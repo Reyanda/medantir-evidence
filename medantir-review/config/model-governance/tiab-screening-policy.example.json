@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "medantir-model-governance/1",
+  "policyId": "example-tiabscreen-decision-support",
+  "policyVersion": "0.1.0-example",
+  "task": "tiab-screening",
+  "minSampledRecords": 200,
+  "minReferenceIncludes": 30,
+  "minCompletedRate": 0.99,
+  "minSensitivity": 0.98,
+  "minSpecificity": 0.9,
+  "minF1": 0.9,
+  "maxFalseNegatives": 1,
+  "maxUncertainRate": 0.05,
+  "maxInvalidOutputRate": 0.01,
+  "maxInferenceErrorRate": 0.01,
+  "maxTotalCostUsd": 0.5,
+  "requireFixedRequestedModel": true,
+  "requireSingleActualModel": true,
+  "requireSingleProvider": true,
+  "requireIndependentReferenceVerification": true
+}

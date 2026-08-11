@@ -1,0 +1,153 @@
+{
+  "schemaVersion": "medantir-srbench/1",
+  "benchmarkClass": "synthetic-fixture",
+  "role": "canary",
+  "caseId": "SRBENCH-FIXTURE-001",
+  "title": "Synthetic complete systematic-review pipeline falsification case",
+  "domain": "benchmark-infrastructure",
+  "reviewType": "systematic",
+  "stageGold": {
+    "question": { "status": "complete", "receiptHash": "AUTO" },
+    "protocol": { "status": "complete", "receiptHash": "AUTO" },
+    "search": { "status": "complete", "receiptHash": "AUTO" },
+    "deduplication": { "status": "complete", "receiptHash": "AUTO" },
+    "tiab-screening": { "status": "complete", "receiptHash": "AUTO" },
+    "fulltext-screening": { "status": "complete", "receiptHash": "AUTO" },
+    "extraction": { "status": "complete", "receiptHash": "AUTO" },
+    "appraisal": { "status": "complete", "receiptHash": "AUTO" },
+    "synthesis": { "status": "complete", "receiptHash": "AUTO" },
+    "report": { "status": "complete", "receiptHash": "AUTO" }
+  },
+  "tasks": [
+    {
+      "id": "fixture-question",
+      "stage": "question",
+      "critical": true,
+      "instruction": "Convert the rough review question into the exact structured fields requested. Preserve the wording of the supplied concepts; do not add concepts.",
+      "input": { "roughQuestion": "In adults hospitalized with viral pneumonia, does Treatment A compared with standard care reduce 28-day mortality?", "eligibleDesigns": "comparative interventional and observational studies" },
+      "outputSchema": { "population": "string", "intervention": "string", "comparator": "string", "outcome": "string", "design": "string" },
+      "gold": { "population": "adults hospitalized with viral pneumonia", "intervention": "Treatment A", "comparator": "standard care", "outcome": "28-day mortality", "design": "comparative interventional and observational studies" },
+      "scorer": { "kind": "exact-json" }
+    },
+    {
+      "id": "fixture-protocol",
+      "stage": "protocol",
+      "dependsOn": ["fixture-question"],
+      "critical": true,
+      "instruction": "Return the prespecified eligibility object exactly from the supplied protocol notes, using the upstream structured question as context.",
+      "input": { "notes": { "include": ["age >=18 years", "hospitalized viral pneumonia", "Treatment A versus standard care", "reports 28-day mortality"], "exclude": ["case reports", "pregnancy", "age <18 years"] } },
+      "outputSchema": { "include": ["string"], "exclude": ["string"] },
+      "gold": { "include": ["age >=18 years", "hospitalized viral pneumonia", "Treatment A versus standard care", "reports 28-day mortality"], "exclude": ["case reports", "pregnancy", "age <18 years"] },
+      "scorer": { "kind": "exact-json" }
+    },
+    {
+      "id": "fixture-search",
+      "stage": "search",
+      "dependsOn": ["fixture-question", "fixture-protocol"],
+      "critical": true,
+      "instruction": "Return the recall-first search term set. Use every supplied population and intervention synonym and no outcome term. Respect the upstream question/protocol rather than inventing a different review scope.",
+      "input": { "populationTerms": ["viral pneumonia", "VP syndrome"], "interventionTerms": ["Treatment A", "TA-101"], "rule": "population AND intervention; no outcome terms" },
+      "outputSchema": { "terms": ["string"] },
+      "gold": { "terms": ["viral pneumonia", "VP syndrome", "Treatment A", "TA-101"] },
+      "scorer": { "kind": "set-exact", "path": "terms" }
+    },
+    {
+      "id": "fixture-dedup",
+      "stage": "deduplication",
+      "dependsOn": ["fixture-search"],
+      "critical": true,
+      "instruction": "Deduplicate records by normalized DOI when present and otherwise by PMID. Return the retained canonical record IDs. The upstream search artifact is provided for lineage context only.",
+      "input": { "records": [
+        { "id": "r1", "doi": "10.1000/a" },
+        { "id": "r1-duplicate", "doi": "https://doi.org/10.1000/A" },
+        { "id": "r2", "pmid": "200" },
+        { "id": "r3", "doi": "10.1000/c" }
+      ] },
+      "outputSchema": { "uniqueRecordIds": ["string"] },
+      "gold": { "uniqueRecordIds": ["r1", "r2", "r3"] },
+      "scorer": { "kind": "set-exact", "path": "uniqueRecordIds" }
+    },
+    {
+      "id": "fixture-tiab",
+      "stage": "tiab-screening",
+      "dependsOn": ["fixture-protocol", "fixture-dedup"],
+      "critical": true,
+      "instruction": "Screen using only the supplied title/abstract, the upstream eligibility protocol and the upstream retained-record identity. Include means retain for full text. Exclude only when an exclusion is explicit.",
+      "input": { "records": [
+        { "id": "r1", "text": "Randomized adults hospitalized with viral pneumonia to Treatment A or standard care; 28-day mortality recorded." },
+        { "id": "r2", "text": "Case report of Treatment A in one pregnant adolescent." },
+        { "id": "r3", "text": "Retrospective adult cohort comparing Treatment A with standard care in viral pneumonia." }
+      ] },
+      "outputSchema": { "decisions": [{ "id": "string", "decision": "include|exclude" }] },
+      "gold": { "decisions": [{ "id": "r1", "decision": "include" }, { "id": "r2", "decision": "exclude" }, { "id": "r3", "decision": "include" }] },
+      "scorer": { "kind": "classification-ledger", "path": "decisions", "idKey": "id", "labelKey": "decision", "positiveLabel": "include", "negativeLabel": "exclude", "falseNegativeFatal": true }
+    },
+    {
+      "id": "fixture-fulltext",
+      "stage": "fulltext-screening",
+      "dependsOn": ["fixture-protocol", "fixture-tiab"],
+      "critical": true,
+      "instruction": "Apply the upstream protocol to the supplied full-text evidence summaries for records retained by the upstream title/abstract screen. Return include/exclude decisions only.",
+      "input": { "documents": [
+        { "id": "r1", "methods": "Adults >=18; randomized Treatment A versus standard care.", "results": "28-day mortality reported." },
+        { "id": "r3", "methods": "Adults >=18; comparative cohort Treatment A versus standard care.", "results": "Only 7-day symptom score; no 28-day mortality." }
+      ] },
+      "outputSchema": { "decisions": [{ "id": "string", "decision": "include|exclude" }] },
+      "gold": { "decisions": [{ "id": "r1", "decision": "include" }, { "id": "r3", "decision": "exclude" }] },
+      "scorer": { "kind": "classification-ledger", "path": "decisions", "idKey": "id", "labelKey": "decision", "positiveLabel": "include", "negativeLabel": "exclude", "falseNegativeFatal": true }
+    },
+    {
+      "id": "fixture-extraction",
+      "stage": "extraction",
+      "dependsOn": ["fixture-fulltext"],
+      "critical": true,
+      "instruction": "Extract the arm-level 28-day mortality counts exactly for the evidence retained by the upstream full-text stage. Do not calculate or impute missing values.",
+      "input": { "rows": [
+        { "studyId": "S1", "row": "Treatment A: 10 deaths / 100; standard care: 20 deaths / 100 at day 28" },
+        { "studyId": "S2", "row": "Treatment A: 15 deaths / 100; standard care: 20 deaths / 100 at day 28" }
+      ] },
+      "outputSchema": { "studies": [{ "studyId": "string", "experimentalEvents": "integer", "experimentalTotal": "integer", "controlEvents": "integer", "controlTotal": "integer", "timeHorizon": "string" }] },
+      "gold": { "studies": [
+        { "studyId": "S1", "experimentalEvents": 10, "experimentalTotal": 100, "controlEvents": 20, "controlTotal": 100, "timeHorizon": "28-day" },
+        { "studyId": "S2", "experimentalEvents": 15, "experimentalTotal": 100, "controlEvents": 20, "controlTotal": 100, "timeHorizon": "28-day" }
+      ] },
+      "scorer": { "kind": "exact-json" }
+    },
+    {
+      "id": "fixture-appraisal",
+      "stage": "appraisal",
+      "dependsOn": ["fixture-extraction"],
+      "critical": true,
+      "instruction": "Classify the supplied risk-of-bias descriptions using the specified three-level rubric for the studies present in the upstream extraction artifact.",
+      "input": { "rubric": "low if randomized with concealed allocation and complete outcome ascertainment; high if nonrandom allocation with major missing outcome data; otherwise some-concerns", "studies": [
+        { "studyId": "S1", "evidence": "Computer randomization, central concealed allocation, complete mortality ascertainment." },
+        { "studyId": "S2", "evidence": "Alternating allocation and 30% missing mortality status." }
+      ] },
+      "outputSchema": { "judgments": [{ "studyId": "string", "risk": "low|some-concerns|high" }] },
+      "gold": { "judgments": [{ "studyId": "S1", "risk": "low" }, { "studyId": "S2", "risk": "high" }] },
+      "scorer": { "kind": "exact-json" }
+    },
+    {
+      "id": "fixture-synthesis",
+      "stage": "synthesis",
+      "dependsOn": ["fixture-extraction", "fixture-appraisal"],
+      "critical": true,
+      "instruction": "Using the upstream extraction/appraisal as the audit lineage, compute the supplied equal-weight effect example exactly. The study log risk ratios have equal prespecified weights. Return studyCount, pooledLogRR and pooledRR.",
+      "input": { "effects": [{ "studyId": "S1", "logRR": -0.6931471805599453, "weight": 1 }, { "studyId": "S2", "logRR": -0.2876820724517809, "weight": 1 }] },
+      "outputSchema": { "studyCount": "integer", "pooledLogRR": "number", "pooledRR": "number" },
+      "gold": { "studyCount": 2, "pooledLogRR": -0.4904146265058631, "pooledRR": 0.6123724356957946 },
+      "scorer": { "kind": "numeric-fields", "fields": [{ "path": "studyCount", "absoluteTolerance": 0 }, { "path": "pooledLogRR", "absoluteTolerance": 0.000001 }, { "path": "pooledRR", "absoluteTolerance": 0.000001 }] }
+    },
+    {
+      "id": "fixture-report",
+      "stage": "report",
+      "dependsOn": ["fixture-synthesis", "fixture-appraisal"],
+      "critical": true,
+      "instruction": "Generate the exact structured result statement from the ACTUAL upstream synthesis result and appraisal lineage plus the supplied benchmark certainty label. Do not replace an upstream result with a memorized or independently calculated answer.",
+      "input": { "outcome": "28-day mortality", "certainty": "benchmark-fixture-only" },
+      "outputSchema": { "outcome": "string", "direction": "string", "studies": "integer", "effectMeasure": "string", "estimate": "number", "certainty": "string" },
+      "gold": { "outcome": "28-day mortality", "direction": "favours Treatment A", "studies": 2, "effectMeasure": "RR", "estimate": 0.6123724356957946, "certainty": "benchmark-fixture-only" },
+      "scorer": { "kind": "exact-json" }
+    }
+  ]
+}

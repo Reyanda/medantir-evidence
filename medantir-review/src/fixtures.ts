@@ -1,0 +1,67 @@
+import type { EvidenceRecord, ReviewRequest } from './core/types.js';
+
+export const fixtureRecords: EvidenceRecord[] = [
+  {
+    id: 'pubmed-1',
+    title: 'Reduced dose therapeutic food for children with severe acute malnutrition',
+    abstract: 'A randomised trial evaluated nutritional treatment, recovery, and mortality in children with severe acute malnutrition.',
+    authors: ['A Researcher', 'B Scientist'],
+    year: 2024,
+    journal: 'Nutrition Trials',
+    doi: '10.1000/sam.001',
+    sourceDatabases: ['PubMed'],
+    keywords: ['severe acute malnutrition', 'RUTF', 'mortality'],
+    effect: -0.24,
+    standardError: 0.10,
+  },
+  {
+    id: 'medline-duplicate-1',
+    title: 'Reduced-dose therapeutic food for children with severe acute malnutrition',
+    abstract: 'Randomised evidence on nutritional treatment and mortality among children with severe acute malnutrition.',
+    authors: ['A Researcher', 'B Scientist'],
+    year: 2024,
+    journal: 'Nutrition Trials',
+    doi: '10.1000/sam.001',
+    sourceDatabases: ['MEDLINE'],
+    effect: -0.24,
+    standardError: 0.10,
+  },
+  {
+    id: 'pubmed-2',
+    title: 'Post-discharge mortality after treatment of severe acute malnutrition',
+    abstract: 'A prospective cohort of children treated for severe acute malnutrition measured post-discharge mortality and recovery.',
+    authors: ['C Analyst'],
+    year: 2023,
+    journal: 'Global Child Health',
+    doi: '10.1000/sam.002',
+    sourceDatabases: ['PubMed'],
+    keywords: ['malnutrition', 'mortality', 'children'],
+    effect: -0.10,
+    standardError: 0.08,
+  },
+  {
+    id: 'irrelevant-1',
+    title: 'Astronomical observations of lunar eclipses',
+    abstract: 'A telescope study of orbital dynamics and eclipse prediction.',
+    authors: ['D Astronomer'],
+    year: 2022,
+    journal: 'Astronomy',
+    sourceDatabases: ['MEDLINE'],
+  },
+];
+
+export const fixtureRequest: ReviewRequest = {
+  reviewType: 'systematic',
+  databases: ['PubMed', 'MEDLINE'],
+  autoApproveHumanGates: true,
+  dualScreening: true,
+  question: {
+    title: 'Therapeutic food and mortality in severe acute malnutrition',
+    objective: 'Estimate the effect of therapeutic food strategies on mortality among children with severe acute malnutrition.',
+    population: 'children with severe acute malnutrition',
+    interventionOrExposure: 'therapeutic food',
+    comparator: 'standard nutritional treatment',
+    outcomes: ['mortality'],
+    concepts: ['recovery'],
+  },
+};

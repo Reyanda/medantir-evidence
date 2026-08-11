@@ -1,0 +1,52 @@
+{
+  "name": "closed-loop-evidence-review-engine",
+  "version": "0.5.0",
+  "private": true,
+  "type": "module",
+  "description": "Auditable multi-review evidence synthesis orchestration reference implementation",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "clean": "rm -rf dist",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "npm run build && node --test dist/test/**/*.test.js",
+    "verify:offline": "node scripts/offline-verification.mjs",
+    "demo": "npm run build && node dist/examples/demo.js",
+    "start": "npm run build && node dist/src/server.js",
+    "demo:human": "npm run build && node dist/examples/human-loop.js",
+    "demo:benchmark": "npm run build && node dist/examples/benchmark.js",
+    "demo:live-search": "npm run build && node dist/examples/live-search.js",
+    "demo:live-pipeline": "npm run build && node dist/examples/live-pipeline.js",
+    "demo:review-spec": "npm run build && node dist/examples/review-spec-clarification.js",
+    "benchmark:omniroute-screening": "npm run build && node dist/examples/omniroute-screening-benchmark.js",
+    "benchmark:rob2:conformance": "npm run build && node dist/examples/rob2-conformance.js",
+    "demo:forest-plot": "npm run build && node dist/examples/forest-plot-demo.js",
+    "benchmark:jak-covid": "npm run build && node dist/examples/live-historical-replay.js",
+    "benchmark:historical-capsule": "npm run build && node dist/examples/historical-time-capsule.js",
+    "benchmark:historical-debt": "npm run build && node dist/examples/historical-reproduction-debt.js",
+    "benchmark:sr:derive-coverage": "npm run build && node dist/examples/srbench-derive-historical-coverage.js",
+    "benchmark:sr:qualify": "npm run build && node dist/examples/srbench-qualification-corpus.js",
+    "benchmark:sr:capture-sources": "npm run build && node dist/examples/srbench-apply-qualification-captures.js",
+    "benchmark:sr:finalize-qualification": "npm run build && node dist/examples/srbench-finalize-qualification.js",
+    "benchmark:sr:inventory-osf": "npm run build && node dist/examples/srbench-inventory-osf-sources.js",
+    "benchmark:sr:resolve-osf": "npm run build && node dist/examples/srbench-resolve-osf-sources.js",
+    "benchmark:sr:preflight-analysis": "npm run build && node dist/examples/srbench-analysis-preflight.js",
+    "benchmark:sr:materialize-llm-clinical": "npm run build && node dist/examples/srbench-materialize-llm-clinical-human-screening.js",
+    "benchmark:sr:validate": "npm run build && node dist/examples/srbench-validate.js",
+    "benchmark:sr": "npm run build && node dist/examples/srbench-tournament.js",
+    "benchmark:sr:summary": "npm run build && node dist/examples/srbench-performance-summary.js",
+    "benchmark:sr:mint-sentinel": "npm run build && node dist/examples/srbench-mint-sentinel.js",
+    "govern:model": "npm run build && node dist/examples/model-governance-dossier.js",
+    "generate:templates": "npm run build && node dist/examples/generate-protocol-templates.js",
+    "demo:protocol": "npm run build && node dist/examples/protocol-registration.js"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.2",
+    "typescript": "^7.0.2"
+  },
+  "dependencies": {
+    "aws-jwt-verify": "^5.1.0"
+  }
+}

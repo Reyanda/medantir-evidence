@@ -1,0 +1,78 @@
+{
+  "candidateId": "SRQ-LLM-CLINICAL-2026",
+  "sourceRepository": "nyuolab/llms-in-clinical-medicine-systematic-review",
+  "sourceCommit": "69597fdd1dd2cd45417446997af5af671853e2ec",
+  "language": "Python",
+  "runtimeVersion": null,
+  "entrypoints": [
+    "screening.ipynb",
+    "analysis-and-figures.ipynb"
+  ],
+  "dependencies": [
+    { "name": "arviz", "version": "0.22.0", "source": "Nature Medicine Code availability" },
+    { "name": "matplotlib", "version": "3.10.1", "source": "Nature Medicine Code availability" },
+    { "name": "numpy", "version": "1.26.4", "source": "Nature Medicine Code availability" },
+    { "name": "openai", "version": "1.61.0", "source": "Nature Medicine Code availability" },
+    { "name": "pandas", "version": "2.2.3", "source": "Nature Medicine Code availability" },
+    { "name": "pymc", "version": "5.23.0", "source": "Nature Medicine Code availability" },
+    { "name": "pytensor", "version": null, "source": "Named in Nature Medicine Code availability without exact version" },
+    { "name": "rapidfuzz", "version": null, "source": "Imported by repository notebook; exact historical version not published" },
+    { "name": "scipy", "version": "1.14.1", "source": "Nature Medicine Code availability" },
+    { "name": "statsmodels", "version": "0.14.4", "source": "Nature Medicine Code availability" },
+    { "name": "tqdm", "version": null, "source": "Imported by repository notebook; exact historical version not published" }
+  ],
+  "findings": [
+    {
+      "code": "PYTHON_VERSION_CONFLICT",
+      "severity": "blocker",
+      "message": "The version of record states that all analyses ran in Python 3.12.7, while the final pinned analysis notebook metadata is Python 3.12.12. The exact historical interpreter identity must be reconciled before computational reproduction can be certified.",
+      "files": ["analysis-and-figures.ipynb"],
+      "evidence": [
+        "Nature Medicine Code availability: Python 3.12.7",
+        "Git commit 69597fdd1dd2cd45417446997af5af671853e2ec changes notebook metadata 3.12.7 -> 3.12.12"
+      ]
+    },
+    {
+      "code": "POST_ANALYSIS_STATISTICAL_ALIGNMENT",
+      "severity": "blocker",
+      "message": "The pinned final commit is titled 'Changed stat-test in notebook to match paper' and changes multiple-testing corrections from fdr_gbs/bonferroni to fdr_bh. A publication-era or Zenodo snapshot must be cross-bound before the final Git state can be called the exact historical analysis runtime.",
+      "files": ["analysis-and-figures.ipynb"],
+      "evidence": [
+        "Git commit 69597fdd1dd2cd45417446997af5af671853e2ec"
+      ]
+    },
+    {
+      "code": "DEPENDENCY_MANIFEST_INCOMPLETE",
+      "severity": "blocker",
+      "message": "The publication pins many core packages, but exact historical versions remain unresolved for pytensor and notebook-imported utilities including rapidfuzz and tqdm.",
+      "files": ["screening.ipynb", "analysis-and-figures.ipynb"]
+    },
+    {
+      "code": "GENERATED_INTERMEDIATE_ARTIFACTS_MISSING",
+      "severity": "warning",
+      "message": "Notebook-named generated files embase_pubmed_scopus_batch-GPT-5r-high.jsonl and deduped_and_processed_studies-GPT-5r-high.jsonl were not found at their named root paths in the pinned commit. They must be deterministically reconstructed or located in the publication/Zenodo snapshot before they can be treated as historical original artifacts.",
+      "files": ["screening.ipynb"]
+    },
+    {
+      "code": "LIVE_GPT_REPLAY_UNSAFE",
+      "severity": "warning",
+      "message": "Historical reproduction must prefer the committed model response artifacts. Re-querying a moving GPT-5 service would test contemporary model behavior, not reproduce the frozen 2025 screening computation."
+    }
+  ],
+  "proposedRepairs": [
+    {
+      "repairId": "ZENODO-SNAPSHOT-CROSSBIND",
+      "description": "Resolve the Zenodo 10.5281/zenodo.17393576 publication snapshot and cross-bind its notebook/runtime files to the Git state used for the version of record.",
+      "affectedFiles": ["screening.ipynb", "analysis-and-figures.ipynb"],
+      "semanticImpact": "none",
+      "rationale": "This establishes historical identity without changing data, estimands or calculations."
+    },
+    {
+      "repairId": "FROZEN-RESPONSE-REPLAY",
+      "description": "Use committed batch response artifacts for historical screening replay rather than issuing new live model calls.",
+      "affectedFiles": ["screening.ipynb", "Batch Responses/GPT-5r-high-screening-output.jsonl"],
+      "semanticImpact": "none",
+      "rationale": "The repair preserves the historical model outputs and prevents provider/model drift from being mistaken for review reproduction."
+    }
+  ]
+}

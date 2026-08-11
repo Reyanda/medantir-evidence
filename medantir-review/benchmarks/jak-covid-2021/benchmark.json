@@ -1,0 +1,84 @@
+{
+  "benchmarkId": "MEDANTIR-RETRIEVAL-001-JAK-COVID-2021",
+  "status": "real-published-gold-set",
+  "review": {
+    "title": "Janus kinase (JAK)-inhibitors and coronavirus disease 2019 (Covid-19) outcomes: a systematic review and meta-analysis",
+    "pmid": "34538216",
+    "pmcid": "PMC8500309",
+    "doi": "10.1080/14787210.2021.1982695",
+    "prospero": "CRD42021258750"
+  },
+  "historicalCutoff": "2021-06-02",
+  "searchStart": "2019-01-01",
+  "language": "English",
+  "reportedFlow": {
+    "pubmed": 303,
+    "europepmc": 1666,
+    "clinicaltrials.gov": 46,
+    "totalBeforeDedup": 2015,
+    "afterDedup": 1632,
+    "fullTextAssessed": 65,
+    "includedLineages": 14
+  },
+  "publicationReproduction": {
+    "sourceReference": "PMC8500309, Methods 2.2 and Table 1",
+    "referenceListSearchReported": true,
+    "referenceListSearchLedgerAvailable": false,
+    "claims": [
+      {
+        "database": "pubmed",
+        "platform": "PubMed",
+        "reportedResultCount": 303,
+        "queryAvailable": true,
+        "dateRestrictionAvailable": true,
+        "languageRestrictionAvailable": true,
+        "manualSearchesDisclosed": false,
+        "sourceReference": "PMC8500309 Table 1",
+        "notes": [
+          "The paper reports a PubMed strategy and an English-language search period ending 2021-06-02, but no immutable PubMed export from the original run is available in this benchmark.",
+          "Reference-list searching was reported but no itemized manual-search ledger was published."
+        ]
+      },
+      {
+        "database": "europepmc",
+        "platform": "Europe PMC",
+        "reportedResultCount": 1666,
+        "queryAvailable": true,
+        "dateRestrictionAvailable": false,
+        "languageRestrictionAvailable": true,
+        "manualSearchesDisclosed": false,
+        "sourceReference": "PMC8500309 Methods 2.2 and Table 1",
+        "notes": [
+          "The narrative gives the historical search period, but the table does not preserve a source-native Europe PMC date-filter execution receipt.",
+          "Reference-list searching was reported but no itemized manual-search ledger was published."
+        ]
+      },
+      {
+        "database": "clinicaltrials.gov",
+        "platform": "ClinicalTrials.gov",
+        "reportedResultCount": 46,
+        "queryAvailable": true,
+        "dateRestrictionAvailable": false,
+        "languageRestrictionAvailable": true,
+        "manualSearchesDisclosed": false,
+        "sourceReference": "PMC8500309 Methods 2.2 and Table 1",
+        "notes": [
+          "The narrative gives the historical search period, but the table does not preserve a source-native ClinicalTrials.gov date-filter execution receipt.",
+          "Reference-list searching was reported but no itemized manual-search ledger was published."
+        ]
+      }
+    ]
+  },
+  "principalSources": ["pubmed", "europepmc", "clinicaltrials.gov"],
+  "primaryEndpoint": "evidence-lineage-recall",
+  "secondaryEndpoints": [
+    "source-marginal-recall",
+    "version-identity-accuracy",
+    "query-semantic-fidelity",
+    "dedup-lineage-accuracy",
+    "record-yield",
+    "machine-exact-offline-replay",
+    "publication-reproduction-classification"
+  ],
+  "historicalReplayRule": "A later journal PMID/DOI may link to a lineage but cannot count as the evidence object retrievable at the 2021-06-02 cutoff."
+}

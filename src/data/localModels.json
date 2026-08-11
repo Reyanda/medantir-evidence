@@ -1,0 +1,129 @@
+{
+  "engines": {
+    "transformers": {
+      "label": "Transformers.js (ONNX)",
+      "description": "Hugging Face task pipelines — classification, embeddings, summarization, QA",
+      "bestFor": ["classification", "embeddings", "sentiment", "screening", "ranking", "qa"],
+      "backends": ["webgpu", "wasm"]
+    },
+    "webllm": {
+      "label": "WebLLM (MLC)",
+      "description": "OpenAI-compatible chat API — streaming, function calling, structured JSON",
+      "bestFor": ["chat", "generation", "code", "reasoning", "tool-calling"],
+      "backends": ["webgpu"]
+    },
+    "gemini-nano": {
+      "label": "Gemini Nano (Chrome built-in)",
+      "description": "Zero-download on-device model in Chrome 137+ — summarization, rewriting, translation",
+      "bestFor": ["summarization", "rewriting", "translation", "proofreading"],
+      "backends": ["chrome-ai"]
+    }
+  },
+  "defaultEngine": "transformers",
+  "defaultModelId": "SmolLM2-360M-Instruct",
+  "cascade": ["gemini-nano", "transformers", "webllm"],
+  "models": {
+    "transformers": [
+      {
+        "id": "SmolLM2-135M-Instruct",
+        "hfId": "HuggingFaceTB/SmolLM2-135M-Instruct",
+        "params": "135M",
+        "quantizedSizeMB": 80,
+        "wasmRamMB": 300,
+        "webgpuRamMB": 200,
+        "pipelines": ["text-classification", "text-generation", "feature-extraction"],
+        "quality": "basic",
+        "note": "Ultra-light fallback — runs on any device with 1GB+ RAM"
+      },
+      {
+        "id": "SmolLM2-360M-Instruct",
+        "hfId": "HuggingFaceTB/SmolLM2-360M-Instruct",
+        "params": "360M",
+        "quantizedSizeMB": 200,
+        "wasmRamMB": 600,
+        "webgpuRamMB": 400,
+        "pipelines": ["text-classification", "text-generation", "summarization", "feature-extraction", "question-answering"],
+        "quality": "good",
+        "note": "Default — best quality-to-size for task pipelines (classification, screening, embeddings)"
+      },
+      {
+        "id": "Qwen2-0.5B-Instruct",
+        "hfId": "Qwen/Qwen2-0.5B-Instruct",
+        "params": "500M",
+        "quantizedSizeMB": 280,
+        "wasmRamMB": 800,
+        "webgpuRamMB": 500,
+        "pipelines": ["text-classification", "text-generation", "summarization", "feature-extraction", "question-answering"],
+        "quality": "very-good",
+        "note": "Strong multilingual — good for non-English text classification"
+      }
+    ],
+    "webllm": [
+      {
+        "id": "Phi-4-mini",
+        "engineId": "Phi-4-mini-q4f16_1-MLC",
+        "params": "3.8B",
+        "quantizedSizeGB": 2.3,
+        "ramMB": 3000,
+        "quality": "frontier",
+        "note": "Frontier-tier reasoning and code at 3.8B — surpasses 2024-era 7B models. Best local chat model."
+      },
+      {
+        "id": "Llama-3.2-3B",
+        "engineId": "Llama-3.2-3B-Instruct-q4f16_1-MLC",
+        "params": "3B",
+        "quantizedSizeGB": 1.9,
+        "ramMB": 2500,
+        "quality": "high",
+        "note": "Meta's small Llama — widely supported, good instruction following"
+      },
+      {
+        "id": "Qwen2.5-3B",
+        "engineId": "Qwen2.5-3B-Instruct-q4f16_1-MLC",
+        "params": "3B",
+        "quantizedSizeGB": 1.9,
+        "ramMB": 2500,
+        "quality": "high",
+        "note": "Alibaba's multilingual 3B — strong at structured extraction and classification"
+      },
+      {
+        "id": "Gemma-3-4B",
+        "engineId": "gemma-3-4b-it-q4f16_1-MLC",
+        "params": "4B",
+        "quantizedSizeGB": 2.6,
+        "ramMB": 3500,
+        "quality": "frontier",
+        "note": "Google's on-device optimized 4B — strong multilingual instruction following"
+      },
+      {
+        "id": "Llama-3.1-8B",
+        "engineId": "Llama-3.1-8B-Instruct-q4f16_1-MLC",
+        "params": "8B",
+        "quantizedSizeGB": 4.5,
+        "ramMB": 6000,
+        "quality": "frontier-max",
+        "note": "Upper bound — requires 8GB+ RAM and discrete GPU. Near-cloud quality for chat."
+      }
+    ],
+    "gemini-nano": [
+      {
+        "id": "Gemini-Nano",
+        "params": "unknown (~3-5B)",
+        "quality": "high",
+        "note": "Chrome 137+ built-in. Zero download. Summarization, rewriting, translation, proofreading."
+      }
+    ]
+  },
+  "taskDefaults": {
+    "sentiment": { "engine": "transformers", "pipeline": "text-classification", "fallbackLabel": "neutral" },
+    "tiab-screening": { "engine": "transformers", "pipeline": "text-classification", "fallbackLabel": "exclude" },
+    "document-classify": { "engine": "transformers", "pipeline": "text-classification", "fallbackLabel": "unknown" },
+    "summarize": { "engines": ["gemini-nano", "transformers"], "pipeline": "text-generation", "maxTokens": 200 },
+    "rank": { "engine": "transformers", "pipeline": "feature-extraction" },
+    "extract-entities": { "engine": "transformers", "pipeline": "text-generation", "maxTokens": 150 },
+    "query-route": { "engine": "transformers", "pipeline": "text-classification", "fallbackLabel": "api" },
+    "chat": { "engine": "webllm", "note": "General-purpose chat and reasoning" },
+    "generate": { "engines": ["webllm", "transformers"], "pipeline": "text-generation", "maxTokens": 512 },
+    "code": { "engine": "webllm", "note": "Code generation and debugging" }
+  }
+}

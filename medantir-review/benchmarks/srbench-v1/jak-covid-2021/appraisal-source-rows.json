@@ -1,0 +1,39 @@
+{
+  "source": {
+    "review": "PMC8500309",
+    "tables": ["Table 3", "Table 4"],
+    "instruction": "Normalize these published appraisal rows onto the canonical JAKCOVID lineage IDs. Preserve all component scores exactly."
+  },
+  "canonicalLineages": [
+    {"lineageId":"JAKCOVID-001","rowLabel":"Bronte V 2020"},
+    {"lineageId":"JAKCOVID-002","rowLabel":"Cantini F 2020 (a)"},
+    {"lineageId":"JAKCOVID-003","rowLabel":"Cantini F 2020 (b)"},
+    {"lineageId":"JAKCOVID-004","rowLabel":"Cao Y 2020"},
+    {"lineageId":"JAKCOVID-005","rowLabel":"D’Alessio A 2021"},
+    {"lineageId":"JAKCOVID-006","rowLabel":"Giudice V 2020"},
+    {"lineageId":"JAKCOVID-007","rowLabel":"Kalil AC 2021"},
+    {"lineageId":"JAKCOVID-008","rowLabel":"Marconi VC 2021"},
+    {"lineageId":"JAKCOVID-009","rowLabel":"Maslennikov R 2021"},
+    {"lineageId":"JAKCOVID-010","rowLabel":"Novartis Pharmaceuticals 2021"},
+    {"lineageId":"JAKCOVID-011","rowLabel":"Rodriguez-Garcia JL 2021"},
+    {"lineageId":"JAKCOVID-012","rowLabel":"Rosas J 2020"},
+    {"lineageId":"JAKCOVID-013","rowLabel":"Stanevich OV 2021"},
+    {"lineageId":"JAKCOVID-014","rowLabel":"Stebbing J 2021"}
+  ],
+  "publishedRows": [
+    {"table":"Table 3","rowLabel":"Cantini F 2020 (a)","tool":"modified-jadad-7","randomAllocation":0,"concealment":0,"blinding":0,"withdrawalsDropouts":1,"totalScore":1,"interpretation":"low"},
+    {"table":"Table 3","rowLabel":"Cao Y 2020","tool":"modified-jadad-7","randomAllocation":2,"concealment":2,"blinding":2,"withdrawalsDropouts":1,"totalScore":7,"interpretation":"high"},
+    {"table":"Table 3","rowLabel":"D’Alessio A 2021","tool":"modified-jadad-7","randomAllocation":0,"concealment":0,"blinding":0,"withdrawalsDropouts":1,"totalScore":1,"interpretation":"low"},
+    {"table":"Table 3","rowLabel":"Kalil AC 2021","tool":"modified-jadad-7","randomAllocation":1,"concealment":1,"blinding":2,"withdrawalsDropouts":1,"totalScore":5,"interpretation":"high"},
+    {"table":"Table 3","rowLabel":"Marconi VC 2021","tool":"modified-jadad-7","randomAllocation":2,"concealment":1,"blinding":2,"withdrawalsDropouts":1,"totalScore":6,"interpretation":"high"},
+    {"table":"Table 3","rowLabel":"Novartis Pharmaceuticals 2021","tool":"modified-jadad-7","randomAllocation":1,"concealment":1,"blinding":2,"withdrawalsDropouts":1,"totalScore":5,"interpretation":"high"},
+    {"table":"Table 4","rowLabel":"Bronte V 2020","tool":"newcastle-ottawa-cohort-9","selection":3,"comparability":2,"outcome":3,"totalScore":8,"interpretation":"good"},
+    {"table":"Table 4","rowLabel":"Cantini F 2020 (b)","tool":"newcastle-ottawa-cohort-9","selection":3,"comparability":2,"outcome":2,"totalScore":7,"interpretation":"good"},
+    {"table":"Table 4","rowLabel":"Giudice V 2020","tool":"newcastle-ottawa-cohort-9","selection":3,"comparability":2,"outcome":2,"totalScore":7,"interpretation":"good"},
+    {"table":"Table 4","rowLabel":"Maslennikov R 2021","tool":"newcastle-ottawa-cohort-9","selection":3,"comparability":2,"outcome":3,"totalScore":8,"interpretation":"good"},
+    {"table":"Table 4","rowLabel":"Rodriguez-Garcia JL 2021","tool":"newcastle-ottawa-cohort-9","selection":3,"comparability":2,"outcome":3,"totalScore":8,"interpretation":"good"},
+    {"table":"Table 4","rowLabel":"Rosas J 2020","tool":"newcastle-ottawa-cohort-9","selection":3,"comparability":2,"outcome":3,"totalScore":8,"interpretation":"good"},
+    {"table":"Table 4","rowLabel":"Stanevich OV 2021","tool":"newcastle-ottawa-cohort-9","selection":3,"comparability":2,"outcome":2,"totalScore":7,"interpretation":"good"},
+    {"table":"Table 4","rowLabel":"Stebbing J 2021","tool":"newcastle-ottawa-cohort-9","selection":3,"comparability":2,"outcome":3,"totalScore":8,"interpretation":"good"}
+  ]
+}

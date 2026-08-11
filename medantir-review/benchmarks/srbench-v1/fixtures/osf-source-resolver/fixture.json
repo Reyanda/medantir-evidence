@@ -1,0 +1,106 @@
+{
+  "schemaVersion": "medantir-osf-source-fixture/1",
+  "routes": {
+    "https://api.osf.io/v2/nodes/abc12/files/": {
+      "json": {
+        "data": [
+          {
+            "id": "osfstorage",
+            "links": {
+              "files": "https://api.osf.io/v2/nodes/abc12/files/osfstorage/"
+            }
+          }
+        ],
+        "links": {
+          "next": null
+        }
+      }
+    },
+    "https://api.osf.io/v2/nodes/abc12/files/osfstorage/": {
+      "json": {
+        "data": [
+          {
+            "id": "folder",
+            "attributes": {
+              "kind": "folder",
+              "name": "analysis",
+              "materialized_path": "/analysis/"
+            },
+            "relationships": {
+              "files": {
+                "links": {
+                  "related": {
+                    "href": "https://api.osf.io/v2/files/folder/files/"
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "links": {
+          "next": null
+        }
+      }
+    },
+    "https://api.osf.io/v2/files/folder/files/": {
+      "json": {
+        "data": [
+          {
+            "id": "nested",
+            "attributes": {
+              "kind": "file",
+              "name": "report.csv",
+              "materialized_path": "/analysis/report.csv",
+              "current_version": 2,
+              "extra": {
+                "hashes": {
+                  "sha256": "8ddebf2b0a493950f2c91909bd079188f61ee49976298386627c3f3dd77a0b21"
+                }
+              }
+            },
+            "links": {
+              "download": "https://files.osf.io/v1/resources/abc12/providers/osfstorage/nested"
+            },
+            "relationships": {
+              "versions": {
+                "links": {
+                  "related": {
+                    "href": "https://api.osf.io/v2/files/nested/versions/"
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "links": {
+          "next": null
+        }
+      }
+    },
+    "https://api.osf.io/v2/files/nested/versions/": {
+      "json": {
+        "data": [
+          {
+            "id": "2",
+            "attributes": {
+              "size": 14,
+              "content_type": "text/csv"
+            },
+            "links": {
+              "html": "https://osf.io/abc12/files/osfstorage/nested?revision=2"
+            }
+          }
+        ],
+        "links": {
+          "next": null
+        }
+      }
+    },
+    "https://files.osf.io/v1/resources/abc12/providers/osfstorage/nested": {
+      "headers": {
+        "content-type": "text/csv; charset=utf-8"
+      },
+      "bytesBase64": "YWxwaGEtZGF0YS12Mgo="
+    }
+  }
+}

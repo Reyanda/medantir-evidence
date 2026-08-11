@@ -1,0 +1,58 @@
+[
+  {
+    "lineageId":"JAKCOVID-001","tool":"newcastle-ottawa-cohort-9","selection":3,"comparability":2,"outcome":3,"totalScore":8,"interpretation":"good",
+    "source":{"sourceType":"published-table","sourceReference":"PMC8500309","tableOrFigure":"Table 4","rowLabel":"Bronte V 2020","verbatimEvidence":"Selection 3; comparability 2; outcome 3; total 8; good."}
+  },
+  {
+    "lineageId":"JAKCOVID-002","tool":"modified-jadad-7","randomAllocation":0,"concealment":0,"blinding":0,"withdrawalsDropouts":1,"totalScore":1,"interpretation":"low",
+    "source":{"sourceType":"published-table","sourceReference":"PMC8500309","tableOrFigure":"Table 3","rowLabel":"Cantini F 2020 (a)","verbatimEvidence":"Random 0; concealment 0; blinding 0; withdrawals 1; total 1; low quality."}
+  },
+  {
+    "lineageId":"JAKCOVID-003","tool":"newcastle-ottawa-cohort-9","selection":3,"comparability":2,"outcome":2,"totalScore":7,"interpretation":"good",
+    "source":{"sourceType":"published-table","sourceReference":"PMC8500309","tableOrFigure":"Table 4","rowLabel":"Cantini F 2020 (b)","verbatimEvidence":"Selection 3; comparability 2; outcome 2; total 7; good."}
+  },
+  {
+    "lineageId":"JAKCOVID-004","tool":"modified-jadad-7","randomAllocation":2,"concealment":2,"blinding":2,"withdrawalsDropouts":1,"totalScore":7,"interpretation":"high",
+    "source":{"sourceType":"published-table","sourceReference":"PMC8500309","tableOrFigure":"Table 3","rowLabel":"Cao Y 2020","verbatimEvidence":"Random 2; concealment 2; blinding 2; withdrawals 1; total 7; high quality."}
+  },
+  {
+    "lineageId":"JAKCOVID-005","tool":"modified-jadad-7","randomAllocation":0,"concealment":0,"blinding":0,"withdrawalsDropouts":1,"totalScore":1,"interpretation":"low",
+    "source":{"sourceType":"published-table","sourceReference":"PMC8500309","tableOrFigure":"Table 3","rowLabel":"D’Alessio A 2021","verbatimEvidence":"Random 0; concealment 0; blinding 0; withdrawals 1; total 1; low quality."}
+  },
+  {
+    "lineageId":"JAKCOVID-006","tool":"newcastle-ottawa-cohort-9","selection":3,"comparability":2,"outcome":2,"totalScore":7,"interpretation":"good",
+    "source":{"sourceType":"published-table","sourceReference":"PMC8500309","tableOrFigure":"Table 4","rowLabel":"Giudice V 2020","verbatimEvidence":"Selection 3; comparability 2; outcome 2; total 7; good."}
+  },
+  {
+    "lineageId":"JAKCOVID-007","tool":"modified-jadad-7","randomAllocation":1,"concealment":1,"blinding":2,"withdrawalsDropouts":1,"totalScore":5,"interpretation":"high",
+    "source":{"sourceType":"published-table","sourceReference":"PMC8500309","tableOrFigure":"Table 3","rowLabel":"Kalil AC 2021","verbatimEvidence":"Random 1; concealment 1; blinding 2; withdrawals 1; total 5; high quality."}
+  },
+  {
+    "lineageId":"JAKCOVID-008","tool":"modified-jadad-7","randomAllocation":2,"concealment":1,"blinding":2,"withdrawalsDropouts":1,"totalScore":6,"interpretation":"high",
+    "source":{"sourceType":"published-table","sourceReference":"PMC8500309","tableOrFigure":"Table 3","rowLabel":"Marconi VC 2021","verbatimEvidence":"Random 2; concealment 1; blinding 2; withdrawals 1; total 6; high quality."}
+  },
+  {
+    "lineageId":"JAKCOVID-009","tool":"newcastle-ottawa-cohort-9","selection":3,"comparability":2,"outcome":3,"totalScore":8,"interpretation":"good",
+    "source":{"sourceType":"published-table","sourceReference":"PMC8500309","tableOrFigure":"Table 4","rowLabel":"Maslennikov R 2021","verbatimEvidence":"Selection 3; comparability 2; outcome 3; total 8; good."}
+  },
+  {
+    "lineageId":"JAKCOVID-010","tool":"modified-jadad-7","randomAllocation":1,"concealment":1,"blinding":2,"withdrawalsDropouts":1,"totalScore":5,"interpretation":"high",
+    "source":{"sourceType":"published-table","sourceReference":"PMC8500309","tableOrFigure":"Table 3","rowLabel":"Novartis Pharmaceuticals 2021","verbatimEvidence":"Random 1; concealment 1; blinding 2; withdrawals 1; total 5; high quality."}
+  },
+  {
+    "lineageId":"JAKCOVID-011","tool":"newcastle-ottawa-cohort-9","selection":3,"comparability":2,"outcome":3,"totalScore":8,"interpretation":"good",
+    "source":{"sourceType":"published-table","sourceReference":"PMC8500309","tableOrFigure":"Table 4","rowLabel":"Rodriguez-Garcia JL 2021","verbatimEvidence":"Selection 3; comparability 2; outcome 3; total 8; good."}
+  },
+  {
+    "lineageId":"JAKCOVID-012","tool":"newcastle-ottawa-cohort-9","selection":3,"comparability":2,"outcome":3,"totalScore":8,"interpretation":"good",
+    "source":{"sourceType":"published-table","sourceReference":"PMC8500309","tableOrFigure":"Table 4","rowLabel":"Rosas J 2020","verbatimEvidence":"Selection 3; comparability 2; outcome 3; total 8; good."}
+  },
+  {
+    "lineageId":"JAKCOVID-013","tool":"newcastle-ottawa-cohort-9","selection":3,"comparability":2,"outcome":2,"totalScore":7,"interpretation":"good",
+    "source":{"sourceType":"published-table","sourceReference":"PMC8500309","tableOrFigure":"Table 4","rowLabel":"Stanevich OV 2021","verbatimEvidence":"Selection 3; comparability 2; outcome 2; total 7; good."}
+  },
+  {
+    "lineageId":"JAKCOVID-014","tool":"newcastle-ottawa-cohort-9","selection":3,"comparability":2,"outcome":3,"totalScore":8,"interpretation":"good",
+    "source":{"sourceType":"published-table","sourceReference":"PMC8500309","tableOrFigure":"Table 4","rowLabel":"Stebbing J 2021","verbatimEvidence":"Selection 3; comparability 2; outcome 3; total 8; good."}
+  }
+]

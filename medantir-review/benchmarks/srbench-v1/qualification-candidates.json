@@ -1,0 +1,123 @@
+{
+  "schemaVersion": "medantir-sr-qualification-corpus/1",
+  "corpusId": "MEDANTIR-SR-QUALIFICATION-CANDIDATES",
+  "corpusVersion": "1.0.0",
+  "candidates": [
+    {
+      "candidateId": "SRQ-JAK-COVID-2021",
+      "title": "Janus kinase inhibitors and COVID-19 outcomes: systematic review and meta-analysis",
+      "domain": "infectious-disease-therapeutics",
+      "methodologicalClass": "intervention-mixed-design-meta-analysis",
+      "publication": {
+        "doi": "10.1080/14787210.2021.1982695",
+        "pmid": "34538216",
+        "pmcid": "PMC8500309",
+        "year": 2021
+      },
+      "registration": ["PROSPERO CRD42021228866"],
+      "repositories": ["MEDANTIR historical time-capsule benchmark"],
+      "assets": {
+        "protocol": { "status": "identified", "basis": "published-aggregate", "references": ["PMC8500309 methods", "PROSPERO CRD42021228866"] },
+        "search-strategy": { "status": "available-unfrozen", "basis": "source-reconstructed", "references": ["PMC8500309 supplementary/published database strategies"] },
+        "search-corpus": { "status": "frozen-unverified", "basis": "source-reconstructed", "references": ["MEDANTIR historical replay capsule"], "notes": ["Current-index historical replay is not the original 2021 index state."] },
+        "dedup-truth": { "status": "identified", "basis": "published-aggregate", "references": ["Published PRISMA counts: 2015 identified; 1632 after deduplication"] },
+        "tiab-truth": { "status": "identified", "basis": "published-aggregate", "references": ["Published PRISMA aggregate title/abstract exclusions"] },
+        "fulltext-truth": { "status": "identified", "basis": "published-aggregate", "references": ["Published full-text counts and exclusion categories"] },
+        "included-report-corpus": { "status": "identified", "basis": "source-reconstructed", "references": ["14 canonical JAKCOVID lineage identities"], "notes": ["Exact result-bearing source objects remain unarchived for 14/14 lineages."] },
+        "extraction-truth": { "status": "missing", "basis": "not-available", "notes": ["39 published contribution rows still require source-authorized reconstruction."] },
+        "appraisal-truth": { "status": "frozen-unverified", "basis": "source-reconstructed", "references": ["Published Tables 3-4 reconstructed against canonical JAKCOVID identities"] },
+        "analysis-runtime": { "status": "frozen-unverified", "basis": "source-reconstructed", "references": ["MEDANTIR RevMan 5.4 compatibility engine"] },
+        "synthesis-targets": { "status": "available-unfrozen", "basis": "published-aggregate", "references": ["Four published pooled targets and study counts"] },
+        "report-source": { "status": "frozen-unverified", "basis": "original-artifact", "references": ["OA JATS publication object PMC8500309"] }
+      },
+      "notes": ["Existing SRBench validation case has 47.5% scientific pipeline coverage; this qualification record remains stricter and does not call any unfrozen component complete."]
+    },
+    {
+      "candidateId": "SRQ-HAMILTON-SHARING-2023",
+      "title": "Prevalence and predictors of data and code sharing in the medical and health sciences: systematic review with meta-analysis of individual participant data",
+      "domain": "meta-research-open-science",
+      "methodologicalClass": "systematic-review-ipd-meta-analysis",
+      "publication": {
+        "doi": "10.1136/bmj-2023-075767",
+        "pmid": "37433624",
+        "pmcid": "PMC10334349",
+        "year": 2023
+      },
+      "registration": ["OSF DOI 10.17605/OSF.IO/7SX8U"],
+      "repositories": ["OSF DOI 10.17605/OSF.IO/U3YRP", "OSF underlying table data ca89e"],
+      "assets": {
+        "protocol": { "status": "available-unfrozen", "basis": "original-artifact", "references": ["Registered OSF review", "Published detailed review protocol"] },
+        "search-strategy": { "status": "available-unfrozen", "basis": "original-artifact", "references": ["BMJ supplementary methods and review protocol"] },
+        "search-corpus": { "status": "identified", "basis": "source-reconstructed", "references": ["4952 deduplicated main-search records reported; additional literature searches reported"], "notes": ["Original database exports/Covidence export must be located or reconstructed before benchmark completion."] },
+        "dedup-truth": { "status": "identified", "basis": "published-aggregate", "references": ["4952 deduplicated potentially eligible articles reported"] },
+        "tiab-truth": { "status": "identified", "basis": "published-aggregate", "references": ["4736 title/abstract exclusions reported"] },
+        "fulltext-truth": { "status": "identified", "basis": "published-aggregate", "references": ["216 full texts retrieved; 70 eligible from main search; additional searches added reports"] },
+        "included-report-corpus": { "status": "available-unfrozen", "basis": "source-reconstructed", "references": ["105 studies in final analysis; 114 eligible meta-research reports described"] },
+        "extraction-truth": { "status": "available-unfrozen", "basis": "original-artifact", "references": ["OSF U3YRP summary-level data; harmonised publicly available IPD"] },
+        "appraisal-truth": { "status": "available-unfrozen", "basis": "original-artifact", "references": ["OSF/review risk-of-bias data"] },
+        "analysis-runtime": { "status": "available-unfrozen", "basis": "original-artifact", "references": ["OSF U3YRP code required to reproduce review findings"] },
+        "synthesis-targets": { "status": "available-unfrozen", "basis": "original-artifact", "references": ["OSF U3YRP summary data/code; BMJ result tables and figures"] },
+        "report-source": { "status": "available-unfrozen", "basis": "original-artifact", "references": ["BMJ 2023 article; PMCID PMC10334349; open peer review history"] }
+      },
+      "notes": ["High-priority candidate because the publication explicitly states that summary data and code required to reproduce all review findings are openly available."]
+    },
+    {
+      "candidateId": "SRQ-CALORIE-REFORMULATION-2022",
+      "title": "Calorie reformulation: a systematic review and meta-analysis examining the effect of manipulating food energy density on daily energy intake",
+      "domain": "nutrition-obesity",
+      "methodologicalClass": "multilevel-intervention-meta-analysis",
+      "publication": {
+        "doi": "10.1186/s12966-022-01287-z",
+        "pmid": "35459185",
+        "pmcid": "PMC9026919",
+        "year": 2022
+      },
+      "registration": ["PROSPERO CRD42020223973", "OSF dj4yf pre-registered analysis protocol"],
+      "repositories": ["OSF dj4yf"],
+      "assets": {
+        "protocol": { "status": "available-unfrozen", "basis": "original-artifact", "references": ["PROSPERO CRD42020223973", "OSF dj4yf preregistration"] },
+        "search-strategy": { "status": "available-unfrozen", "basis": "original-artifact", "references": ["Published methods and OSF protocol"] },
+        "search-corpus": { "status": "identified", "basis": "source-reconstructed", "notes": ["Original search export must be located or reconstructed and frozen."] },
+        "dedup-truth": { "status": "identified", "basis": "published-aggregate", "references": ["Published PRISMA flow"] },
+        "tiab-truth": { "status": "identified", "basis": "published-aggregate", "references": ["Published PRISMA flow"] },
+        "fulltext-truth": { "status": "identified", "basis": "published-aggregate", "references": ["Published eligibility flow"] },
+        "included-report-corpus": { "status": "available-unfrozen", "basis": "source-reconstructed", "references": ["31 eligible studies contributing 90 primary effects"] },
+        "extraction-truth": { "status": "available-unfrozen", "basis": "original-artifact", "references": ["OSF dj4yf manuscript data and codebook"] },
+        "appraisal-truth": { "status": "available-unfrozen", "basis": "original-artifact", "references": ["OSF dj4yf and published risk-of-bias methods"] },
+        "analysis-runtime": { "status": "available-unfrozen", "basis": "original-artifact", "references": ["OSF dj4yf analytic code; multilevel meta-analysis"] },
+        "synthesis-targets": { "status": "available-unfrozen", "basis": "original-artifact", "references": ["OSF dj4yf analytic data/code; published forest plots/results"] },
+        "report-source": { "status": "available-unfrozen", "basis": "original-artifact", "references": ["PMCID PMC9026919", "medRxiv 2021.11.04.21265933"] }
+      },
+      "notes": ["Strong non-infectious-disease candidate with preregistration and openly stated manuscript data, codebook and analytic code."]
+    },
+    {
+      "candidateId": "SRQ-COVID-RAT-2024",
+      "title": "Comparison of diagnostic accuracy of rapid antigen tests for COVID-19 compared to the viral genetic test in adults: a systematic review and meta-analysis",
+      "domain": "infectious-disease-diagnostics",
+      "methodologicalClass": "diagnostic-accuracy-meta-analysis",
+      "publication": {
+        "doi": "10.11124/JBIES-23-00291",
+        "pmid": "39188132",
+        "pmcid": "PMC11462910",
+        "year": 2024
+      },
+      "registration": ["PROSPERO CRD42020224250"],
+      "repositories": ["GitHub skoshyc/covid_systematic_review_2023"],
+      "assets": {
+        "protocol": { "status": "identified", "basis": "original-artifact", "references": ["PROSPERO CRD42020224250"] },
+        "search-strategy": { "status": "available-unfrozen", "basis": "original-artifact", "references": ["Published PubMed strategy adapted to Embase, Scopus, Qinsight and WHO COVID-19 databases"] },
+        "search-corpus": { "status": "identified", "basis": "source-reconstructed", "notes": ["Original database exports must be located/reconstructed."] },
+        "dedup-truth": { "status": "identified", "basis": "published-aggregate", "references": ["Published study-selection flow"] },
+        "tiab-truth": { "status": "identified", "basis": "published-aggregate", "references": ["Published study-selection flow"] },
+        "fulltext-truth": { "status": "identified", "basis": "published-aggregate", "references": ["581 full-text articles retrieved; 91 studies entered meta-analysis"] },
+        "included-report-corpus": { "status": "available-unfrozen", "basis": "source-reconstructed", "references": ["91 meta-analysed diagnostic-accuracy studies"] },
+        "extraction-truth": { "status": "available-unfrozen", "basis": "original-artifact", "references": ["GitHub Master File of Data extraction_New.xlsx", "GitHub Data extraction tool.xlsx"] },
+        "appraisal-truth": { "status": "available-unfrozen", "basis": "source-reconstructed", "references": ["Published QUADAS-2 assessment and figures"] },
+        "analysis-runtime": { "status": "available-unfrozen", "basis": "original-artifact", "references": ["GitHub R scripts for sensitivity, specificity, PPV and NPV; meta and dmetar packages"] },
+        "synthesis-targets": { "status": "available-unfrozen", "basis": "original-artifact", "references": ["GitHub master extraction file and R scripts; published pooled results"] },
+        "report-source": { "status": "available-unfrozen", "basis": "original-artifact", "references": ["PMCID PMC11462910"] }
+      },
+      "notes": ["Useful diagnostic-accuracy stress test, but it does not count as a third distinct qualification domain alongside the JAK/COVID intervention review under the current domain policy."]
+    }
+  ]
+}

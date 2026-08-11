@@ -1,0 +1,957 @@
+{
+  "source": "Vellum university_brand_registry.yml",
+  "generatedFrom": "/Users/qp252220/Documents/Vellum/university_brand_registry.yml",
+  "count": 50,
+  "brands": [
+    {
+      "id": "vellum-kuhes",
+      "name": "Kamuzu University of Health Sciences",
+      "group": "malawi_public",
+      "provenance": "website_inferred",
+      "confidence": 0.58,
+      "colours": {
+        "primary": "#004E70",
+        "secondary": "#008A9A",
+        "accent": "#D2A72C",
+        "support_1": "#52A675",
+        "support_2": "#7BC6D3",
+        "ink": "#132A35",
+        "muted": "#5F6B71",
+        "rule": "#D5E0E4",
+        "surface": "#F2F8F9",
+        "background": "#FFFFFF"
+      }
+    },
+    {
+      "id": "vellum-luanar",
+      "name": "Lilongwe University of Agriculture and Natural Resources",
+      "group": "malawi_public",
+      "provenance": "website_inferred",
+      "confidence": 0.57,
+      "colours": {
+        "primary": "#2F6B3C",
+        "secondary": "#8A6D1F",
+        "accent": "#D2A72C",
+        "support_1": "#6EA544",
+        "support_2": "#2B7A9B",
+        "ink": "#1E2B20",
+        "muted": "#657067",
+        "rule": "#D6DED5",
+        "surface": "#F4F7F1",
+        "background": "#FFFFFF"
+      }
+    },
+    {
+      "id": "vellum-mubas",
+      "name": "Malawi University of Business and Applied Sciences",
+      "group": "malawi_public",
+      "provenance": "website_inferred",
+      "confidence": 0.61,
+      "colours": {
+        "primary": "#123B63",
+        "secondary": "#1E6A8D",
+        "accent": "#D49B36",
+        "support_1": "#B84A3A",
+        "support_2": "#4A8B72",
+        "ink": "#17242F",
+        "muted": "#66727A",
+        "rule": "#D7DEE3",
+        "surface": "#F3F6F8",
+        "background": "#FFFFFF"
+      }
+    },
+    {
+      "id": "vellum-must_mw",
+      "name": "Malawi University of Science and Technology",
+      "group": "malawi_public",
+      "provenance": "website_inferred",
+      "confidence": 0.6,
+      "colours": {
+        "primary": "#082F4F",
+        "secondary": "#007FA3",
+        "accent": "#D7A928",
+        "support_1": "#B33A3A",
+        "support_2": "#5E8E3E",
+        "ink": "#12232F",
+        "muted": "#62717A",
+        "rule": "#D4DEE3",
+        "surface": "#F1F6F8",
+        "background": "#FFFFFF"
+      }
+    },
+    {
+      "id": "vellum-mzuni",
+      "name": "Mzuzu University",
+      "group": "malawi_public",
+      "provenance": "website_inferred",
+      "confidence": 0.63,
+      "colours": {
+        "primary": "#205B3A",
+        "secondary": "#4F8A35",
+        "accent": "#D2A22A",
+        "support_1": "#2D6E78",
+        "support_2": "#8A6A3A",
+        "ink": "#17271E",
+        "muted": "#627066",
+        "rule": "#D4DDD5",
+        "surface": "#F2F7F2",
+        "background": "#FFFFFF"
+      }
+    },
+    {
+      "id": "vellum-unima",
+      "name": "University of Malawi",
+      "group": "malawi_public",
+      "provenance": "website_inferred",
+      "confidence": 0.6,
+      "colours": {
+        "primary": "#194E38",
+        "secondary": "#772A35",
+        "accent": "#C6A03A",
+        "support_1": "#1D5E7A",
+        "support_2": "#6B7A42",
+        "ink": "#18221D",
+        "muted": "#626B66",
+        "rule": "#D5DAD6",
+        "surface": "#F5F5F1",
+        "background": "#FFFFFF"
+      }
+    },
+    {
+      "id": "vellum-cardiff",
+      "name": "Cardiff University",
+      "group": "russell_group",
+      "provenance": "website_inferred",
+      "confidence": 0.58,
+      "colours": {
+        "primary": "#D32F45",
+        "secondary": "#243447",
+        "accent": "#E0A82E",
+        "support_1": "#007C91",
+        "support_2": "#74538D",
+        "ink": "#18232C",
+        "muted": "#66727A",
+        "rule": "#D7DEE2",
+        "surface": "#F5F7F8",
+        "background": "#FFFFFF"
+      }
+    },
+    {
+      "id": "vellum-durham",
+      "name": "Durham University",
+      "group": "russell_group",
+      "provenance": "website_inferred",
+      "confidence": 0.67,
+      "colours": {
+        "primary": "#68246D",
+        "secondary": "#1B365D",
+        "accent": "#D6A84B",
+        "support_1": "#2D7F87",
+        "support_2": "#8F6AA8",
+        "ink": "#1E2024",
+        "muted": "#67656B",
+        "rule": "#DDD7DF",
+        "surface": "#F7F4F7",
+        "background": "#FFFFFF"
+      }
+    },
+    {
+      "id": "vellum-imperial",
+      "name": "Imperial College London",
+      "group": "russell_group",
+      "provenance": "private_inferred",
+      "confidence": 0.71,
+      "colours": {
+        "primary": "#002147",
+        "secondary": "#003E74",
+        "accent": "#00AEEF",
+        "support_1": "#E40046",
+        "support_2": "#7F8C2F",
+        "ink": "#162432",
+        "muted": "#61707B",
+        "rule": "#D3DCE2",
+        "surface": "#F2F6F8",
+        "background": "#FFFFFF"
+      }
+    },
+    {
+      "id": "vellum-kings",
+      "name": "King’s College London",
+      "group": "russell_group",
+      "provenance": "website_inferred",
+      "confidence": 0.61,
+      "colours": {
+        "primary": "#D2232A",
+        "secondary": "#1F2A44",
+        "accent": "#D4A72C",
+        "support_1": "#5B7F95",
+        "support_2": "#7C4D79",
+        "ink": "#1A222C",
+        "muted": "#676F77",
+        "rule": "#D8DDE1",
+        "surface": "#F7F5F3",
+        "background": "#FFFFFF"
+      }
+    },
+    {
+      "id": "vellum-lse",
+      "name": "London School of Economics and Political Science",
+      "group": "russell_group",
+      "provenance": "official_observed",
+      "confidence": 0.73,
+      "colours": {
+        "primary": "#E31B23",
+        "secondary": "#252525",
+        "accent": "#F2B134",
+        "support_1": "#005A70",
+        "support_2": "#6A4C93",
+        "ink": "#151515",
+        "muted": "#626262",
+        "rule": "#D8D8D8",
+        "surface": "#F7F7F5",
+        "background": "#FFFFFF"
+      }
+    },
+    {
+      "id": "vellum-newcastle",
+      "name": "Newcastle University",
+      "group": "russell_group",
+      "provenance": "official_public",
+      "confidence": 0.91,
+      "colours": {
+        "primary": "#003A65",
+        "secondary": "#00857E",
+        "accent": "#D50032",
+        "support_1": "#FFB81C",
+        "support_2": "#5C4B8A",
+        "ink": "#172633",
+        "muted": "#60717A",
+        "rule": "#D3DDE1",
+        "surface": "#F2F7F7",
+        "background": "#FFFFFF"
+      }
+    },
+    {
+      "id": "vellum-qmul",
+      "name": "Queen Mary University of London",
+      "group": "russell_group",
+      "provenance": "private_inferred",
+      "confidence": 0.59,
+      "colours": {
+        "primary": "#D50032",
+        "secondary": "#21314D",
+        "accent": "#F2B134",
+        "support_1": "#007E87",
+        "support_2": "#7C4D79",
+        "ink": "#18212D",
+        "muted": "#66717A",
+        "rule": "#D7DEE2",
+        "surface": "#F5F7F8",
+        "background": "#FFFFFF"
+      }
+    },
+    {
+      "id": "vellum-qub",
+      "name": "Queen’s University Belfast",
+      "group": "russell_group",
+      "provenance": "private_inferred",
+      "confidence": 0.6,
+      "colours": {
+        "primary": "#B90E34",
+        "secondary": "#1D2A3A",
+        "accent": "#D6A54B",
+        "support_1": "#006F7D",
+        "support_2": "#6C4D80",
+        "ink": "#18222C",
+        "muted": "#66717A",
+        "rule": "#D7DEE3",
+        "surface": "#F6F5F2",
+        "background": "#FFFFFF"
+      }
+    },
+    {
+      "id": "vellum-ucl",
+      "name": "University College London",
+      "group": "russell_group",
+      "provenance": "official_public",
+      "confidence": 0.94,
+      "colours": {
+        "primary": "#332A40",
+        "secondary": "#6D3F8C",
+        "accent": "#30D6FF",
+        "support_1": "#EEDEFF",
+        "support_2": "#D64B63",
+        "ink": "#19161F",
+        "muted": "#6A6470",
+        "rule": "#DCD7E0",
+        "surface": "#F8F6F8",
+        "background": "#FFFFFF"
+      }
+    },
+    {
+      "id": "vellum-birmingham",
+      "name": "University of Birmingham",
+      "group": "russell_group",
+      "provenance": "official_observed",
+      "confidence": 0.72,
+      "colours": {
+        "primary": "#C8102E",
+        "secondary": "#1B365D",
+        "accent": "#F3B61F",
+        "support_1": "#007D8A",
+        "support_2": "#6A2C70",
+        "ink": "#1D2329",
+        "muted": "#666C70",
+        "rule": "#D8DDE1",
+        "surface": "#F5F6F7",
+        "background": "#FFFFFF"
+      }
+    },
+    {
+      "id": "vellum-bristol",
+      "name": "University of Bristol",
+      "group": "russell_group",
+      "provenance": "official_observed",
+      "confidence": 0.68,
+      "colours": {
+        "primary": "#B01C2E",
+        "secondary": "#172B4D",
+        "accent": "#D8A126",
+        "support_1": "#007C91",
+        "support_2": "#7A4E8A",
+        "ink": "#182126",
+        "muted": "#667078",
+        "rule": "#D7DEE2",
+        "surface": "#F5F7F7",
+        "background": "#FFFFFF"
+      }
+    },
+    {
+      "id": "vellum-cambridge",
+      "name": "University of Cambridge",
+      "group": "russell_group",
+      "provenance": "official_public",
+      "confidence": 0.97,
+      "colours": {
+        "primary": "#133844",
+        "secondary": "#8EE8D8",
+        "accent": "#C3E86B",
+        "support_1": "#E98300",
+        "support_2": "#6A4C93",
+        "ink": "#18252B",
+        "muted": "#5F696D",
+        "rule": "#D2DCDD",
+        "surface": "#F4F7F6",
+        "background": "#FFFFFF"
+      }
+    },
+    {
+      "id": "vellum-edinburgh",
+      "name": "University of Edinburgh",
+      "group": "russell_group",
+      "provenance": "private_inferred",
+      "confidence": 0.65,
+      "colours": {
+        "primary": "#041E42",
+        "secondary": "#007DBA",
+        "accent": "#C5003E",
+        "support_1": "#00A499",
+        "support_2": "#D6A461",
+        "ink": "#18212A",
+        "muted": "#606B74",
+        "rule": "#D5DDE3",
+        "surface": "#F3F6F8",
+        "background": "#FFFFFF"
+      }
+    },
+    {
+      "id": "vellum-exeter",
+      "name": "University of Exeter",
+      "group": "russell_group",
+      "provenance": "official_observed",
+      "confidence": 0.7,
+      "colours": {
+        "primary": "#003C71",
+        "secondary": "#00A3AD",
+        "accent": "#D94F70",
+        "support_1": "#F0B323",
+        "support_2": "#4F6D3A",
+        "ink": "#172B3A",
+        "muted": "#64717A",
+        "rule": "#D5DEE4",
+        "surface": "#F2F7F8",
+        "background": "#FFFFFF"
+      }
+    },
+    {
+      "id": "vellum-glasgow",
+      "name": "University of Glasgow",
+      "group": "russell_group",
+      "provenance": "official_public",
+      "confidence": 0.96,
+      "colours": {
+        "primary": "#011451",
+        "secondary": "#003865",
+        "accent": "#00AEEF",
+        "support_1": "#7A3E9D",
+        "support_2": "#D79E2B",
+        "ink": "#111C33",
+        "muted": "#5E6876",
+        "rule": "#D2D9E3",
+        "surface": "#F4F6FA",
+        "background": "#FFFFFF"
+      }
+    },
+    {
+      "id": "vellum-leeds",
+      "name": "University of Leeds",
+      "group": "russell_group",
+      "provenance": "official_public",
+      "confidence": 0.95,
+      "colours": {
+        "primary": "#910000",
+        "secondary": "#C70000",
+        "accent": "#FF4E36",
+        "support_1": "#005A70",
+        "support_2": "#F2B134",
+        "ink": "#1E1E1E",
+        "muted": "#676767",
+        "rule": "#D9D9D9",
+        "surface": "#F7F5F3",
+        "background": "#FFFFFF"
+      }
+    },
+    {
+      "id": "vellum-liverpool",
+      "name": "University of Liverpool",
+      "group": "russell_group",
+      "provenance": "website_inferred",
+      "confidence": 0.61,
+      "colours": {
+        "primary": "#C8102E",
+        "secondary": "#1E2A3A",
+        "accent": "#F2A900",
+        "support_1": "#008C95",
+        "support_2": "#6D4C7D",
+        "ink": "#18222C",
+        "muted": "#67717A",
+        "rule": "#D8DEE2",
+        "surface": "#F5F6F7",
+        "background": "#FFFFFF"
+      }
+    },
+    {
+      "id": "vellum-manchester",
+      "name": "University of Manchester",
+      "group": "russell_group",
+      "provenance": "official_public",
+      "confidence": 0.93,
+      "colours": {
+        "primary": "#6B2C91",
+        "secondary": "#FFCC33",
+        "accent": "#1E1E1E",
+        "support_1": "#00A3A1",
+        "support_2": "#D74F70",
+        "ink": "#1B1720",
+        "muted": "#69626D",
+        "rule": "#DDD7E1",
+        "surface": "#F8F5FA",
+        "background": "#FFFFFF"
+      }
+    },
+    {
+      "id": "vellum-nottingham",
+      "name": "University of Nottingham",
+      "group": "russell_group",
+      "provenance": "official_observed",
+      "confidence": 0.72,
+      "colours": {
+        "primary": "#10263B",
+        "secondary": "#005A70",
+        "accent": "#00B2A9",
+        "support_1": "#D65A31",
+        "support_2": "#7A5C9E",
+        "ink": "#17232D",
+        "muted": "#62707A",
+        "rule": "#D4DDE2",
+        "surface": "#F3F7F8",
+        "background": "#FFFFFF"
+      }
+    },
+    {
+      "id": "vellum-oxford",
+      "name": "University of Oxford",
+      "group": "russell_group",
+      "provenance": "official_public",
+      "confidence": 0.98,
+      "colours": {
+        "primary": "#002147",
+        "secondary": "#2F6F8F",
+        "accent": "#BEA55D",
+        "support_1": "#7F2A48",
+        "support_2": "#5B7F53",
+        "ink": "#141F2B",
+        "muted": "#626B73",
+        "rule": "#D4DADF",
+        "surface": "#F6F5F1",
+        "background": "#FFFFFF"
+      }
+    },
+    {
+      "id": "vellum-sheffield",
+      "name": "University of Sheffield",
+      "group": "russell_group",
+      "provenance": "official_public",
+      "confidence": 0.91,
+      "colours": {
+        "primary": "#440099",
+        "secondary": "#E7004C",
+        "accent": "#FFB81C",
+        "support_1": "#007D8A",
+        "support_2": "#6CC24A",
+        "ink": "#21152C",
+        "muted": "#6A6170",
+        "rule": "#DDD5E3",
+        "surface": "#F7F4F9",
+        "background": "#FFFFFF"
+      }
+    },
+    {
+      "id": "vellum-southampton",
+      "name": "University of Southampton",
+      "group": "russell_group",
+      "provenance": "website_inferred",
+      "confidence": 0.58,
+      "colours": {
+        "primary": "#002A5C",
+        "secondary": "#007C91",
+        "accent": "#F2A900",
+        "support_1": "#D3435C",
+        "support_2": "#5F6D3A",
+        "ink": "#162637",
+        "muted": "#62717A",
+        "rule": "#D4DDE2",
+        "surface": "#F2F7F8",
+        "background": "#FFFFFF"
+      }
+    },
+    {
+      "id": "vellum-warwick",
+      "name": "University of Warwick",
+      "group": "russell_group",
+      "provenance": "official_observed",
+      "confidence": 0.72,
+      "colours": {
+        "primary": "#552D62",
+        "secondary": "#8E3A80",
+        "accent": "#E5007E",
+        "support_1": "#008A8A",
+        "support_2": "#D6A84B",
+        "ink": "#211A24",
+        "muted": "#6B626D",
+        "rule": "#DED7E0",
+        "surface": "#F8F5F8",
+        "background": "#FFFFFF"
+      }
+    },
+    {
+      "id": "vellum-york",
+      "name": "University of York",
+      "group": "russell_group",
+      "provenance": "private_inferred",
+      "confidence": 0.67,
+      "colours": {
+        "primary": "#071D49",
+        "secondary": "#0057B8",
+        "accent": "#F2B134",
+        "support_1": "#00A499",
+        "support_2": "#B04A6F",
+        "ink": "#121C2D",
+        "muted": "#606B78",
+        "rule": "#D2DBE5",
+        "surface": "#F3F7FA",
+        "background": "#FFFFFF"
+      }
+    },
+    {
+      "id": "vellum-brown",
+      "name": "Brown University",
+      "group": "usa_qs2027_top20",
+      "provenance": "official_observed",
+      "confidence": 0.83,
+      "colours": {
+        "primary": "#4E3629",
+        "secondary": "#C00404",
+        "accent": "#FFC72C",
+        "support_1": "#006F7D",
+        "support_2": "#7A5A86",
+        "ink": "#211C19",
+        "muted": "#69615C",
+        "rule": "#DDD7D2",
+        "surface": "#F8F6F3",
+        "background": "#FFFFFF"
+      }
+    },
+    {
+      "id": "vellum-caltech",
+      "name": "California Institute of Technology",
+      "group": "usa_qs2027_top20",
+      "provenance": "official_public",
+      "confidence": 0.9,
+      "colours": {
+        "primary": "#FF6C0C",
+        "secondary": "#003B5C",
+        "accent": "#E04F16",
+        "support_1": "#00A3A1",
+        "support_2": "#6C5B7B",
+        "ink": "#1D252C",
+        "muted": "#65717A",
+        "rule": "#D8DEE2",
+        "surface": "#F4F7F8",
+        "background": "#FFFFFF"
+      }
+    },
+    {
+      "id": "vellum-cmu",
+      "name": "Carnegie Mellon University",
+      "group": "usa_qs2027_top20",
+      "provenance": "official_public",
+      "confidence": 0.97,
+      "colours": {
+        "primary": "#C41230",
+        "secondary": "#000000",
+        "accent": "#6D6E71",
+        "support_1": "#E0E0E0",
+        "support_2": "#00A3A1",
+        "ink": "#1A1A1A",
+        "muted": "#666666",
+        "rule": "#D7D7D7",
+        "surface": "#F5F5F5",
+        "background": "#FFFFFF"
+      }
+    },
+    {
+      "id": "vellum-columbia",
+      "name": "Columbia University",
+      "group": "usa_qs2027_top20",
+      "provenance": "official_public",
+      "confidence": 0.94,
+      "colours": {
+        "primary": "#B9D9EB",
+        "secondary": "#0033A0",
+        "accent": "#022169",
+        "support_1": "#0072CE",
+        "support_2": "#6A4C93",
+        "ink": "#12213A",
+        "muted": "#5F6D7A",
+        "rule": "#D4DEE7",
+        "surface": "#F3F7FA",
+        "background": "#FFFFFF"
+      }
+    },
+    {
+      "id": "vellum-cornell",
+      "name": "Cornell University",
+      "group": "usa_qs2027_top20",
+      "provenance": "official_public",
+      "confidence": 0.91,
+      "colours": {
+        "primary": "#B31B1B",
+        "secondary": "#222222",
+        "accent": "#D0A94B",
+        "support_1": "#006699",
+        "support_2": "#6B5B7A",
+        "ink": "#1B1B1B",
+        "muted": "#666666",
+        "rule": "#D7D7D7",
+        "surface": "#F7F7F5",
+        "background": "#FFFFFF"
+      }
+    },
+    {
+      "id": "vellum-duke",
+      "name": "Duke University",
+      "group": "usa_qs2027_top20",
+      "provenance": "official_public",
+      "confidence": 0.96,
+      "colours": {
+        "primary": "#012169",
+        "secondary": "#00539B",
+        "accent": "#58595B",
+        "support_1": "#C84E00",
+        "support_2": "#F2A900",
+        "ink": "#15233A",
+        "muted": "#616B76",
+        "rule": "#D4DCE4",
+        "surface": "#F3F7FA",
+        "background": "#FFFFFF"
+      }
+    },
+    {
+      "id": "vellum-harvard",
+      "name": "Harvard University",
+      "group": "usa_qs2027_top20",
+      "provenance": "official_observed",
+      "confidence": 0.78,
+      "colours": {
+        "primary": "#A51C30",
+        "secondary": "#1E1E1E",
+        "accent": "#C6A15B",
+        "support_1": "#4E6E81",
+        "support_2": "#7A6A8B",
+        "ink": "#171717",
+        "muted": "#656565",
+        "rule": "#D8D5D2",
+        "surface": "#F7F5F2",
+        "background": "#FFFFFF"
+      }
+    },
+    {
+      "id": "vellum-johns_hopkins",
+      "name": "Johns Hopkins University",
+      "group": "usa_qs2027_top20",
+      "provenance": "official_public",
+      "confidence": 0.98,
+      "colours": {
+        "primary": "#002D72",
+        "secondary": "#68ACE5",
+        "accent": "#CFB87C",
+        "support_1": "#007C91",
+        "support_2": "#7A4E8A",
+        "ink": "#152338",
+        "muted": "#617083",
+        "rule": "#D3DDE8",
+        "surface": "#F3F7FA",
+        "background": "#FFFFFF"
+      }
+    },
+    {
+      "id": "vellum-mit",
+      "name": "Massachusetts Institute of Technology",
+      "group": "usa_qs2027_top20",
+      "provenance": "official_public",
+      "confidence": 0.96,
+      "colours": {
+        "primary": "#A31F34",
+        "secondary": "#8A8B8C",
+        "accent": "#ED1C24",
+        "support_1": "#006E74",
+        "support_2": "#C6A15B",
+        "ink": "#1B1B1B",
+        "muted": "#666666",
+        "rule": "#D7D7D7",
+        "surface": "#F5F5F5",
+        "background": "#FFFFFF"
+      }
+    },
+    {
+      "id": "vellum-nyu",
+      "name": "New York University",
+      "group": "usa_qs2027_top20",
+      "provenance": "official_public",
+      "confidence": 0.94,
+      "colours": {
+        "primary": "#57068C",
+        "secondary": "#330662",
+        "accent": "#AB82C5",
+        "support_1": "#00A99D",
+        "support_2": "#D6A84B",
+        "ink": "#21132A",
+        "muted": "#6A6170",
+        "rule": "#DED5E3",
+        "surface": "#F8F5FA",
+        "background": "#FFFFFF"
+      }
+    },
+    {
+      "id": "vellum-northwestern",
+      "name": "Northwestern University",
+      "group": "usa_qs2027_top20",
+      "provenance": "official_public",
+      "confidence": 0.98,
+      "colours": {
+        "primary": "#4E2A84",
+        "secondary": "#342F2E",
+        "accent": "#836EAA",
+        "support_1": "#00A6A6",
+        "support_2": "#D9A441",
+        "ink": "#211A2C",
+        "muted": "#68616F",
+        "rule": "#DCD5E2",
+        "surface": "#F8F5FA",
+        "background": "#FFFFFF"
+      }
+    },
+    {
+      "id": "vellum-princeton",
+      "name": "Princeton University",
+      "group": "usa_qs2027_top20",
+      "provenance": "private_inferred",
+      "confidence": 0.78,
+      "colours": {
+        "primary": "#E77500",
+        "secondary": "#000000",
+        "accent": "#F2B134",
+        "support_1": "#006F7D",
+        "support_2": "#7A5B83",
+        "ink": "#151515",
+        "muted": "#626262",
+        "rule": "#D8D8D8",
+        "surface": "#F7F5F2",
+        "background": "#FFFFFF"
+      }
+    },
+    {
+      "id": "vellum-stanford",
+      "name": "Stanford University",
+      "group": "usa_qs2027_top20",
+      "provenance": "official_public",
+      "confidence": 0.99,
+      "colours": {
+        "primary": "#8C1515",
+        "secondary": "#2E2D29",
+        "accent": "#B1040E",
+        "support_1": "#008566",
+        "support_2": "#DAD7CB",
+        "ink": "#1F1F1F",
+        "muted": "#5F5E5B",
+        "rule": "#D5D3CE",
+        "surface": "#F7F6F2",
+        "background": "#FFFFFF"
+      }
+    },
+    {
+      "id": "vellum-ut_austin",
+      "name": "The University of Texas at Austin",
+      "group": "usa_qs2027_top20",
+      "provenance": "official_public",
+      "confidence": 0.99,
+      "colours": {
+        "primary": "#BF5700",
+        "secondary": "#333F48",
+        "accent": "#005F86",
+        "support_1": "#00A9B7",
+        "support_2": "#D6D2C4",
+        "ink": "#1D2429",
+        "muted": "#626B70",
+        "rule": "#D7D9D7",
+        "surface": "#F7F5F1",
+        "background": "#FFFFFF"
+      }
+    },
+    {
+      "id": "vellum-uc_berkeley",
+      "name": "University of California, Berkeley",
+      "group": "usa_qs2027_top20",
+      "provenance": "official_public",
+      "confidence": 0.99,
+      "colours": {
+        "primary": "#002676",
+        "secondary": "#FDB515",
+        "accent": "#3B7EA1",
+        "support_1": "#C4820E",
+        "support_2": "#00A598",
+        "ink": "#18233A",
+        "muted": "#657080",
+        "rule": "#D4DDE7",
+        "surface": "#F4F7FA",
+        "background": "#FFFFFF"
+      }
+    },
+    {
+      "id": "vellum-ucla",
+      "name": "University of California, Los Angeles",
+      "group": "usa_qs2027_top20",
+      "provenance": "official_public",
+      "confidence": 0.99,
+      "colours": {
+        "primary": "#2774AE",
+        "secondary": "#FFD100",
+        "accent": "#003B5C",
+        "support_1": "#8BB8E8",
+        "support_2": "#00A99D",
+        "ink": "#1A2733",
+        "muted": "#666666",
+        "rule": "#D8E0E5",
+        "surface": "#F3F8FC",
+        "background": "#FFFFFF"
+      }
+    },
+    {
+      "id": "vellum-uchicago",
+      "name": "University of Chicago",
+      "group": "usa_qs2027_top20",
+      "provenance": "official_public",
+      "confidence": 0.91,
+      "colours": {
+        "primary": "#800000",
+        "secondary": "#565A5C",
+        "accent": "#D6D6CE",
+        "support_1": "#007396",
+        "support_2": "#C1666B",
+        "ink": "#1D1D1D",
+        "muted": "#656565",
+        "rule": "#D7D7D2",
+        "surface": "#F7F6F2",
+        "background": "#FFFFFF"
+      }
+    },
+    {
+      "id": "vellum-umich",
+      "name": "University of Michigan–Ann Arbor",
+      "group": "usa_qs2027_top20",
+      "provenance": "official_public",
+      "confidence": 0.96,
+      "colours": {
+        "primary": "#00274C",
+        "secondary": "#FFCB05",
+        "accent": "#2F65A7",
+        "support_1": "#00A6D6",
+        "support_2": "#A5A508",
+        "ink": "#172335",
+        "muted": "#626E79",
+        "rule": "#D5DDE4",
+        "surface": "#F4F7FA",
+        "background": "#FFFFFF"
+      }
+    },
+    {
+      "id": "vellum-upenn",
+      "name": "University of Pennsylvania",
+      "group": "usa_qs2027_top20",
+      "provenance": "official_observed",
+      "confidence": 0.82,
+      "colours": {
+        "primary": "#011F5B",
+        "secondary": "#990000",
+        "accent": "#F2C100",
+        "support_1": "#007E87",
+        "support_2": "#7A4E8A",
+        "ink": "#141E2B",
+        "muted": "#606B76",
+        "rule": "#D4DCE3",
+        "surface": "#F5F6F7",
+        "background": "#FFFFFF"
+      }
+    },
+    {
+      "id": "vellum-yale",
+      "name": "Yale University",
+      "group": "usa_qs2027_top20",
+      "provenance": "official_public",
+      "confidence": 0.97,
+      "colours": {
+        "primary": "#00356B",
+        "secondary": "#286DC0",
+        "accent": "#D9B44A",
+        "support_1": "#5B7F6A",
+        "support_2": "#7B567A",
+        "ink": "#162231",
+        "muted": "#626E78",
+        "rule": "#D4DDE4",
+        "surface": "#F5F7F8",
+        "background": "#FFFFFF"
+      }
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+# Evidence Review Protocol Template Library
+
+These templates are generated from the same typed protocol library used by the engine. They must be completed, tested, peer reviewed where required, human approved and prospectively registered before definitive screening or extraction.
+
+- [systematic](./protocol-templates/systematic.md)
+- [intervention](./protocol-templates/intervention.md)
+- [diagnostic-accuracy](./protocol-templates/diagnostic-accuracy.md)
+- [overall-prognosis](./protocol-templates/overall-prognosis.md)
+- [prognostic-factor](./protocol-templates/prognostic-factor.md)
+- [prediction-model](./protocol-templates/prediction-model.md)
+- [prevalence-incidence](./protocol-templates/prevalence-incidence.md)
+- [qualitative](./protocol-templates/qualitative.md)
+- [mixed-methods](./protocol-templates/mixed-methods.md)
+- [scoping](./protocol-templates/scoping.md)
+- [rapid](./protocol-templates/rapid.md)
+- [umbrella](./protocol-templates/umbrella.md)
+- [living](./protocol-templates/living.md)
+- [network-meta-analysis](./protocol-templates/network-meta-analysis.md)
+- [adverse-effects](./protocol-templates/adverse-effects.md)
+- [economic](./protocol-templates/economic.md)
+- [implementation](./protocol-templates/implementation.md)
+- [mechanistic](./protocol-templates/mechanistic.md)
+- [animal](./protocol-templates/animal.md)
+- [environmental](./protocol-templates/environmental.md)
+- [evidence-map](./protocol-templates/evidence-map.md)

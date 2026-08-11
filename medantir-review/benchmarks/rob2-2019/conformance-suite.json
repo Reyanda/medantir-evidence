@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "source": {
+    "tool": "RoB 2",
+    "version": "2019-08-22",
+    "variant": "individual-parallel-assignment",
+    "sourcePage": "https://www.riskofbias.info/welcome/rob-2-0-tool/current-version-of-rob-2",
+    "sourceFileId": "1malyRF_b-DgvAGHssrdt4N9R7Yhljmt0",
+    "workbookSha256": null,
+    "captured": false,
+    "notes": [
+      "Official workbook download is linked from the current RoB 2 page.",
+      "Google Drive redirect is blocked in the current execution environment.",
+      "No official algorithm parity claim is permitted until workbook capture and truth-table extraction are complete."
+    ]
+  },
+  "cases": [],
+  "suiteHash": "b03be05b5c99b53ba87a176bb60569c8d086c5268e40e3a51d9efc8dce7d90b7"
+}

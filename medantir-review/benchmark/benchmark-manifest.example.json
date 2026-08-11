@@ -1,0 +1,37 @@
+{
+  "schemaVersion": "1.0",
+  "benchmarkId": "replace-with-case-id",
+  "benchmarkVersion": "1.0.0",
+  "mode": "frozen-reproduction",
+  "reviewType": "intervention",
+  "diseaseDomains": ["replace-with-domain"],
+  "sourceReview": {
+    "title": "Replace with exact source review title",
+    "locator": "Replace with DOI or stable public locator",
+    "publicationDate": "YYYY-MM-DD",
+    "lastSearchDate": "YYYY-MM-DD"
+  },
+  "oracleSealed": true,
+  "expectedStages": ["search-execute", "deduplicate", "tiab-screen", "fulltext-screen", "extract", "risk-of-bias", "synthesise", "grade", "report", "human-verify"],
+  "artifacts": [
+    {
+      "id": "protocol",
+      "name": "Protocol and amendments",
+      "kind": "protocol",
+      "access": "open",
+      "locator": "Replace with source locator",
+      "path": "oracle/protocol.pdf",
+      "required": true,
+      "checksum": "replace-with-64-character-sha256"
+    }
+  ],
+  "softwareEnvironment": {
+    "nodeVersion": ">=22",
+    "packageLockChecksum": "replace-with-64-character-sha256",
+    "containerDigest": "optional-immutable-container-digest"
+  },
+  "curators": [
+    { "id": "curator-1", "role": "primary", "signedAt": "YYYY-MM-DDTHH:mm:ss.sssZ" },
+    { "id": "curator-2", "role": "independent-verifier", "signedAt": "YYYY-MM-DDTHH:mm:ss.sssZ" }
+  ]
+}

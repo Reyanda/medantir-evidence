@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "medantir-sr-source-discovery/1",
+  "candidateId": "SRQ-CALORIE-REFORMULATION-2022",
+  "status": "source-map-frozen-objects-pending",
+  "publication": {
+    "doi": "10.1186/s12966-022-01287-z",
+    "pmid": "35459185",
+    "pmcid": "PMC9026919"
+  },
+  "registration": {
+    "prospero": "CRD42020223973",
+    "osfId": "DJ4YF",
+    "role": "pre-registered analysis protocol and public review workspace"
+  },
+  "publicArtifactClaim": {
+    "osfId": "DJ4YF",
+    "declaredArtifacts": [
+      "manuscript data",
+      "codebook",
+      "analytic code"
+    ],
+    "access": "public-without-restriction"
+  },
+  "publishedAnalysisContract": {
+    "primaryOutcome": "daily energy intake",
+    "modelFamily": "multi-level meta-analysis",
+    "dependencyReason": "Some studies contribute multiple energy-density comparisons.",
+    "withinStudyCorrelation": 0.8,
+    "correlationSensitivityValues": [0.6, 0.4],
+    "runtime": "R",
+    "runtimeVersion": null,
+    "packageVersions": {},
+    "runtimeQualificationReady": false
+  },
+  "qualificationPlan": {
+    "immutableObjectsResolved": false,
+    "nextRequiredEvidence": [
+      "Resolve public OSF file IDs and revisions for DJ4YF.",
+      "Separate the energy-density review files from portion-size review files sharing the same OSF workspace.",
+      "Hash the exact data, codebook, protocol and analytic-code bytes into immutable source identities.",
+      "Recover or reconstruct an exact R/package runtime before certifying computational reproduction.",
+      "Independently rerun the pre-specified r=0.8 analysis and the r=0.6 and r=0.4 sensitivity analyses."
+    ]
+  }
+}

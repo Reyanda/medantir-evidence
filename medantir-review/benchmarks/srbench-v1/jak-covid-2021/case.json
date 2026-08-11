@@ -1,0 +1,53 @@
+{
+  "schemaVersion": "medantir-srbench/1",
+  "benchmarkClass": "published-review",
+  "caseId": "SRBENCH-JAK-COVID-2021",
+  "title": "Janus kinase inhibitors and COVID-19 outcomes historical systematic review",
+  "domain": "infectious-disease-therapeutics",
+  "reviewType": "systematic",
+  "sourceReview": {
+    "doi": "10.1080/14787210.2021.1982695",
+    "pmid": "34538216",
+    "pmcid": "PMC8500309",
+    "citation": "Janus kinase (JAK)-inhibitors and coronavirus disease 2019 (Covid-19) outcomes: a systematic review and meta-analysis"
+  },
+  "stageGold": {
+    "question": { "status": "partial", "reason": "Publication-level eligibility is known, but original question/protocol development history is not fully archived." },
+    "protocol": { "status": "partial", "reason": "Published methods and PROSPERO identity are known; original versioned protocol workspace is not frozen." },
+    "search": { "status": "partial", "reason": "Published source strategies/cutoff are known, but original database export/index state and manual-search ledger are incomplete." },
+    "deduplication": { "status": "partial", "reason": "Published before/after deduplication counts are known; original row-level duplicate decisions are unavailable." },
+    "tiab-screening": { "status": "partial", "reason": "PRISMA aggregate exclusions are published, but original row-level title/abstract decisions are unavailable." },
+    "fulltext-screening": { "status": "partial", "reason": "Published full-text counts and exclusion categories are known, but original row-level decision ledger is unavailable." },
+    "extraction": { "status": "missing", "reason": "Complete source-authorized study-by-outcome extraction rows are still being reconstructed." },
+    "appraisal": { "status": "complete", "receiptHash": "AUTO" },
+    "synthesis": { "status": "partial", "reason": "Published pooled targets and RevMan 5.4 semantics are known, but the complete study-level synthesis input ledger is not yet frozen." },
+    "report": { "status": "partial", "reason": "The OA publication is archived and structurally readable, but full report-regeneration gold is not yet formalized." }
+  },
+  "tasks": [
+    {
+      "id": "jak-covid-appraisal-normalization",
+      "stage": "appraisal",
+      "critical": true,
+      "instruction": "Normalize the 14 published Table 3/4 appraisal rows to the canonical JAKCOVID lineage IDs. Return an array in canonical lineageId order. For modified Jadad rows preserve randomAllocation, concealment, blinding, withdrawalsDropouts, totalScore and interpretation. For Newcastle-Ottawa rows preserve selection, comparability, outcome, totalScore and interpretation. Each source object must use sourceType='published-table', sourceReference='PMC8500309', the supplied table label and row label, and a concise verbatimEvidence sentence that states the component values exactly in the same field order as the source row. Do not invent or omit a lineage.",
+      "inputFile": "appraisal-source-rows.json",
+      "goldFile": "appraisal-gold.json",
+      "outputSchema": [
+        {
+          "lineageId": "JAKCOVID-###",
+          "tool": "modified-jadad-7|newcastle-ottawa-cohort-9",
+          "componentFields": "tool-specific integer fields",
+          "totalScore": "integer",
+          "interpretation": "low|moderate|high|good|fair|poor",
+          "source": {
+            "sourceType": "published-table",
+            "sourceReference": "PMC8500309",
+            "tableOrFigure": "Table 3|Table 4",
+            "rowLabel": "string",
+            "verbatimEvidence": "string"
+          }
+        }
+      ],
+      "scorer": { "kind": "exact-json" }
+    }
+  ]
+}

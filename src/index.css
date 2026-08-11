@@ -1,0 +1,981 @@
+/* Fonts are loaded from index.html (<link> + preconnect) rather than a CSS
+   @import, so they fetch in parallel instead of blocking on CSS parse. */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-bg-canvas: #f3f5f7;
+  --color-bg-surface: #ffffff;
+  --color-bg-elevated: #f8f9fb;
+  --color-text-primary: #171a1f;
+  --color-text-secondary: #606975;
+  --color-border-subtle: #dce1e7;
+  --color-brand-primary: #315f85;
+  --color-brand-secondary: #617f99;
+  --accent-rgb: 49 95 133;
+  --accent-2-rgb: 97 127 153;
+  --accent-3-rgb: 74 100 125;
+  --shape-surface-radius: 0.75rem;
+  --shape-control-radius: 0.5rem;
+  --shape-input-radius: 0.25rem;
+  --surface-opacity: 100%;
+  --surface-blur: 0px;
+  --surface-saturate: 100%;
+  --surface-border-width: 1px;
+  --surface-shadow: none;
+  --surface-rim: rgb(255 255 255 / 0.18);
+  --surface-specular: rgb(255 255 255 / 0.22);
+  --surface-fresnel: rgb(255 255 255 / 0.12);
+  --surface-chroma: rgb(var(--accent-2-rgb) / 0.025);
+  --surface-lower: rgb(15 23 42 / 0.08);
+  --surface-optics-opacity: 0;
+  --ambient-opacity: 0.12;
+  --motion-fast: 160ms;
+  --motion-panel: 240ms;
+  --font-ui: "DM Sans", sans-serif;
+}
+
+.dark {
+  --color-bg-canvas: #101215;
+  --color-bg-surface: #15181c;
+  --color-bg-elevated: #1b1f24;
+  --color-text-primary: #f0f2f4;
+  --color-text-secondary: #9aa3ad;
+  --color-border-subtle: #2a3037;
+  --surface-shadow: none;
+  --surface-rim: rgb(255 255 255 / 0.15);
+  --surface-specular: rgb(255 255 255 / 0.22);
+  --surface-fresnel: rgb(255 255 255 / 0.10);
+  --surface-lower: rgb(0 0 0 / 0.42);
+}
+
+/* Semantic state layer.
+   Status, priority, and destructive affordances resolve through these instead of
+   literal palette classes, so changing appearance or design language restyles the
+   whole app without touching a component. Values are RGB triplets so any callsite
+   can pick its own opacity: rgb(var(--state-blocked-rgb) / 0.12).
+   "Active" deliberately inherits the chosen palette accent — work in progress
+   reads as the brand colour, whichever palette is selected. */
+:root {
+  --state-idle-rgb: 113 113 122;
+  --state-active-rgb: var(--accent-rgb);
+  --state-blocked-rgb: 225 29 72;
+  --state-done-rgb: 5 150 105;
+  --state-caution-rgb: 217 119 6;
+  --state-info-rgb: 2 132 199;
+  --state-danger-rgb: 190 18 60;
+}
+
+.dark {
+  --state-idle-rgb: 161 161 170;
+  --state-blocked-rgb: 251 113 133;
+  --state-done-rgb: 52 211 153;
+  --state-caution-rgb: 251 191 36;
+  --state-info-rgb: 56 189 248;
+  --state-danger-rgb: 251 113 133;
+}
+
+/* Priority is a view onto the state layer rather than a second colour system. */
+:root {
+  --priority-immediate-rgb: var(--state-danger-rgb);
+  --priority-high-rgb: var(--state-caution-rgb);
+  --priority-medium-rgb: var(--state-info-rgb);
+  --priority-low-rgb: var(--state-idle-rgb);
+}
+
+html[data-palette="teal"] { --color-brand-primary: #0d9488; --color-brand-secondary: #14b8a6; --accent-rgb: 13 148 136; --accent-2-rgb: 20 184 166; --accent-3-rgb: 14 116 144; }
+html[data-palette="twilight"] { --color-brand-primary: #47769c; --color-brand-secondary: #718da6; --accent-rgb: 71 118 156; --accent-2-rgb: 113 141 166; --accent-3-rgb: 92 111 132; }
+html[data-palette="violet"] { --color-brand-primary: #7c3aed; --color-brand-secondary: #a78bfa; --accent-rgb: 124 58 237; --accent-2-rgb: 167 139 250; --accent-3-rgb: 219 39 119; }
+html[data-palette="amber"] { --color-brand-primary: #d97706; --color-brand-secondary: #f59e0b; --accent-rgb: 217 119 6; --accent-2-rgb: 245 158 11; --accent-3-rgb: 234 88 12; }
+html[data-palette="rose"] { --color-brand-primary: #e11d48; --color-brand-secondary: #fb7185; --accent-rgb: 225 29 72; --accent-2-rgb: 251 113 133; --accent-3-rgb: 147 51 234; }
+html[data-palette="forest"] { --color-brand-primary: #15803d; --color-brand-secondary: #4d7c0f; --accent-rgb: 21 128 61; --accent-2-rgb: 77 124 15; --accent-3-rgb: 13 148 136; }
+html[data-palette="orange"] { --color-brand-primary: #ea580c; --color-brand-secondary: #f97316; --accent-rgb: 234 88 12; --accent-2-rgb: 249 115 22; --accent-3-rgb: #c2410c; }
+
+html[data-ui-theme="paper"]:not(.dark) { --color-bg-canvas: #f5f1e8; --color-bg-surface: #fffdf7; --color-border-subtle: #d8d0c2; }
+html[data-ui-theme="midnight"].dark { --color-bg-canvas: #050816; --color-bg-surface: #0a1024; --color-bg-elevated: #111a34; --color-border-subtle: #24304f; }
+html[data-ui-theme="sunset"]:not(.dark) { --color-bg-canvas: #fff7ed; --color-bg-surface: #fffaf5; --color-border-subtle: #fed7aa; }
+html[data-ui-theme="sunset"].dark { --color-bg-canvas: #170b12; --color-bg-surface: #211018; --color-border-subtle: #4c2432; }
+
+html[data-design-language="air"] {
+  --shape-surface-radius: 0.75rem;
+  --shape-control-radius: 0.5rem;
+  --shape-input-radius: 0.25rem;
+  --surface-blur: 0px;
+  --surface-saturate: 100%;
+  --surface-optics-opacity: 0;
+  --surface-shadow: none;
+  --ambient-opacity: 0.28;
+}
+html[data-design-language="clear"] { --shape-surface-radius: 0.75rem; --surface-blur: 0px; --surface-saturate: 100%; --surface-optics-opacity: 0; --surface-shadow: none; --ambient-opacity: 0.24; }
+html[data-design-language="solid"] { --shape-surface-radius: 0.5rem; --surface-blur: 0px; --surface-saturate: 100%; --surface-optics-opacity: 0; --surface-shadow: none; --ambient-opacity: 0.12; }
+html[data-design-language="glass"] {
+  --shape-surface-radius: 0.875rem;
+  --surface-blur: 14px;
+  --surface-saturate: 125%;
+  --surface-optics-opacity: 0.26;
+  --ambient-opacity: 0.26;
+  --surface-shadow: 0 8px 24px rgb(15 23 42 / 0.08);
+}
+html[data-design-language="frosted"] { --shape-surface-radius: 0.875rem; --surface-blur: 18px; --surface-saturate: 120%; --surface-optics-opacity: 0.20; --ambient-opacity: 0.22; --surface-shadow: 0 8px 24px rgb(15 23 42 / 0.08); }
+html[data-design-language="brutalist"] { --shape-surface-radius: 0; --shape-control-radius: 0; --shape-input-radius: 0; --surface-blur: 0px; --surface-saturate: 100%; --surface-optics-opacity: 0; --surface-border-width: 2px; --surface-shadow: 4px 4px 0 var(--color-text-primary); }
+html[data-design-language="skeuomorphic"] { --shape-surface-radius: 0.875rem; --surface-blur: 0px; --surface-saturate: 100%; --surface-optics-opacity: 0; --surface-shadow: inset 0 1px 0 rgb(255 255 255 / 0.45), inset 0 -1px 0 rgb(0 0 0 / 0.12), 0 8px 20px rgb(15 23 42 / 0.15); }
+/* Soft spatial studio: inspired by the local mechanistic-model interface, but
+   expressed through shared tokens so it works across every project surface. */
+html[data-design-language="studio"] {
+  --shape-surface-radius: 1rem;
+  --shape-control-radius: 0.625rem;
+  --surface-blur: 10px;
+  --surface-saturate: 115%;
+  --surface-optics-opacity: 0.18;
+  --ambient-opacity: 0.20;
+  --surface-shadow: 0 8px 24px rgb(15 23 42 / 0.07);
+}
+
+html[data-transparency="opaque"] { --surface-opacity: 100%; }
+html[data-transparency="translucent"] { --surface-opacity: 64%; }
+html[data-transparency="transparent"] { --surface-opacity: 22%; }
+
+html[data-typography="editorial"] { --font-ui: Georgia, "Times New Roman", serif; }
+html[data-typography="technical"] { --font-ui: "JetBrains Mono", monospace; }
+html[data-motion="calm"] { --motion-fast: 240ms; --motion-panel: 420ms; }
+html[data-motion="reduced"] { --motion-fast: 1ms; --motion-panel: 1ms; }
+
+@layer base {
+  html,
+  body {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  body {
+    font-family: var(--font-ui);
+    background: var(--color-bg-canvas);
+    color: var(--color-text-primary);
+    transition: background-color var(--motion-panel), color var(--motion-fast);
+    @apply antialiased;
+  }
+
+  /* Visible keyboard-focus ring app-wide — shows for keyboard/AT users only
+     (:focus-visible), never on mouse click, so it doesn't add visual noise. */
+  :focus-visible {
+    outline: 2px solid var(--color-brand-primary);
+    outline-offset: 2px;
+    border-radius: 0.375rem;
+  }
+  /* suppress the default outline when focus isn't keyboard-driven */
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  /* Contrast: zinc-400 muted text (#a1a1aa) on the light-mode white surfaces is
+     only ~2.3:1 (below WCAG AA 4.5:1). Nudge it to zinc-500 (~4.6:1) in light
+     mode only — dark mode already has ample contrast and is untouched. One rule
+     fixes every muted-text occurrence app-wide. */
+  html:not(.dark) .text-zinc-400 {
+    color: #71717a;
+  }
+
+  /* Honor users who ask for less motion (vestibular safety): near-instant
+     animations/transitions instead of the app's spins, fades and slides. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+.app-shell {
+  position: relative;
+  isolation: isolate;
+  overflow-x: clip;
+  background: transparent;
+  color: var(--color-text-primary);
+}
+
+/* Shell children sit above the ambient background layer. `:not()` inherits its
+   argument's specificity, so this selector outranks Tailwind's `.fixed` — an
+   overlay child (the companion) was being forced back to `position: relative`,
+   which put it in the flex row and made it reserve an empty 56px slot at the
+   right edge. Overlays opt out and keep their own positioning. */
+.app-shell > :not(.app-ambient):not(.app-overlay) {
+  position: relative;
+  z-index: 1;
+}
+
+.app-shell > .app-overlay {
+  z-index: 70;
+}
+
+/* The bottom-anchored workspace controls expand beyond the left rail. Keep the
+   rail's stacking context above the centre workspace so the popover remains
+   interactive instead of merely visible. */
+.app-shell > .chrome-shell-sidebar {
+  z-index: 50;
+}
+
+/* Composer transcript: compact conversation hierarchy with a safe Markdown
+   reading surface. All colour roles inherit the active design system. */
+.composer-transcript {
+  padding: 0.875rem 1rem 1rem;
+  overflow-wrap: anywhere;
+}
+
+.composer-transcript > * + * {
+  margin-top: 0.875rem;
+}
+
+.composer-turn {
+  width: min(100%, 52rem);
+}
+
+.composer-turn--user {
+  width: fit-content;
+  max-width: min(82%, 42rem);
+  margin-left: auto;
+}
+
+.composer-turn__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: 0 0.25rem 0.3rem;
+  color: var(--color-text-secondary);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.625rem;
+  line-height: 1;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+}
+
+.composer-turn-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.22rem;
+  padding: 0.18rem 0.3rem;
+  border-radius: 0.3rem;
+  color: var(--color-text-secondary);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.56rem;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.composer-turn-action:hover,
+.composer-turn-action:focus-visible {
+  background: color-mix(in srgb, var(--color-brand-primary) 10%, transparent);
+  color: var(--color-brand-primary);
+}
+
+.composer-turn__body {
+  padding: 0.7rem 0.85rem;
+  border: var(--surface-border-width) solid var(--color-border-subtle);
+  border-radius: var(--shape-control-radius);
+  background: color-mix(in srgb, var(--color-bg-elevated) 84%, transparent);
+  color: var(--color-text-primary);
+  font-size: 0.8125rem;
+  line-height: 1.55;
+}
+
+.composer-turn--user .composer-turn__body {
+  border-color: transparent;
+  background: var(--color-brand-primary);
+  color: white;
+}
+
+.composer-turn--error .composer-turn__body {
+  border-color: color-mix(in srgb, #e11d48 42%, var(--color-border-subtle));
+  background: color-mix(in srgb, #e11d48 9%, var(--color-bg-elevated));
+  color: #be123c;
+}
+
+.dark .composer-turn--error .composer-turn__body {
+  color: #fda4af;
+}
+
+.composer-markdown > :first-child { margin-top: 0; }
+.composer-markdown > :last-child { margin-bottom: 0; }
+.composer-markdown p { margin: 0.45rem 0; }
+.composer-markdown h1,
+.composer-markdown h2,
+.composer-markdown h3,
+.composer-markdown h4 {
+  margin: 0.85rem 0 0.35rem;
+  color: var(--color-text-primary);
+  font-weight: 650;
+  line-height: 1.25;
+}
+.composer-markdown h1 { font-size: 1.08rem; }
+.composer-markdown h2 { font-size: 1rem; }
+.composer-markdown h3,
+.composer-markdown h4 { font-size: 0.9rem; }
+.composer-markdown ul,
+.composer-markdown ol { margin: 0.45rem 0; padding-left: 1.3rem; }
+.composer-markdown ul { list-style: disc; }
+.composer-markdown ol { list-style: decimal; }
+.composer-markdown li + li { margin-top: 0.2rem; }
+.composer-markdown a { color: var(--color-brand-primary); text-decoration: underline; text-underline-offset: 2px; }
+.composer-markdown strong { font-weight: 650; }
+.composer-markdown blockquote {
+  margin: 0.6rem 0;
+  padding-left: 0.75rem;
+  border-left: 2px solid var(--color-brand-primary);
+  color: var(--color-text-secondary);
+}
+.composer-markdown code {
+  padding: 0.1rem 0.28rem;
+  border-radius: 0.3rem;
+  background: color-mix(in srgb, var(--color-text-primary) 8%, transparent);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.76rem;
+}
+.composer-markdown pre {
+  max-width: 100%;
+  margin: 0.65rem 0;
+  padding: 0.7rem 0.8rem;
+  overflow: auto;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--shape-control-radius);
+  background: color-mix(in srgb, var(--color-bg-canvas) 90%, black 3%);
+}
+.composer-markdown pre code { padding: 0; background: transparent; font-size: 0.72rem; }
+.composer-markdown table {
+  display: block;
+  width: max-content;
+  max-width: 100%;
+  margin: 0.65rem 0;
+  overflow-x: auto;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+.composer-markdown th,
+.composer-markdown td {
+  min-width: 7rem;
+  padding: 0.4rem 0.55rem;
+  border: 1px solid var(--color-border-subtle);
+  text-align: left;
+  vertical-align: top;
+}
+.composer-markdown th { background: color-mix(in srgb, var(--color-brand-primary) 8%, transparent); font-weight: 650; }
+.composer-markdown hr { margin: 0.75rem 0; border: 0; border-top: 1px solid var(--color-border-subtle); }
+
+.composer-trace {
+  margin-top: 0.65rem;
+  padding-top: 0.55rem;
+  border-top: 1px solid var(--color-border-subtle);
+  color: var(--color-text-secondary);
+  font-size: 0.68rem;
+}
+
+.composer-trace summary {
+  display: flex;
+  width: fit-content;
+  align-items: center;
+  gap: 0.35rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.composer-trace__steps { margin-top: 0.45rem; display: grid; gap: 0.3rem; }
+.composer-trace__step { display: flex; align-items: baseline; gap: 0.5rem; font-family: "JetBrains Mono", monospace; }
+.composer-trace__step span { color: var(--color-text-primary); }
+.composer-trace__step small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.composer-live {
+  display: grid;
+  gap: 0.35rem;
+  color: var(--color-text-secondary);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.68rem;
+}
+.composer-live > div { display: flex; align-items: center; gap: 0.4rem; }
+.composer-live small { color: #059669; }
+
+.composer-message-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.55rem;
+}
+
+.composer-message-attachments span {
+  max-width: 18rem;
+  overflow: hidden;
+  padding: 0.18rem 0.4rem;
+  border: 1px solid currentColor;
+  border-radius: 0.35rem;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.6rem;
+  opacity: 0.82;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-tree-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.22rem 0.38rem;
+  border-radius: calc(var(--shape-control-radius) * 0.65);
+  color: var(--color-text-secondary);
+  font-size: 0.58rem;
+  line-height: 1;
+}
+
+.project-tree-action:hover,
+.project-tree-action:focus-visible {
+  background: color-mix(in srgb, var(--color-brand-primary) 10%, transparent);
+  color: var(--color-brand-primary);
+}
+
+.app-ambient {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% -14%, rgb(var(--accent-rgb) / 0.14), transparent 42%),
+    linear-gradient(145deg, color-mix(in srgb, var(--color-bg-canvas) 94%, rgb(var(--accent-rgb))), var(--color-bg-canvas) 58%);
+  opacity: var(--ambient-opacity);
+  transition: opacity var(--motion-panel), background var(--motion-panel);
+}
+
+.app-ambient__art {
+  position: absolute;
+  inset: -3%;
+  display: none;
+  background-position: center;
+  background-size: cover;
+  opacity: var(--background-art-opacity, 0.55);
+  filter: saturate(0.72) contrast(0.92) brightness(0.82);
+  transform: scale(1.02);
+}
+
+.app-ambient__art::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(80% 80% at 50% 12%, rgb(255 255 255 / 0.14), transparent 64%),
+    linear-gradient(135deg, rgb(17 17 19 / 0.28), rgb(17 17 19 / 0.64));
+}
+
+html[data-background]:not([data-background="aurora"]) .app-ambient__field {
+  display: none;
+}
+
+html[data-background="calm"] .app-ambient {
+  background: radial-gradient(130% 130% at 50% 0%, #f6f8fd 0%, #e9eef8 55%, #dfe6f3 100%);
+}
+
+html.dark[data-background="calm"] .app-ambient {
+  background: radial-gradient(130% 130% at 50% 0%, #2c2c2e 0%, #1c1c1e 55%, #111113 100%);
+}
+
+html[data-background="mesh"] .app-ambient {
+  background:
+    radial-gradient(60% 60% at 18% 12%, rgb(var(--accent-rgb) / 0.32), transparent 70%),
+    radial-gradient(55% 55% at 82% 18%, rgb(var(--accent-2-rgb) / 0.30), transparent 70%),
+    radial-gradient(60% 60% at 70% 88%, rgb(var(--accent-3-rgb) / 0.26), transparent 70%),
+    radial-gradient(55% 55% at 22% 82%, rgb(244 162 97 / 0.22), transparent 70%),
+    color-mix(in srgb, var(--color-bg-canvas) 94%, white);
+}
+
+html[data-background="plain"] .app-ambient {
+  background: var(--color-bg-canvas);
+}
+
+html[data-background="vision-grey"] .app-ambient {
+  background:
+    radial-gradient(70% 70% at 18% 10%, rgb(255 255 255 / 0.62), transparent 68%),
+    radial-gradient(58% 58% at 84% 18%, rgb(209 209 214 / 0.42), transparent 70%),
+    radial-gradient(62% 62% at 50% 96%, rgb(142 142 147 / 0.24), transparent 72%),
+    linear-gradient(135deg, #f5f5f7 0%, #e8e8ed 50%, #d7d7dc 100%);
+}
+
+html.dark[data-background="vision-grey"] .app-ambient {
+  background:
+    radial-gradient(72% 72% at 18% 10%, rgb(255 255 255 / 0.12), transparent 68%),
+    radial-gradient(64% 64% at 86% 12%, rgb(118 118 128 / 0.20), transparent 72%),
+    radial-gradient(68% 68% at 50% 96%, rgb(84 84 88 / 0.18), transparent 72%),
+    linear-gradient(135deg, #2c2c2e 0%, #1c1c1e 48%, #111113 100%);
+}
+
+html[data-background="gallery-art"] .app-ambient {
+  background: linear-gradient(135deg, #2c2c2e 0%, #1c1c1e 50%, #111113 100%);
+}
+
+html[data-background="gallery-art"] .app-ambient__art {
+  display: block;
+}
+
+html[data-background="kiki"] .app-ambient {
+  background:
+    radial-gradient(16rem 16rem at 12% 18%, rgb(255 149 0 / 0.28), transparent 70%),
+    radial-gradient(20rem 20rem at 86% 12%, rgb(255 55 95 / 0.24), transparent 70%),
+    radial-gradient(24rem 24rem at 76% 88%, rgb(175 82 222 / 0.22), transparent 70%),
+    radial-gradient(18rem 18rem at 18% 82%, rgb(15 181 201 / 0.20), transparent 70%),
+    linear-gradient(135deg, #ffe7cf 0%, #ffd6e6 30%, #f3ddff 62%, #d9eeff 100%);
+}
+
+html.dark[data-background="kiki"] .app-ambient {
+  background:
+    radial-gradient(18rem 18rem at 12% 18%, rgb(255 149 0 / 0.16), transparent 70%),
+    radial-gradient(22rem 22rem at 86% 12%, rgb(255 55 95 / 0.15), transparent 70%),
+    radial-gradient(24rem 24rem at 76% 88%, rgb(175 82 222 / 0.15), transparent 70%),
+    linear-gradient(135deg, #241b33 0%, #2a1c3c 46%, #1b2340 100%);
+}
+
+html[data-background="nature-clean"] .app-ambient {
+  background: #ffffff;
+}
+
+html.dark[data-background="nature-clean"] .app-ambient {
+  background: #161617;
+}
+
+html[data-background="cytoplasm"] .app-ambient {
+  background: linear-gradient(135deg, #ffe4e6 0%, #fff1f2 35%, #fff7ed 70%, #fff1f2 100%);
+}
+
+html.dark[data-background="cytoplasm"] .app-ambient {
+  background: linear-gradient(135deg, #2b1115 0%, #1e1112 50%, #140d12 100%);
+}
+
+.app-ambient__field {
+  position: absolute;
+  display: block;
+  width: min(56rem, 72vw);
+  aspect-ratio: 1;
+  border-radius: 9999px;
+  filter: blur(86px);
+  opacity: 0.07;
+  will-change: transform;
+}
+
+.app-ambient__field--one { left: -18%; top: -28%; background: rgb(var(--accent-rgb) / 0.9); animation: ambient-drift-one 30s ease-in-out infinite alternate; }
+.app-ambient__field--two { right: -24%; top: -6%; background: rgb(var(--accent-2-rgb) / 0.78); animation: ambient-drift-two 34s ease-in-out infinite alternate; }
+.app-ambient__field--three { left: 24%; bottom: -46%; background: rgb(var(--accent-3-rgb) / 0.66); animation: ambient-drift-three 32s ease-in-out infinite alternate; }
+.app-ambient__field--four { right: 22%; top: 36%; width: min(34rem, 48vw); background: rgb(var(--accent-rgb) / 0.42); animation: ambient-drift-four 26s ease-in-out infinite alternate; }
+
+.app-ambient__grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.022;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.68'/%3E%3C/svg%3E");
+  mix-blend-mode: soft-light;
+}
+
+@keyframes ambient-drift-one { to { transform: translate3d(12vw, 10vh, 0) scale(1.08); } }
+@keyframes ambient-drift-two { to { transform: translate3d(-14vw, 14vh, 0) scale(0.94); } }
+@keyframes ambient-drift-three { to { transform: translate3d(10vw, -12vh, 0) scale(1.1); } }
+@keyframes ambient-drift-four { to { transform: translate3d(-8vw, -10vh, 0) scale(1.12); } }
+
+.chrome-surface {
+  background: var(--color-bg-surface);
+  background: color-mix(in srgb, var(--color-bg-surface) var(--surface-opacity), transparent);
+  border-color: var(--color-border-subtle);
+  border-style: solid;
+  border-radius: var(--shape-surface-radius);
+  box-shadow: var(--surface-shadow);
+  -webkit-backdrop-filter: blur(var(--surface-blur)) saturate(var(--surface-saturate));
+  backdrop-filter: blur(var(--surface-blur)) saturate(var(--surface-saturate));
+  transition: background-color var(--motion-panel), border-color var(--motion-fast), box-shadow var(--motion-panel), border-radius var(--motion-panel);
+}
+
+/* The ::before optics overlay needs a positioning context, but declaring
+   `position: relative` on .chrome-surface itself ties with Tailwind's .fixed and
+   .absolute (both one class) and wins on source order — silently un-fixing every
+   surface that is also a popover, dropdown, or fullscreen panel. `:where()`
+   contributes zero specificity, so a positioning utility always wins while a
+   plain surface still gets its context. */
+:where(.chrome-surface) {
+  position: relative;
+}
+
+.chrome-surface::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: var(--surface-optics-opacity);
+  background:
+    linear-gradient(180deg, var(--surface-specular) 0, transparent 14%),
+    radial-gradient(115% 58% at 8% 0%, var(--surface-fresnel), transparent 56%),
+    linear-gradient(0deg, var(--surface-lower) 0, transparent 9%);
+  box-shadow: inset 0 1px 0 var(--surface-rim);
+  mix-blend-mode: normal;
+  transition: opacity var(--motion-panel);
+}
+
+.chrome-surface:not(.chrome-shell-header):not(.chrome-shell-sidebar) {
+  border-width: var(--surface-border-width);
+}
+
+/* Component geometry follows the selected language even when leaf views use
+   utility classes. Pills keep their intentional fully rounded shape. */
+.chrome-surface :where(button, [role="button"]):not(.rounded-full) {
+  border-radius: var(--shape-control-radius);
+}
+
+.chrome-surface :where(input, select, textarea) {
+  border-radius: var(--shape-input-radius);
+}
+
+.chrome-shell-header {
+  border-width: 0 0 var(--surface-border-width);
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.chrome-shell-sidebar {
+  border-width: 0 var(--surface-border-width) 0 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --surface-opacity: 100%;
+    --surface-blur: 0px;
+    --surface-saturate: 100%;
+    --surface-optics-opacity: 0.2;
+    --ambient-opacity: 0.22;
+  }
+
+  .app-ambient__art {
+    filter: saturate(0.45) contrast(0.9) brightness(0.65);
+  }
+}
+html.is-resizing-right-pane,
+html.is-resizing-right-pane * {
+  cursor: col-resize !important;
+  user-select: none !important;
+}
+
+/* --- Companion creature -----------------------------------------------------
+   Movement lives in CSS keyframes rather than a JS animation loop, so the global
+   prefers-reduced-motion block above and the data-motion="reduced" setting both
+   neutralise it for free, and the compositor does the work off the main thread. */
+
+.companion-face {
+  overflow: visible;
+  /* Only transform/opacity animate — nothing here can trigger layout. */
+  will-change: transform;
+}
+
+.companion-face .companion-body,
+.companion-face .companion-antenna,
+.companion-face .companion-lids,
+.companion-face .companion-brows,
+.companion-face .companion-mouth,
+.companion-face .companion-pupils {
+  transition: transform var(--motion-fast) ease-out, d var(--motion-panel) ease-out;
+}
+
+/* Pupils follow the pointer; the parent writes these two properties directly so
+   a 60fps glance never passes through React. */
+.companion-face .companion-pupils {
+  transform: translate(var(--pupil-x, 0px), var(--pupil-y, 0px));
+}
+
+.companion-face .companion-lids {
+  transform-origin: 24px 18.4px;
+  transition: transform 90ms ease-in;
+}
+
+/* Idle breathing — a slow, small scale change reads as alive at rest. */
+.companion-face .companion-body {
+  transform-origin: 24px 40px;
+  animation: companion-breathe 4.6s ease-in-out infinite;
+}
+
+@keyframes companion-breathe {
+  0%, 100% { transform: scale(1, 1); }
+  50% { transform: scale(1.014, 0.986); }
+}
+
+.companion-face .companion-antenna {
+  transform-origin: 24px 9px;
+  animation: companion-antenna-sway 5.2s ease-in-out infinite;
+}
+
+@keyframes companion-antenna-sway {
+  0%, 100% { transform: rotate(-3deg); }
+  50% { transform: rotate(4deg); }
+}
+
+/* Working: a faster bob plus travelling thought dots. */
+.companion-mood-thinking .companion-body {
+  animation: companion-bob 900ms ease-in-out infinite;
+}
+
+@keyframes companion-bob {
+  0%, 100% { transform: translateY(0) scale(1, 1); }
+  50% { transform: translateY(-1.6px) scale(0.99, 1.01); }
+}
+
+.companion-thinking circle {
+  animation: companion-think-dot 1.35s ease-in-out infinite;
+}
+.companion-thinking circle:nth-child(2) { animation-delay: 0.18s; }
+.companion-thinking circle:nth-child(3) { animation-delay: 0.36s; }
+
+@keyframes companion-think-dot {
+  0%, 100% { opacity: 0.15; transform: translateY(1px); }
+  50% { opacity: 1; transform: translateY(-1px); }
+}
+
+.companion-sleep text {
+  animation: companion-zzz 2.8s ease-in-out infinite;
+}
+.companion-sleep text:nth-child(2) { animation-delay: 0.6s; }
+
+@keyframes companion-zzz {
+  0% { opacity: 0; transform: translate(0, 2px) scale(0.7); }
+  40% { opacity: 0.85; }
+  100% { opacity: 0; transform: translate(3px, -6px) scale(1.1); }
+}
+
+.companion-mood-asleep .companion-body {
+  animation: companion-breathe 6.4s ease-in-out infinite;
+}
+
+.companion-mood-concerned .companion-body {
+  animation: companion-fret 1.6s ease-in-out infinite;
+}
+
+@keyframes companion-fret {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-1.6deg); }
+  75% { transform: rotate(1.6deg); }
+}
+
+/* One-shot idle gestures. Each runs for its duration then the class is removed. */
+.companion-gesture-glance .companion-pupils { animation: companion-glance 1.5s ease-in-out; }
+@keyframes companion-glance {
+  0%, 100% { transform: translate(var(--pupil-x, 0px), var(--pupil-y, 0px)); }
+  25% { transform: translate(-2.4px, 0.4px); }
+  60% { transform: translate(2.4px, 0.4px); }
+}
+
+.companion-gesture-tilt .companion-body { animation: companion-tilt 1.4s ease-in-out; }
+@keyframes companion-tilt {
+  0%, 100% { transform: rotate(0deg); }
+  35%, 65% { transform: rotate(-7deg); }
+}
+
+.companion-gesture-stretch .companion-body { animation: companion-stretch 1.5s ease-in-out; }
+@keyframes companion-stretch {
+  0%, 100% { transform: scale(1, 1); }
+  40% { transform: scale(0.94, 1.09) translateY(-2px); }
+  70% { transform: scale(1.05, 0.95); }
+}
+
+.companion-gesture-hop .companion-body { animation: companion-hop 1.1s cubic-bezier(0.3, -0.4, 0.5, 1.5); }
+@keyframes companion-hop {
+  0%, 100% { transform: translateY(0) scale(1, 1); }
+  20% { transform: translateY(0) scale(1.1, 0.9); }
+  55% { transform: translateY(-7px) scale(0.94, 1.08); }
+  85% { transform: translateY(0) scale(1.08, 0.92); }
+}
+
+/* Squash on grab, so dragging the pet feels like handling an object. */
+.companion-mood-held .companion-body {
+  transform: scale(1.06, 0.94);
+  animation: none;
+}
+
+/* The tip bubble: a speech balloon with a tail, entering with a small pop. */
+.companion-bubble {
+  animation: companion-bubble-in var(--motion-panel) cubic-bezier(0.2, 1.3, 0.4, 1);
+}
+
+@keyframes companion-bubble-in {
+  from { opacity: 0; transform: translateY(4px) scale(0.9); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+
+/* -------------------------------------------------------------------------
+   Production visual discipline
+   -------------------------------------------------------------------------
+   MEDANTIR is an evidence workbench, not a neon dashboard. The default shell is
+   intentionally quiet: hierarchy comes from spacing, typography, and grouping;
+   chroma communicates selection, state, risk, or a primary action. */
+.workspace-main {
+  background: color-mix(in srgb, var(--color-bg-canvas) 96%, transparent);
+  scrollbar-gutter: stable;
+}
+
+.workspace-frame {
+  width: min(100%, 1680px);
+  margin-inline: auto;
+}
+
+.ui-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.ui-page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.9rem;
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.ui-title {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  margin: 0;
+  color: var(--color-text-primary);
+  font-size: clamp(1.2rem, 1.6vw, 1.55rem);
+  line-height: 1.2;
+  font-weight: 680;
+  letter-spacing: -0.025em;
+}
+
+.ui-title > svg { color: var(--color-text-secondary) !important; }
+
+.ui-subtitle {
+  margin-top: 0.3rem;
+  max-width: 72rem;
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+  line-height: 1.55;
+}
+
+.ui-kicker {
+  color: var(--color-text-secondary);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.075em;
+  text-transform: uppercase;
+}
+
+.ui-panel,
+.ui-card {
+  border: 1px solid var(--color-border-subtle);
+  background: var(--color-bg-surface);
+  border-radius: 0.7rem;
+  box-shadow: none;
+}
+
+.ui-panel { padding: 1rem; }
+.ui-card { padding: 0.875rem; }
+
+.ui-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  padding: 0.65rem;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 0.65rem;
+  background: var(--color-bg-surface);
+}
+
+.ui-tabs {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  overflow-x: auto;
+  padding-bottom: 0.55rem;
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.ui-tabs > button {
+  flex: none;
+  border-radius: 0.45rem;
+}
+
+.ui-stat-value {
+  color: var(--color-text-primary);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 1.35rem;
+  line-height: 1.2;
+  font-weight: 700;
+}
+
+.ui-primary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border: 1px solid var(--color-brand-primary);
+  border-radius: 0.5rem;
+  background: var(--color-brand-primary);
+  color: white;
+  font-weight: 650;
+}
+
+.ui-secondary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 0.5rem;
+  background: var(--color-bg-surface);
+  color: var(--color-text-primary);
+}
+
+.ui-secondary-button:hover {
+  background: var(--color-bg-elevated);
+}
+
+.ui-status-dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 9999px;
+  background: rgb(var(--state-idle-rgb));
+}
+.ui-status-dot[data-state="active"] { background: rgb(var(--state-active-rgb)); }
+.ui-status-dot[data-state="done"] { background: rgb(var(--state-done-rgb)); }
+.ui-status-dot[data-state="caution"] { background: rgb(var(--state-caution-rgb)); }
+.ui-status-dot[data-state="blocked"] { background: rgb(var(--state-blocked-rgb)); }
+
+/* Decorative domain tints were being stacked card-inside-card and created the
+   "neon everywhere" effect. Neutralise tinted containers while retaining colour
+   on text/icons/buttons, where it can still carry meaning. */
+.app-shell :where(div, section, article)[class*="bg-violet-"][class*="/"],
+.app-shell :where(div, section, article)[class*="bg-fuchsia-"][class*="/"],
+.app-shell :where(div, section, article)[class*="bg-cyan-"][class*="/"],
+.app-shell :where(div, section, article)[class*="bg-teal-"][class*="/"],
+.app-shell :where(div, section, article)[class*="bg-blue-"][class*="/"] {
+  background-color: var(--color-bg-surface) !important;
+  border-color: var(--color-border-subtle) !important;
+}
+
+/* Reserve heavy shadows for modal depth. Ordinary cards/panes stay on one
+   visual plane and are separated with borders/spacing. */
+.app-shell :where(.shadow-sm, .shadow-md, .shadow-lg):not([role="dialog"]) {
+  box-shadow: none !important;
+}
+
+/* Dense two-rail layouts need a real no-overlap contract. */
+@media (min-width: 1024px) {
+  .chrome-shell-sidebar { flex: 0 0 auto; }
+}
+
+@media (max-width: 1180px) {
+  .workspace-main { padding-inline: 1rem !important; }
+  .ui-page-header { flex-direction: column; }
+}

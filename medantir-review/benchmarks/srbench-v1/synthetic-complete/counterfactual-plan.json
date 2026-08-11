@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "medantir-sr-counterfactual-challenge/1",
+  "planId": "SRBENCH-FIXTURE-COUNTERFACTUAL",
+  "planVersion": "1.0.0",
+  "mutations": [
+    {
+      "mutationId": "CHANGE-STUDY-2-EFFECT",
+      "variants": [
+        {
+          "variantId": "NULL-STUDY-2",
+          "rationale": "Make the second study null while preserving the first study, forcing synthesis and report to follow the counterfactual evidence rather than the memorized fixture answer.",
+          "patches": [
+            { "taskId": "fixture-synthesis", "surface": "input", "path": "effects.1.logRR", "value": 0 },
+            { "taskId": "fixture-synthesis", "surface": "gold", "path": "pooledLogRR", "value": -0.34657359027997264 },
+            { "taskId": "fixture-synthesis", "surface": "gold", "path": "pooledRR", "value": 0.7071067811865476 },
+            { "taskId": "fixture-report", "surface": "gold", "path": "estimate", "value": 0.7071067811865476 }
+          ]
+        },
+        {
+          "variantId": "STRONGER-STUDY-2",
+          "rationale": "Make the second study substantially more protective while preserving the first study, forcing a different pooled effect and final report estimate.",
+          "patches": [
+            { "taskId": "fixture-synthesis", "surface": "input", "path": "effects.1.logRR", "value": -1.3862943611198906 },
+            { "taskId": "fixture-synthesis", "surface": "gold", "path": "pooledLogRR", "value": -1.039720770839918 },
+            { "taskId": "fixture-synthesis", "surface": "gold", "path": "pooledRR", "value": 0.3535533905932738 },
+            { "taskId": "fixture-report", "surface": "gold", "path": "estimate", "value": 0.3535533905932738 }
+          ]
+        }
+      ]
+    }
+  ]
+}

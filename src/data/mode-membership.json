@@ -1,0 +1,49 @@
+{
+  "records": {
+    "mapit": { "kind": "canonical", "primaryMode": "security", "modes": ["security"] },
+    "khwelero": { "kind": "system" },
+    "redteam": { "kind": "canonical", "primaryMode": "security", "modes": ["security"] },
+    "openscience": { "kind": "canonical", "primaryMode": "academic", "modes": ["academic"] },
+    "liteparse": { "kind": "canonical", "primaryMode": "academic", "modes": ["academic"] },
+    "unlimited-ocr": { "kind": "canonical", "primaryMode": "academic", "modes": ["academic"] },
+    "pdf-tools": { "kind": "canonical", "primaryMode": "academic", "modes": ["academic"] },
+    "resource-shrimp": { "kind": "canonical", "primaryMode": "academic", "modes": ["academic"] },
+    "inferenceos": { "kind": "system" },
+    "inferno-code": { "kind": "system" },
+    "open-bio-canvas": { "kind": "canonical", "primaryMode": "clinical", "modes": ["academic", "clinical", "statistical"] },
+    "maled": { "kind": "canonical", "primaryMode": "humanitarian", "modes": ["humanitarian", "academic", "clinical", "statistical"] },
+    "nutrimodel": { "kind": "canonical", "primaryMode": "humanitarian", "modes": ["humanitarian", "academic", "clinical", "statistical"] },
+    "hmis": { "kind": "canonical", "primaryMode": "humanitarian", "modes": ["humanitarian", "academic", "clinical", "statistical"] },
+    "cameo-sam": { "kind": "canonical", "primaryMode": "clinical", "modes": ["academic", "clinical"] },
+    "dhs-sdh": { "kind": "canonical", "primaryMode": "statistical", "modes": ["humanitarian", "academic", "statistical"] },
+    "systematic-review": { "kind": "canonical", "primaryMode": "academic", "modes": ["humanitarian", "academic", "clinical", "statistical"] },
+    "ascent": { "kind": "canonical", "primaryMode": "personal", "modes": ["personal"] },
+    "astellic": { "kind": "canonical", "primaryMode": "humanitarian", "modes": ["humanitarian", "clinical", "statistical"] },
+    "actiora": { "kind": "canonical", "primaryMode": "security", "modes": ["security"] },
+
+    "exam-revision-hub": { "kind": "canonical", "primaryMode": "personal", "modes": ["academic", "personal"] },
+    "dataforqi": { "kind": "canonical", "primaryMode": "clinical", "modes": ["clinical", "statistical"] },
+    "manimr": { "kind": "canonical", "primaryMode": "statistical", "modes": ["academic", "statistical"] },
+
+    "ascent-operating-system": { "kind": "alias", "canonicalId": "ascent" },
+    "cameo-sam-qwoe-assessor": { "kind": "alias", "canonicalId": "cameo-sam" },
+    "dhs-structural-determinants": { "kind": "alias", "canonicalId": "dhs-sdh" },
+    "open-bio-canvas-data": { "kind": "alias", "canonicalId": "open-bio-canvas" },
+    "khwelero-live": { "kind": "alias", "canonicalId": "khwelero" },
+    "khwelero-demo": { "kind": "alias", "canonicalId": "khwelero" },
+
+    "open-canvas-studio": { "kind": "system" },
+    "dodexa": { "kind": "system" },
+    "dodexabash": { "kind": "system" },
+    "dodexacode": { "kind": "system" },
+    "liquidglass": { "kind": "system" },
+    "chambo-wave": { "kind": "system" },
+    "actiora-landing": { "kind": "system" },
+    "reyanda.github.io": { "kind": "system" },
+    "reyanda.com": { "kind": "system" },
+
+    "astellic-chwbrc": { "kind": "unclassified", "reason": "Insufficient metadata for a reliable mode assignment." },
+    "map-of-time": { "kind": "unclassified", "reason": "Current metadata conflicts with the curated MapIt ownership-graph record." },
+    "cameo": { "kind": "unclassified", "reason": "Generic record lacks enough metadata to distinguish it from CAMEO-SAM." }
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "candidateId": "SRQ-COVID-RAT-2024",
+  "sourceRepository": "skoshyc/covid_systematic_review_2023",
+  "sourceCommit": "957343bf17087f492e38cf6cb9d26b6882a146a1",
+  "language": "R",
+  "runtimeVersion": null,
+  "entrypoints": [
+    "COVID_SR_NPV.R",
+    "COVID_SR_PPV.R",
+    "COVID_SR_sensitivity.R",
+    "COVID_SR_specificity.R"
+  ],
+  "dependencies": [
+    { "name": "dmetar", "version": "0.1.0", "source": "repository README declaration" },
+    { "name": "dplyr", "version": null },
+    { "name": "meta", "version": null },
+    { "name": "readxl", "version": null }
+  ],
+  "findings": [
+    {
+      "code": "BARE_SETWD",
+      "severity": "blocker",
+      "message": "All four committed R entrypoints call setwd() without a directory argument and therefore are not directly runnable as committed.",
+      "files": ["COVID_SR_NPV.R", "COVID_SR_PPV.R", "COVID_SR_sensitivity.R", "COVID_SR_specificity.R"],
+      "evidence": ["pinned Git commit 957343bf17087f492e38cf6cb9d26b6882a146a1"]
+    },
+    {
+      "code": "INPUT_CASE_MISMATCH",
+      "severity": "blocker",
+      "message": "The R scripts reference Master File of Data extraction_new.xlsx while the pinned repository stores Master File of Data extraction_New.xlsx; this fails on case-sensitive filesystems.",
+      "files": ["COVID_SR_NPV.R", "COVID_SR_PPV.R", "COVID_SR_sensitivity.R", "COVID_SR_specificity.R", "Master File of Data extraction_New.xlsx"],
+      "evidence": ["pinned Git commit 957343bf17087f492e38cf6cb9d26b6882a146a1"]
+    },
+    {
+      "code": "R_VERSION_UNPINNED",
+      "severity": "blocker",
+      "message": "The reproducibility repository does not pin the R interpreter version needed to recreate the historical analysis environment."
+    },
+    {
+      "code": "PACKAGE_VERSIONS_INCOMPLETE",
+      "severity": "blocker",
+      "message": "The analysis depends on readxl, meta, dmetar and dplyr, but exact historical package versions are not fully pinned."
+    },
+    {
+      "code": "META_API_VERSION_SENSITIVE",
+      "severity": "warning",
+      "message": "The scripts use meta::metaprop arguments such as comb.fixed, comb.random and byvar; exact package identity must be fixed before interpreting a successful rerun as historical computational reproduction."
+    }
+  ],
+  "proposedRepairs": [
+    {
+      "repairId": "WORKDIR-SHIM-1",
+      "description": "Execute each script with the captured repository root as the working directory and neutralize the argument-less setwd() call in the reproduction harness.",
+      "affectedFiles": ["COVID_SR_NPV.R", "COVID_SR_PPV.R", "COVID_SR_sensitivity.R", "COVID_SR_specificity.R"],
+      "semanticImpact": "none",
+      "rationale": "The shim changes file-location setup only and does not alter data, model settings, estimands or statistical calculations."
+    },
+    {
+      "repairId": "INPUT-PATH-SHIM-1",
+      "description": "Map the script-requested workbook basename to the exact captured workbook path with repository capitalization.",
+      "affectedFiles": ["COVID_SR_NPV.R", "COVID_SR_PPV.R", "COVID_SR_sensitivity.R", "COVID_SR_specificity.R"],
+      "semanticImpact": "none",
+      "rationale": "The repair resolves a case-sensitive path spelling difference while preserving the exact captured workbook bytes."
+    }
+  ]
+}

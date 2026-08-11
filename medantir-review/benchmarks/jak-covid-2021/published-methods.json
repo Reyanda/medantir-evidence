@@ -1,0 +1,159 @@
+{
+  "reviewId": "PMC8500309",
+  "sourceReference": "PMC8500309, Methods 2.1-2.4 and Results 3.1-3.7",
+  "eligibility": {
+    "population": [
+      "hospitalized patients with COVID-19",
+      "adult population"
+    ],
+    "interventionOrExposure": [
+      "baricitinib",
+      "ruxolitinib",
+      "tofacitinib",
+      "fedratinib",
+      "JAK inhibitor treatment"
+    ],
+    "comparator": [
+      "standard of care without JAK inhibitor",
+      "other medication control or placebo without JAK inhibitor"
+    ],
+    "outcomes": [
+      "recovery rate",
+      "time to recovery",
+      "clinical deterioration",
+      "mortality"
+    ],
+    "includedDesigns": [
+      "randomized clinical trial",
+      "non-randomized clinical trial",
+      "cohort study",
+      "case-control study",
+      "cross-sectional study"
+    ],
+    "exclusions": [
+      "non-original articles",
+      "case reports",
+      "case series",
+      "non-English reports",
+      "pregnant populations",
+      "populations younger than 18 years"
+    ]
+  },
+  "screening": {
+    "titleAbstractScreeningReported": true,
+    "fullTextScreeningReported": true,
+    "independentReviewReported": false,
+    "conflictResolutionReported": false
+  },
+  "extraction": {
+    "reviewerCount": 2,
+    "independentReviewReported": false,
+    "fields": [
+      "study characteristics",
+      "population characteristics",
+      "JAK inhibitor type",
+      "JAK inhibitor dose",
+      "intervention group size",
+      "control group size",
+      "recovery rate",
+      "time to recovery",
+      "clinical deterioration",
+      "mortality"
+    ]
+  },
+  "appraisal": [
+    {
+      "population": "clinical trials",
+      "tool": "modified Jadad scale",
+      "scoreRange": "0-7",
+      "qualityThreshold": ">4 high quality",
+      "independentReviewReported": true
+    },
+    {
+      "population": "cohort and case-control studies",
+      "tool": "Newcastle-Ottawa Scale",
+      "scoreRange": "0-9",
+      "qualityThreshold": ">=7 good quality",
+      "independentReviewReported": true
+    }
+  ],
+  "synthesis": {
+    "software": "Review Manager",
+    "softwareVersion": "5.4",
+    "dichotomousMethod": "Mantel-Haenszel",
+    "dichotomousMeasure": "risk ratio",
+    "continuousMethod": "inverse variance",
+    "continuousMeasure": "mean difference",
+    "heterogeneityStatistic": "I2",
+    "publicationBiasMethods": [
+      "funnel plot",
+      "Begg-Mazumdar rank correlation"
+    ]
+  },
+  "reportedFlow": {
+    "recordsIdentified": 2015,
+    "afterDeduplication": 1632,
+    "titleAbstractExcluded": 1567,
+    "fullTextAssessed": 65,
+    "excludedStillRecruitingOrWithdrawn": 37,
+    "excludedNoComparator": 7,
+    "excludedOutcomeMismatch": 5,
+    "excludedNonEnglish": 2,
+    "includedStudies": 14,
+    "includedParticipants": 4363
+  },
+  "reportedResults": [
+    {
+      "outcome": "recovery rate",
+      "studies": 7,
+      "participants": 3320,
+      "measure": "RR",
+      "estimate": 1.17,
+      "ciLower": 1.01,
+      "ciUpper": 1.36,
+      "i2": 91,
+      "model": "random effects"
+    },
+    {
+      "outcome": "time to recovery",
+      "studies": 7,
+      "participants": 3159,
+      "measure": "MD",
+      "estimate": -0.96,
+      "ciLower": -1.15,
+      "ciUpper": -0.77,
+      "i2": 28,
+      "model": "random effects"
+    },
+    {
+      "outcome": "clinical deterioration",
+      "studies": 12,
+      "participants": 4041,
+      "measure": "RR",
+      "estimate": 0.66,
+      "ciLower": 0.48,
+      "ciUpper": 0.89,
+      "i2": 57,
+      "model": "random effects"
+    },
+    {
+      "outcome": "mortality",
+      "studies": 13,
+      "participants": 4339,
+      "measure": "RR",
+      "estimate": 0.52,
+      "ciLower": 0.36,
+      "ciUpper": 0.76,
+      "i2": 33,
+      "model": "random effects"
+    }
+  ],
+  "disclosureGaps": [
+    "The publication does not provide an itemized reference-list/manual-search ledger.",
+    "The publication does not state how many reviewers performed title/abstract and full-text screening.",
+    "The publication does not report a screening disagreement-resolution procedure.",
+    "The publication states that two authors extracted data but does not explicitly state independent duplicate extraction or conflict resolution.",
+    "The publication reports random-effects pooled results but does not fully specify the random-effects estimator and model-selection rule needed for bit-level statistical reproduction.",
+    "The original Review Manager project file and original database export files are not currently part of this benchmark."
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "schemaVersion": "medantir-srbench-suite/1",
+  "suiteId": "MEDANTIR-SRBENCH-V1",
+  "suiteVersion": "1.0.0",
+  "qualificationCorpus": "qualification-candidates.json",
+  "qualificationSourceCaptures": "qualification-source-captures.json",
+  "qualificationAssetReceipts": "qualification-asset-receipts.json",
+  "qualificationCandidateVerifications": "qualification-candidate-verifications.json",
+  "cases": [
+    { "path": "synthetic-complete/case.json", "enabled": true, "role": "canary" },
+    {
+      "path": "jak-covid-2021/case.json",
+      "enabled": true,
+      "role": "validation",
+      "qualificationCandidateId": "SRQ-JAK-COVID-2021"
+    }
+  ],
+  "promotionPolicy": {
+    "schemaVersion": "medantir-sr100-promotion/1",
+    "policyId": "MEDANTIR-SR100",
+    "policyVersion": "1.1.0",
+    "minCompleteReviewCases": 3,
+    "minDistinctDomains": 3,
+    "minRepeatsPerCase": 3,
+    "requireEveryRunSr100": true,
+    "requirePinnedActualModel": true,
+    "requirePinnedProvider": false,
+    "requireZeroCriticalFailures": true,
+    "livingReviewRequiresDriftSentinel": true,
+    "requiredModelStages": [
+      "question",
+      "protocol",
+      "search",
+      "tiab-screening",
+      "fulltext-screening",
+      "extraction",
+      "appraisal",
+      "report"
+    ],
+    "minModelEvaluatedReviewCasesPerStage": 3,
+    "minModelEvaluatedDomainsPerStage": 3
+  }
+}

@@ -1,0 +1,941 @@
+[
+  {
+    "id": "synergy-screening-gold",
+    "title": "SYNERGY systematic-review screening collection",
+    "authority": "SYNERGY / open systematic review automation research",
+    "reviewType": "systematic",
+    "diseaseDomains": [
+      "multidisease",
+      "clinical",
+      "public health"
+    ],
+    "tier": "gold-data",
+    "readiness": "ready",
+    "publicInputClass": "fully-open",
+    "supportedModes": [
+      "frozen-reproduction",
+      "independent-audit"
+    ],
+    "referenceArtifacts": [
+      {
+        "name": "Labeled citation screening datasets",
+        "kind": "dataset",
+        "access": "open",
+        "locator": "https://github.com/asreview/synergy-dataset"
+      }
+    ],
+    "targetStages": [
+      "deduplicate",
+      "tiab-screen"
+    ],
+    "strengths": [
+      "Large cross-review screening benchmark",
+      "Stable labels support repeatable regression tests"
+    ],
+    "cautions": [
+      "Labels inherit the eligibility decisions of the source reviews",
+      "Not a complete benchmark for search construction or synthesis"
+    ]
+  },
+  {
+    "id": "clef-tar-intervention-gold",
+    "title": "CLEF Technology-Assisted Review intervention tasks",
+    "authority": "CLEF eHealth TAR",
+    "reviewType": "intervention",
+    "diseaseDomains": [
+      "multidisease",
+      "intervention effectiveness"
+    ],
+    "tier": "gold-data",
+    "readiness": "ready",
+    "publicInputClass": "fully-open",
+    "supportedModes": [
+      "frozen-reproduction",
+      "independent-audit"
+    ],
+    "referenceArtifacts": [
+      {
+        "name": "Reusable intervention review test collection",
+        "kind": "dataset",
+        "access": "open",
+        "locator": "https://www.clef-initiative.eu/"
+      }
+    ],
+    "targetStages": [
+      "tiab-screen"
+    ],
+    "strengths": [
+      "Designed for systematic-review prioritisation evaluation",
+      "Supports recall-oriented ranking metrics"
+    ],
+    "cautions": [
+      "Does not by itself validate extraction, risk of bias, or meta-analysis"
+    ]
+  },
+  {
+    "id": "clef-tar-dta-gold",
+    "title": "CLEF Technology-Assisted Review diagnostic accuracy tasks",
+    "authority": "CLEF eHealth TAR",
+    "reviewType": "diagnostic-accuracy",
+    "diseaseDomains": [
+      "multidisease",
+      "diagnostic testing"
+    ],
+    "tier": "gold-data",
+    "readiness": "ready",
+    "publicInputClass": "fully-open",
+    "supportedModes": [
+      "frozen-reproduction",
+      "independent-audit"
+    ],
+    "referenceArtifacts": [
+      {
+        "name": "Reusable diagnostic review test collection",
+        "kind": "dataset",
+        "access": "open",
+        "locator": "https://www.clef-initiative.eu/"
+      }
+    ],
+    "targetStages": [
+      "tiab-screen"
+    ],
+    "strengths": [
+      "Tests a review family with different search and eligibility behaviour from intervention reviews"
+    ],
+    "cautions": [
+      "Screening labels do not validate bivariate or HSROC synthesis"
+    ]
+  },
+  {
+    "id": "evidence-inference-extraction-gold",
+    "title": "Evidence Inference 2.0 extraction benchmark",
+    "authority": "Evidence Inference research collaboration",
+    "reviewType": "intervention",
+    "diseaseDomains": [
+      "multidisease",
+      "randomised trials"
+    ],
+    "tier": "gold-data",
+    "readiness": "ready",
+    "publicInputClass": "fully-open",
+    "supportedModes": [
+      "frozen-reproduction",
+      "independent-audit"
+    ],
+    "referenceArtifacts": [
+      {
+        "name": "Trial article prompts, evidence spans, and inference labels",
+        "kind": "dataset",
+        "access": "open",
+        "locator": "https://evidence-inference.ebm-nlp.com/"
+      }
+    ],
+    "targetStages": [
+      "pdf-to-text",
+      "extract"
+    ],
+    "strengths": [
+      "Evaluates evidence-span retrieval and structured clinical inference",
+      "Links labels to source text"
+    ],
+    "cautions": [
+      "Covers selected extraction questions rather than the entire review data model"
+    ]
+  },
+  {
+    "id": "ahrq-srdr-extraction-silver",
+    "title": "AHRQ Systematic Review Data Repository studies",
+    "authority": "Agency for Healthcare Research and Quality",
+    "reviewType": "systematic",
+    "diseaseDomains": [
+      "multidisease",
+      "comparative effectiveness"
+    ],
+    "tier": "gold-data",
+    "readiness": "requires-snapshot-onboarding",
+    "publicInputClass": "fully-open",
+    "supportedModes": [
+      "frozen-reproduction",
+      "independent-audit"
+    ],
+    "referenceArtifacts": [
+      {
+        "name": "Public structured review data",
+        "kind": "extraction-table",
+        "access": "open",
+        "locator": "https://srdr.ahrq.gov/"
+      }
+    ],
+    "targetStages": [
+      "extract",
+      "risk-of-bias"
+    ],
+    "strengths": [
+      "Study-level structured data from completed evidence reviews",
+      "Supports field-by-field extraction comparison"
+    ],
+    "cautions": [
+      "Schemas vary by project and require benchmark-specific mappings"
+    ]
+  },
+  {
+    "id": "who-mental-health-at-work-silver",
+    "title": "WHO mental health at work evidence reviews",
+    "authority": "World Health Organization",
+    "reviewType": "mixed-methods",
+    "diseaseDomains": [
+      "mental health",
+      "occupational health"
+    ],
+    "tier": "silver-review",
+    "readiness": "requires-snapshot-onboarding",
+    "publicInputClass": "open-reference-mixed-search-access",
+    "supportedModes": [
+      "frozen-reproduction",
+      "live-rerun",
+      "independent-audit"
+    ],
+    "referenceArtifacts": [
+      {
+        "name": "Evidence review and methods annex",
+        "kind": "report",
+        "access": "open",
+        "locator": "https://www.who.int/publications/i/item/9789240053052"
+      },
+      {
+        "name": "GRADE evidence profiles",
+        "kind": "certainty",
+        "access": "open",
+        "locator": "https://www.who.int/publications/i/item/9789240053052"
+      }
+    ],
+    "targetStages": [
+      "review-landscape",
+      "search-build",
+      "tiab-screen",
+      "extract",
+      "risk-of-bias",
+      "grade",
+      "report"
+    ],
+    "strengths": [
+      "Demonstrates reuse appraisal of existing reviews plus commissioned evidence work",
+      "Includes quantitative and qualitative decision support"
+    ],
+    "cautions": [
+      "Some searched databases require subscriptions",
+      "Exact reruns require frozen exports and dated search interfaces"
+    ]
+  },
+  {
+    "id": "who-wasting-guideline-silver",
+    "title": "WHO guideline on prevention and management of wasting and nutritional oedema",
+    "authority": "World Health Organization",
+    "reviewType": "mixed-methods",
+    "diseaseDomains": [
+      "child nutrition",
+      "wasting",
+      "severe acute malnutrition"
+    ],
+    "tier": "silver-review",
+    "readiness": "requires-snapshot-onboarding",
+    "publicInputClass": "open-reference-mixed-search-access",
+    "supportedModes": [
+      "frozen-reproduction",
+      "live-rerun",
+      "independent-audit"
+    ],
+    "referenceArtifacts": [
+      {
+        "name": "Guideline and systematic review web annexes",
+        "kind": "report",
+        "access": "open",
+        "locator": "https://www.who.int/publications/i/item/9789240082830"
+      },
+      {
+        "name": "GRADE and evidence-to-decision materials",
+        "kind": "certainty",
+        "access": "open",
+        "locator": "https://www.who.int/publications/i/item/9789240082830"
+      }
+    ],
+    "targetStages": [
+      "search-build",
+      "deduplicate",
+      "tiab-screen",
+      "fulltext-screen",
+      "extract",
+      "risk-of-bias",
+      "synthesise",
+      "grade",
+      "report"
+    ],
+    "strengths": [
+      "Multiple question types within one disease domain",
+      "Rich benchmark for interventions, prognosis, implementation, and guideline evidence flow"
+    ],
+    "cautions": [
+      "Must be decomposed into question-specific benchmark cases rather than scored as one monolith"
+    ]
+  },
+  {
+    "id": "who-non-sugar-sweeteners-silver",
+    "title": "WHO systematic review and meta-analysis on non-sugar sweeteners",
+    "authority": "World Health Organization",
+    "reviewType": "systematic",
+    "diseaseDomains": [
+      "nutrition",
+      "metabolic disease",
+      "noncommunicable disease"
+    ],
+    "tier": "silver-review",
+    "readiness": "requires-snapshot-onboarding",
+    "publicInputClass": "open-reference-mixed-search-access",
+    "supportedModes": [
+      "frozen-reproduction",
+      "live-rerun",
+      "independent-audit"
+    ],
+    "referenceArtifacts": [
+      {
+        "name": "Systematic review report",
+        "kind": "report",
+        "access": "open",
+        "locator": "https://www.who.int/publications/i/item/9789240046429"
+      },
+      {
+        "name": "Guideline evidence products",
+        "kind": "certainty",
+        "access": "open",
+        "locator": "https://www.who.int/publications/i/item/9789240073616"
+      }
+    ],
+    "targetStages": [
+      "search-build",
+      "tiab-screen",
+      "extract",
+      "risk-of-bias",
+      "synthesise",
+      "grade"
+    ],
+    "strengths": [
+      "Combines trial and observational evidence",
+      "Useful for testing separation of causal intervention and association streams"
+    ],
+    "cautions": [
+      "Exact review reproduction requires preserving outcome definitions, follow-up windows, and effect scales"
+    ]
+  },
+  {
+    "id": "who-tb-screening-silver",
+    "title": "WHO systematic screening for tuberculosis disease evidence base",
+    "authority": "World Health Organization",
+    "reviewType": "diagnostic-accuracy",
+    "diseaseDomains": [
+      "tuberculosis",
+      "infectious disease",
+      "screening"
+    ],
+    "tier": "silver-review",
+    "readiness": "requires-snapshot-onboarding",
+    "publicInputClass": "open-reference-mixed-search-access",
+    "supportedModes": [
+      "frozen-reproduction",
+      "live-rerun",
+      "independent-audit"
+    ],
+    "referenceArtifacts": [
+      {
+        "name": "Guideline and systematic review annexes",
+        "kind": "report",
+        "access": "open",
+        "locator": "https://www.who.int/publications/i/item/9789240022676"
+      },
+      {
+        "name": "GRADE and evidence-to-decision tables",
+        "kind": "certainty",
+        "access": "open",
+        "locator": "https://www.who.int/publications/i/item/9789240022676"
+      }
+    ],
+    "targetStages": [
+      "search-build",
+      "extract",
+      "risk-of-bias",
+      "synthesise",
+      "grade"
+    ],
+    "strengths": [
+      "Tests screening-test accuracy and downstream patient-important outcomes"
+    ],
+    "cautions": [
+      "Do not reduce diagnostic accuracy synthesis to a single pooled effect"
+    ]
+  },
+  {
+    "id": "who-tb-diagnostics-silver",
+    "title": "WHO consolidated tuberculosis diagnostic evidence reviews",
+    "authority": "World Health Organization",
+    "reviewType": "diagnostic-accuracy",
+    "diseaseDomains": [
+      "tuberculosis",
+      "infectious disease",
+      "diagnostics"
+    ],
+    "tier": "silver-review",
+    "readiness": "requires-snapshot-onboarding",
+    "publicInputClass": "open-reference-mixed-search-access",
+    "supportedModes": [
+      "frozen-reproduction",
+      "live-rerun",
+      "independent-audit"
+    ],
+    "referenceArtifacts": [
+      {
+        "name": "Diagnostic handbook and systematic review annexes",
+        "kind": "report",
+        "access": "open",
+        "locator": "https://www.who.int/publications/i/item/9789240107984"
+      }
+    ],
+    "targetStages": [
+      "search-build",
+      "extract",
+      "risk-of-bias",
+      "synthesise",
+      "grade"
+    ],
+    "strengths": [
+      "Multiple index tests, reference standards, and populations",
+      "Suitable for comparative diagnostic workflows"
+    ],
+    "cautions": [
+      "Benchmark must preserve test thresholds and paired two-by-two data"
+    ]
+  },
+  {
+    "id": "who-postpartum-haemorrhage-silver",
+    "title": "WHO postpartum haemorrhage treatment evidence reviews",
+    "authority": "World Health Organization",
+    "reviewType": "intervention",
+    "diseaseDomains": [
+      "maternal health",
+      "obstetrics",
+      "postpartum haemorrhage"
+    ],
+    "tier": "silver-review",
+    "readiness": "requires-snapshot-onboarding",
+    "publicInputClass": "open-reference-mixed-search-access",
+    "supportedModes": [
+      "frozen-reproduction",
+      "live-rerun",
+      "independent-audit"
+    ],
+    "referenceArtifacts": [
+      {
+        "name": "Guideline evidence annex",
+        "kind": "report",
+        "access": "open",
+        "locator": "https://www.who.int/publications/i/item/9789240085398"
+      },
+      {
+        "name": "Evidence-to-decision materials",
+        "kind": "certainty",
+        "access": "open",
+        "locator": "https://www.who.int/publications/i/item/9789240085398"
+      }
+    ],
+    "targetStages": [
+      "search-build",
+      "extract",
+      "risk-of-bias",
+      "synthesise",
+      "grade",
+      "report"
+    ],
+    "strengths": [
+      "High-stakes intervention evidence with explicit recommendation linkage"
+    ],
+    "cautions": [
+      "Guideline updates may supersede individual evidence packages"
+    ]
+  },
+  {
+    "id": "who-school-health-services-silver",
+    "title": "WHO school health services evidence reviews",
+    "authority": "World Health Organization",
+    "reviewType": "mixed-methods",
+    "diseaseDomains": [
+      "child and adolescent health",
+      "school health",
+      "public health"
+    ],
+    "tier": "silver-review",
+    "readiness": "requires-snapshot-onboarding",
+    "publicInputClass": "open-reference-mixed-search-access",
+    "supportedModes": [
+      "frozen-reproduction",
+      "independent-audit"
+    ],
+    "referenceArtifacts": [
+      {
+        "name": "Evidence and decision framework annexes",
+        "kind": "certainty",
+        "access": "open",
+        "locator": "https://www.who.int/publications/i/item/9789240029392"
+      }
+    ],
+    "targetStages": [
+      "extract",
+      "risk-of-bias",
+      "grade",
+      "report"
+    ],
+    "strengths": [
+      "Complex public-health interventions and contextual decision criteria"
+    ],
+    "cautions": [
+      "Intervention components and delivery contexts require structured coding"
+    ]
+  },
+  {
+    "id": "cochrane-intervention-conformance",
+    "title": "Cochrane intervention review method conformance",
+    "authority": "Cochrane",
+    "reviewType": "intervention",
+    "diseaseDomains": [
+      "multidisease"
+    ],
+    "tier": "method-conformance",
+    "readiness": "methods-only",
+    "publicInputClass": "methods-reference",
+    "supportedModes": [
+      "independent-audit"
+    ],
+    "referenceArtifacts": [
+      {
+        "name": "Cochrane Handbook for Systematic Reviews of Interventions",
+        "kind": "protocol",
+        "access": "open",
+        "locator": "https://training.cochrane.org/handbook/current"
+      }
+    ],
+    "targetStages": [
+      "protocol",
+      "search-build",
+      "risk-of-bias",
+      "synthesise",
+      "grade",
+      "report"
+    ],
+    "strengths": [
+      "Authoritative end-to-end intervention methods"
+    ],
+    "cautions": [
+      "A handbook is a conformance oracle, not a numeric reproduction dataset"
+    ]
+  },
+  {
+    "id": "cochrane-dta-conformance",
+    "title": "Cochrane diagnostic test accuracy method conformance",
+    "authority": "Cochrane",
+    "reviewType": "diagnostic-accuracy",
+    "diseaseDomains": [
+      "multidisease",
+      "diagnostics"
+    ],
+    "tier": "method-conformance",
+    "readiness": "methods-only",
+    "publicInputClass": "methods-reference",
+    "supportedModes": [
+      "independent-audit"
+    ],
+    "referenceArtifacts": [
+      {
+        "name": "Cochrane DTA Handbook",
+        "kind": "protocol",
+        "access": "open",
+        "locator": "https://methods.cochrane.org/sdt/handbook-dta-reviews"
+      }
+    ],
+    "targetStages": [
+      "protocol",
+      "extract",
+      "risk-of-bias",
+      "synthesise",
+      "grade"
+    ],
+    "strengths": [
+      "Defines paired accuracy data and hierarchical synthesis requirements"
+    ],
+    "cautions": [
+      "Requires DTA-specific statistical fixtures for executable validation"
+    ]
+  },
+  {
+    "id": "cochrane-prognosis-conformance",
+    "title": "Cochrane prognosis review method conformance",
+    "authority": "Cochrane",
+    "reviewType": "prognostic-factor",
+    "diseaseDomains": [
+      "multidisease",
+      "prognosis"
+    ],
+    "tier": "method-conformance",
+    "readiness": "methods-only",
+    "publicInputClass": "methods-reference",
+    "supportedModes": [
+      "independent-audit"
+    ],
+    "referenceArtifacts": [
+      {
+        "name": "Cochrane prognosis methods guidance",
+        "kind": "protocol",
+        "access": "open",
+        "locator": "https://methods.cochrane.org/prognosis/"
+      }
+    ],
+    "targetStages": [
+      "protocol",
+      "extract",
+      "risk-of-bias",
+      "synthesise",
+      "grade"
+    ],
+    "strengths": [
+      "Separates overall prognosis, prognostic factors, and prediction models"
+    ],
+    "cautions": [
+      "Time origin and prediction horizon must be explicit benchmark fields"
+    ]
+  },
+  {
+    "id": "cochrane-qes-conformance",
+    "title": "Cochrane-Campbell qualitative evidence synthesis conformance",
+    "authority": "Cochrane and Campbell Collaboration",
+    "reviewType": "qualitative",
+    "diseaseDomains": [
+      "multidisease",
+      "experience and implementation"
+    ],
+    "tier": "method-conformance",
+    "readiness": "methods-only",
+    "publicInputClass": "methods-reference",
+    "supportedModes": [
+      "independent-audit"
+    ],
+    "referenceArtifacts": [
+      {
+        "name": "Qualitative Evidence Synthesis Handbook",
+        "kind": "protocol",
+        "access": "open",
+        "locator": "https://training.cochrane.org/cochrane-campbell-handbook-qualitative-evidence-synthesis"
+      }
+    ],
+    "targetStages": [
+      "protocol",
+      "search-build",
+      "extract",
+      "risk-of-bias",
+      "synthesise",
+      "grade"
+    ],
+    "strengths": [
+      "Supports thematic, framework, and meta-ethnographic synthesis choices"
+    ],
+    "cautions": [
+      "Qualitative fidelity cannot be reduced to numeric field accuracy alone"
+    ]
+  },
+  {
+    "id": "jbi-scoping-conformance",
+    "title": "JBI scoping review method conformance",
+    "authority": "JBI",
+    "reviewType": "scoping",
+    "diseaseDomains": [
+      "multidisease"
+    ],
+    "tier": "method-conformance",
+    "readiness": "methods-only",
+    "publicInputClass": "methods-reference",
+    "supportedModes": [
+      "independent-audit"
+    ],
+    "referenceArtifacts": [
+      {
+        "name": "JBI Manual for Evidence Synthesis: Scoping Reviews",
+        "kind": "protocol",
+        "access": "open",
+        "locator": "https://jbi-global-wiki.refined.site/space/MANUAL"
+      }
+    ],
+    "targetStages": [
+      "protocol",
+      "search-build",
+      "extract",
+      "report"
+    ],
+    "strengths": [
+      "Clear PCC framing and charting workflow"
+    ],
+    "cautions": [
+      "Risk-of-bias and certainty stages are not automatically required"
+    ]
+  },
+  {
+    "id": "jbi-mixed-methods-conformance",
+    "title": "JBI mixed methods review conformance",
+    "authority": "JBI",
+    "reviewType": "mixed-methods",
+    "diseaseDomains": [
+      "multidisease"
+    ],
+    "tier": "method-conformance",
+    "readiness": "methods-only",
+    "publicInputClass": "methods-reference",
+    "supportedModes": [
+      "independent-audit"
+    ],
+    "referenceArtifacts": [
+      {
+        "name": "JBI Manual: Mixed Methods Systematic Reviews",
+        "kind": "protocol",
+        "access": "open",
+        "locator": "https://jbi-global-wiki.refined.site/space/MANUAL"
+      }
+    ],
+    "targetStages": [
+      "protocol",
+      "extract",
+      "risk-of-bias",
+      "synthesise",
+      "report"
+    ],
+    "strengths": [
+      "Distinguishes convergent integrated and convergent segregated approaches"
+    ],
+    "cautions": [
+      "Integration logic must be prespecified rather than inferred after results are known"
+    ]
+  },
+  {
+    "id": "jbi-umbrella-conformance",
+    "title": "JBI umbrella review conformance",
+    "authority": "JBI",
+    "reviewType": "umbrella",
+    "diseaseDomains": [
+      "multidisease"
+    ],
+    "tier": "method-conformance",
+    "readiness": "methods-only",
+    "publicInputClass": "methods-reference",
+    "supportedModes": [
+      "independent-audit"
+    ],
+    "referenceArtifacts": [
+      {
+        "name": "JBI Manual: Umbrella Reviews",
+        "kind": "protocol",
+        "access": "open",
+        "locator": "https://jbi-global-wiki.refined.site/space/MANUAL"
+      }
+    ],
+    "targetStages": [
+      "review-landscape",
+      "extract",
+      "risk-of-bias",
+      "synthesise",
+      "report"
+    ],
+    "strengths": [
+      "Review-level eligibility and overlap management"
+    ],
+    "cautions": [
+      "Primary-study overlap must be represented as a graph or corrected citation matrix"
+    ]
+  },
+  {
+    "id": "campbell-evidence-map-conformance",
+    "title": "Campbell evidence and gap map conformance",
+    "authority": "Campbell Collaboration",
+    "reviewType": "evidence-map",
+    "diseaseDomains": [
+      "social policy",
+      "international development",
+      "multidisease"
+    ],
+    "tier": "method-conformance",
+    "readiness": "methods-only",
+    "publicInputClass": "methods-reference",
+    "supportedModes": [
+      "independent-audit"
+    ],
+    "referenceArtifacts": [
+      {
+        "name": "Campbell evidence synthesis methods",
+        "kind": "protocol",
+        "access": "open",
+        "locator": "https://www.campbellcollaboration.org/research-resources/writing-a-campbell-systematic-review.html"
+      }
+    ],
+    "targetStages": [
+      "protocol",
+      "search-build",
+      "extract",
+      "report"
+    ],
+    "strengths": [
+      "Ontology-driven gap mapping and transparent protocol workflow"
+    ],
+    "cautions": [
+      "Map-cell accuracy needs a frozen coding ontology"
+    ]
+  },
+  {
+    "id": "ohat-environmental-conformance",
+    "title": "OHAT environmental health review conformance",
+    "authority": "US National Toxicology Program, Office of Health Assessment and Translation",
+    "reviewType": "environmental",
+    "diseaseDomains": [
+      "environmental health",
+      "toxicology"
+    ],
+    "tier": "method-conformance",
+    "readiness": "methods-only",
+    "publicInputClass": "methods-reference",
+    "supportedModes": [
+      "independent-audit"
+    ],
+    "referenceArtifacts": [
+      {
+        "name": "OHAT Handbook",
+        "kind": "protocol",
+        "access": "open",
+        "locator": "https://ntp.niehs.nih.gov/go/ohat-handbook"
+      }
+    ],
+    "targetStages": [
+      "protocol",
+      "extract",
+      "risk-of-bias",
+      "synthesise",
+      "grade"
+    ],
+    "strengths": [
+      "Integrates human, animal, and mechanistic evidence streams"
+    ],
+    "cautions": [
+      "Stream-specific confidence and integration rules must remain distinguishable"
+    ]
+  },
+  {
+    "id": "navigation-guide-environmental-conformance",
+    "title": "Navigation Guide environmental evidence conformance",
+    "authority": "Navigation Guide collaboration",
+    "reviewType": "environmental",
+    "diseaseDomains": [
+      "environmental health",
+      "reproductive health",
+      "toxicology"
+    ],
+    "tier": "method-conformance",
+    "readiness": "methods-only",
+    "publicInputClass": "methods-reference",
+    "supportedModes": [
+      "independent-audit"
+    ],
+    "referenceArtifacts": [
+      {
+        "name": "Navigation Guide systematic review method",
+        "kind": "protocol",
+        "access": "open",
+        "locator": "https://prhe.ucsf.edu/navigation-guide"
+      }
+    ],
+    "targetStages": [
+      "protocol",
+      "risk-of-bias",
+      "synthesise",
+      "grade"
+    ],
+    "strengths": [
+      "Structured environmental health certainty and recommendation logic"
+    ],
+    "cautions": [
+      "Benchmark rules must preserve the framework version used by the source review"
+    ]
+  },
+  {
+    "id": "syrcle-animal-conformance",
+    "title": "SYRCLE animal intervention review conformance",
+    "authority": "SYRCLE",
+    "reviewType": "animal",
+    "diseaseDomains": [
+      "preclinical",
+      "animal studies"
+    ],
+    "tier": "method-conformance",
+    "readiness": "methods-only",
+    "publicInputClass": "methods-reference",
+    "supportedModes": [
+      "independent-audit"
+    ],
+    "referenceArtifacts": [
+      {
+        "name": "SYRCLE risk-of-bias tool",
+        "kind": "risk-of-bias",
+        "access": "open",
+        "locator": "https://www.radboudumc.nl/en/research/departments/health-evidence/systematic-review-center-for-laboratory-animal-experimentation"
+      }
+    ],
+    "targetStages": [
+      "protocol",
+      "extract",
+      "risk-of-bias",
+      "synthesise"
+    ],
+    "strengths": [
+      "Animal-specific bias domains and unit-of-analysis concerns"
+    ],
+    "cautions": [
+      "ARRIVE reporting quality must not be substituted for risk-of-bias judgement"
+    ]
+  },
+  {
+    "id": "who-rapid-review-conformance",
+    "title": "WHO rapid review method conformance",
+    "authority": "World Health Organization",
+    "reviewType": "rapid",
+    "diseaseDomains": [
+      "multidisease",
+      "emergency decision support"
+    ],
+    "tier": "method-conformance",
+    "readiness": "methods-only",
+    "publicInputClass": "methods-reference",
+    "supportedModes": [
+      "independent-audit"
+    ],
+    "referenceArtifacts": [
+      {
+        "name": "WHO practical guide for rapid reviews",
+        "kind": "protocol",
+        "access": "open",
+        "locator": "https://www.who.int/publications/i/item/9789240058189"
+      }
+    ],
+    "targetStages": [
+      "protocol",
+      "search-build",
+      "tiab-screen",
+      "extract",
+      "report"
+    ],
+    "strengths": [
+      "Makes methodological shortcuts explicit and auditable"
+    ],
+    "cautions": [
+      "A rapid review benchmark must score transparency and bias impact, not speed alone"
+    ]
+  }
+]

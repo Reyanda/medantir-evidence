@@ -1,0 +1,21 @@
+{
+  "nodeId": "abc12",
+  "candidateId": "SRQ-OSF-FIXTURE",
+  "component": "extraction-truth",
+  "sourceRole": "results-code",
+  "qualificationUse": "benchmark-gold",
+  "targets": [
+    {
+      "path": "analysis/report.csv",
+      "revision": "2",
+      "expectedSha256": "8ddebf2b0a493950f2c91909bd079188f61ee49976298386627c3f3dd77a0b21",
+      "expectedByteLength": 14
+    }
+  ],
+  "capturedAt": "2026-08-10T21:30:00Z",
+  "archiveMetadata": {
+    "role": "extraction-source",
+    "accessClass": "public",
+    "legalAccessRoute": "OSF public project file"
+  }
+}

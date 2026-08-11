@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "medantir-sr-qualification-source-capture-set/1",
+  "captures": [
+    {
+      "candidateId": "SRQ-COVID-RAT-2024",
+      "component": "extraction-truth",
+      "sourceIdentities": [
+        {
+          "kind": "git-commit",
+          "repository": "skoshyc/covid_systematic_review_2023",
+          "commit": "957343bf17087f492e38cf6cb9d26b6882a146a1"
+        }
+      ],
+      "selectedPaths": [
+        "Data extraction tool.xlsx",
+        "Master File of Data extraction_New.xlsx"
+      ],
+      "sourceRole": "review-materials",
+      "qualificationUse": "benchmark-gold",
+      "capturedAt": "2026-08-10T18:30:00Z",
+      "captureMethod": "git-revision-pin"
+    },
+    {
+      "candidateId": "SRQ-COVID-RAT-2024",
+      "component": "analysis-runtime",
+      "sourceIdentities": [
+        {
+          "kind": "git-commit",
+          "repository": "skoshyc/covid_systematic_review_2023",
+          "commit": "957343bf17087f492e38cf6cb9d26b6882a146a1"
+        }
+      ],
+      "selectedPaths": [
+        "COVID_SR_NPV.R",
+        "COVID_SR_PPV.R",
+        "COVID_SR_sensitivity.R",
+        "COVID_SR_specificity.R"
+      ],
+      "sourceRole": "results-code",
+      "qualificationUse": "benchmark-gold",
+      "capturedAt": "2026-08-10T18:30:00Z",
+      "captureMethod": "git-revision-pin"
+    }
+  ]
+}

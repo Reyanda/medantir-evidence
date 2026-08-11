@@ -1,0 +1,7 @@
+{
+  "dossierHash": "REPLACE_WITH_CURRENT_DOSSIER_HASH",
+  "verdict": "approve-decision-support",
+  "rationale": "Independent frozen benchmark satisfied the prespecified policy; approve non-authoritative decision-support proposals only.",
+  "reviewerId": "REPLACE_WITH_REVIEWER_ID",
+  "decidedAt": "REPLACE_WITH_ISO_TIMESTAMP"
+}

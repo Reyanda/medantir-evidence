@@ -1,0 +1,65 @@
+{
+  "schemaVersion": "medantir-sr-source-discovery/1",
+  "candidateId": "SRQ-HAMILTON-SHARING-2023",
+  "status": "source-map-frozen-objects-pending",
+  "publication": {
+    "doi": "10.1136/bmj-2023-075767",
+    "pmid": "37433624",
+    "pmcid": "PMC10334349"
+  },
+  "osfRoles": {
+    "preregistration": {
+      "doi": "10.17605/OSF.IO/7SX8U",
+      "osfId": "7SX8U",
+      "registeredDate": "2021-05-28",
+      "role": "prospective systematic-review registration"
+    },
+    "reviewProject": {
+      "doi": "10.17605/OSF.IO/H75V4",
+      "osfId": "H75V4",
+      "role": "review materials/search/extraction project named by the peer-reviewed protocol",
+      "publishedProtocolFiles": [
+        "Appendix-1.1_Search-Strategies-MedEmbMeta_v1.0.pdf",
+        "Appendix-1.2_Search-Strategies-MedBioRxiv_v1.0.R",
+        "Appendix-2_Data-Extraction-Fields_v1.0.pdf"
+      ]
+    },
+    "resultsAndCodeDeposit": {
+      "doi": "10.17605/OSF.IO/U3YRP",
+      "osfId": "U3YRP",
+      "role": "summary-level data and code declared by the final BMJ article as sufficient to reproduce all review findings"
+    },
+    "publishedTableData": {
+      "osfId": "CA89E",
+      "role": "underlying data for the final article's included-study characteristics table"
+    },
+    "restrictedIpdRequestPortal": {
+      "osfId": "STNK3",
+      "role": "request route for privately shared harmonised IPD",
+      "benchmarkGoldEligible": false,
+      "reason": "Private or permission-gated IPD is not required for the public reproducibility benchmark and must not be silently treated as public gold."
+    }
+  },
+  "publishedRuntime": {
+    "r": "4.2.1",
+    "packages": {
+      "meta": "5.5",
+      "metafor": "3.8",
+      "altmeta": "4.1",
+      "robvis": null
+    },
+    "python": "3.10.7",
+    "pythonPackages": {
+      "dimcli": "0.9.9.1"
+    }
+  },
+  "qualificationPlan": {
+    "immutableObjectsResolved": false,
+    "nextRequiredEvidence": [
+      "Resolve public OSF file IDs and revisions for H75V4 and U3YRP.",
+      "Hash the exact file bytes into HOBJ identities or another immutable archival capture.",
+      "Reproduce search, extraction and analysis artifacts independently before minting qualification receipts.",
+      "Keep the preregistration, review-project and results-deposit identities distinct in all receipts."
+    ]
+  }
+}

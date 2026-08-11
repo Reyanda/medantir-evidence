@@ -1,0 +1,39 @@
+{
+  "name": "medantir-evidence",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "oxlint",
+    "preview": "vite preview",
+    "test": "npm --prefix medantir-review test"
+  },
+  "dependencies": {
+    "@huggingface/transformers": "^4.2.0",
+    "@lobehub/icons": "^5.15.0",
+    "@mlc-ai/web-llm": "^0.2.84",
+    "@monaco-editor/react": "^4.7.0",
+    "docx": "^9.7.1",
+    "echarts": "^6.1.0",
+    "echarts-for-react": "^3.0.6",
+    "lucide-react": "^1.29.0",
+    "mammoth": "^1.12.0",
+    "markdown-it": "^15.0.0",
+    "pdfjs-dist": "^6.2.108",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.5",
+    "autoprefixer": "^10.5.4",
+    "oxlint": "^1.77.0",
+    "postcss": "^8.5.25",
+    "tailwindcss": "^3.4.15",
+    "terser": "^5.49.0",
+    "vite": "^8.1.1"
+  }
+}

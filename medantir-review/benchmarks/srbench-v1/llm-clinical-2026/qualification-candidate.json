@@ -1,0 +1,141 @@
+{
+  "candidateId": "SRQ-LLM-CLINICAL-2026",
+  "title": "LLM-assisted systematic review of large language models in clinical medicine",
+  "domain": "clinical-ai-meta-research",
+  "methodologicalClass": "llm-assisted-systematic-review",
+  "publication": {
+    "doi": "10.1038/s41591-026-04229-5",
+    "pmid": "41776077",
+    "pmcid": "PMC13004689",
+    "year": 2026
+  },
+  "repositories": [
+    "GitHub nyuolab/llms-in-clinical-medicine-systematic-review@69597fdd1dd2cd45417446997af5af671853e2ec",
+    "Zenodo DOI 10.5281/zenodo.17393576"
+  ],
+  "assets": {
+    "protocol": {
+      "status": "missing",
+      "basis": "not-available",
+      "notes": [
+        "The version-of-record explicitly states that the review was not prospectively registered and that a protocol was not prepared. This historical absence must not be backfilled retrospectively."
+      ]
+    },
+    "search-strategy": {
+      "status": "available-unfrozen",
+      "basis": "original-artifact",
+      "references": [
+        "Nature Medicine Methods: PubMed, Embase and Scopus; 2022-01-01 through 2025-09-06; LLM/model-name terms and original-research restrictions",
+        "GitHub screening.ipynb at pinned commit"
+      ],
+      "notes": [
+        "Database search semantics are documented, but complete database-native query strings still require source-level verification before this component can be frozen-verified."
+      ]
+    },
+    "search-corpus": {
+      "status": "frozen-unverified",
+      "basis": "original-artifact",
+      "references": [
+        "GitHub commit 69597fdd1dd2cd45417446997af5af671853e2ec",
+        "embase-export-9-6-25.csv blob 8cfa4900ec4f229729108e559261bb2f99f91e1a",
+        "pubmed-export-9-6-25.csv blob fa2e5e3a3ef6c52811e36c5dc9f2c44fafdafa13",
+        "scopus-export-9-6-25.csv blob c76efffe8c6052880345073f8bfcfac6c16e76eb"
+      ],
+      "notes": [
+        "The publication reports 23,614 raw records. Immutable Git identities are captured, but row-count/content verification against the publication remains required."
+      ]
+    },
+    "dedup-truth": {
+      "status": "frozen-unverified",
+      "basis": "original-artifact",
+      "references": [
+        "deduped_and_processed_studies.jsonl blob 06d0bc61f274052df218e1bad62f9cb0ffe6b600",
+        "GitHub screening.ipynb at pinned commit"
+      ],
+      "notes": [
+        "The publication reports 12,894 unique studies after title/DOI deduplication. The committed deduplicated corpus is immutable but has not yet been independently reconciled row-for-row to all three raw exports."
+      ]
+    },
+    "tiab-truth": {
+      "status": "available-unfrozen",
+      "basis": "original-artifact",
+      "references": [
+        "Human Screening and Tiering Data/Nature Medicine LLM Systematic Review - Screener Group 1.csv blob daaa8b1d274fd1cd3df9da22a9bec27d318bbf08",
+        "Human Screening and Tiering Data/Nature Medicine LLM Systematic Review - Screener Group 2.csv blob 7b07436c32aa96685035e18998570c0ecf315939",
+        "Human Screening and Tiering Data/Nature Medicine LLM Systematic Review - Tiebreaks.csv blob d18c9a588ed5df2fec607a663cf09cb8159bb401"
+      ],
+      "notes": [
+        "These are genuine independent human screening ledgers for the 500-record validation sample, including adjudication. They are not full-corpus human screening truth for all 12,894 records and therefore cannot certify the complete TIAB plane."
+      ]
+    },
+    "fulltext-truth": {
+      "status": "missing",
+      "basis": "not-available",
+      "notes": [
+        "No separate classical full-text eligibility ledger has yet been identified. Do not infer a full-text stage from the LLM abstract-screening workflow."
+      ]
+    },
+    "included-report-corpus": {
+      "status": "available-unfrozen",
+      "basis": "source-reconstructed",
+      "references": [
+        "Batch Responses/GPT-5r-high-screening-output.jsonl blob 3615a3a309e26b0c2e314e461b2b4a880b05e946",
+        "Nature Medicine reported 4,609 included studies"
+      ],
+      "notes": [
+        "The frozen GPT-5 response artifact exists, but notebook-named generated request/processed derivative files were not found at their root paths in the pinned commit. Reconstruct before treating the included-report corpus as complete."
+      ]
+    },
+    "extraction-truth": {
+      "status": "available-unfrozen",
+      "basis": "source-reconstructed",
+      "references": [
+        "GitHub screening.ipynb and analysis-and-figures.ipynb at pinned commit",
+        "Frozen batch-response artifacts in repository"
+      ],
+      "notes": [
+        "LLM-extracted fields and downstream analysis artifacts are public, but a canonical row-level extraction ledger has not yet been independently mapped and verified."
+      ]
+    },
+    "appraisal-truth": {
+      "status": "missing",
+      "basis": "not-available",
+      "notes": [
+        "The review uses an evidence-tier framework, but no classical study-level risk-of-bias appraisal truth set has yet been identified. Evidence tiering must not be relabeled as risk-of-bias appraisal."
+      ]
+    },
+    "analysis-runtime": {
+      "status": "frozen-unverified",
+      "basis": "original-artifact",
+      "references": [
+        "GitHub commit 69597fdd1dd2cd45417446997af5af671853e2ec",
+        "analysis-and-figures.ipynb blob 563be676fc62a3e8c2ad1c0e108bfb61192dad63",
+        "screening.ipynb at pinned commit"
+      ],
+      "notes": [
+        "Runtime preflight is intentionally blocked because the publication reports Python 3.12.7 while the final notebook metadata is 3.12.12, the final commit changed statistical corrections to match the paper, and imported dependency versions are not completely pinned."
+      ]
+    },
+    "synthesis-targets": {
+      "status": "available-unfrozen",
+      "basis": "original-artifact",
+      "references": [
+        "Nature Medicine version of record",
+        "analysis-and-figures.ipynb at pinned commit"
+      ]
+    },
+    "report-source": {
+      "status": "available-unfrozen",
+      "basis": "original-artifact",
+      "references": [
+        "Nature Medicine DOI 10.1038/s41591-026-04229-5",
+        "PMCID PMC13004689"
+      ]
+    }
+  },
+  "notes": [
+    "High-value real-world benchmark for model-assisted screening, human-ground-truth calibration and extraction/tiering reproducibility.",
+    "Deliberately non-promotable under classical full-pipeline SR100 because the historical review had no prospective registration/protocol and currently lacks complete full-text/appraisal truth planes.",
+    "A model may achieve exact scores on available tasks without this candidate ever being counted as a complete promotion review."
+  ]
+}

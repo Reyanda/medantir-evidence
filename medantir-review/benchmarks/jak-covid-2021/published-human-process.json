@@ -1,0 +1,26 @@
+{
+  "screening": {
+    "reviewId": "PMC8500309",
+    "decisions": [],
+    "aggregates": [
+      {
+        "stage": "title-abstract",
+        "included": 65,
+        "excluded": 1567,
+        "sourceReference": "PMC8500309 Results 3.1 and Figure 1"
+      },
+      {
+        "stage": "full-text",
+        "included": 14,
+        "excluded": 51,
+        "sourceReference": "PMC8500309 Results 3.1 and Figure 1"
+      }
+    ]
+  },
+  "manualSearch": {
+    "reviewId": "PMC8500309",
+    "reportedAsPerformed": true,
+    "actions": [],
+    "missingReason": "The publication reports searching reference lists of eligible studies but does not publish an itemized seed/candidate/decision ledger for that manual search."
+  }
+}

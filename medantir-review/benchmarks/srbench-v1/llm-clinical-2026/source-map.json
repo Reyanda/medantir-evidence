@@ -1,0 +1,116 @@
+{
+  "schemaVersion": "medantir-srbench-source-map/1",
+  "candidateId": "SRQ-LLM-CLINICAL-2026",
+  "sourceRepository": "nyuolab/llms-in-clinical-medicine-systematic-review",
+  "sourceCommit": "69597fdd1dd2cd45417446997af5af671853e2ec",
+  "publication": {
+    "doi": "10.1038/s41591-026-04229-5",
+    "pmid": "41776077",
+    "pmcid": "PMC13004689",
+    "zenodo": "10.5281/zenodo.17393576"
+  },
+  "historicalAbsences": {
+    "prospectiveRegistration": true,
+    "protocolPrepared": false,
+    "classicalFulltextTruthLocated": false,
+    "classicalRiskOfBiasTruthLocated": false
+  },
+  "artifacts": [
+    {
+      "path": "embase-export-9-6-25.csv",
+      "gitBlobSha": "8cfa4900ec4f229729108e559261bb2f99f91e1a",
+      "components": ["search-corpus"],
+      "role": "raw-database-export",
+      "status": "pinned-unverified"
+    },
+    {
+      "path": "pubmed-export-9-6-25.csv",
+      "gitBlobSha": "fa2e5e3a3ef6c52811e36c5dc9f2c44fafdafa13",
+      "components": ["search-corpus"],
+      "role": "raw-database-export",
+      "status": "pinned-unverified"
+    },
+    {
+      "path": "scopus-export-9-6-25.csv",
+      "gitBlobSha": "c76efffe8c6052880345073f8bfcfac6c16e76eb",
+      "components": ["search-corpus"],
+      "role": "raw-database-export",
+      "status": "pinned-unverified"
+    },
+    {
+      "path": "deduped_and_processed_studies.jsonl",
+      "gitBlobSha": "06d0bc61f274052df218e1bad62f9cb0ffe6b600",
+      "components": ["dedup-truth"],
+      "role": "deduplicated-corpus",
+      "status": "pinned-unverified"
+    },
+    {
+      "path": "Prompts/screening_instructions.txt",
+      "gitBlobSha": "0f56006f2b019e6d7531866805d7e6fc5e801c30",
+      "components": ["tiab-truth", "included-report-corpus"],
+      "role": "screening-prompt",
+      "status": "pinned-unverified"
+    },
+    {
+      "path": "Human Screening and Tiering Data/Nature Medicine LLM Systematic Review - Screener Group 1.csv",
+      "gitBlobSha": "daaa8b1d274fd1cd3df9da22a9bec27d318bbf08",
+      "components": ["tiab-truth"],
+      "role": "independent-human-screening-validation",
+      "scope": "500-record validation sample; group 1",
+      "status": "pinned-unverified"
+    },
+    {
+      "path": "Human Screening and Tiering Data/Nature Medicine LLM Systematic Review - Screener Group 2.csv",
+      "gitBlobSha": "7b07436c32aa96685035e18998570c0ecf315939",
+      "components": ["tiab-truth"],
+      "role": "independent-human-screening-validation",
+      "scope": "500-record validation sample; group 2",
+      "status": "pinned-unverified"
+    },
+    {
+      "path": "Human Screening and Tiering Data/Nature Medicine LLM Systematic Review - Tiebreaks.csv",
+      "gitBlobSha": "d18c9a588ed5df2fec607a663cf09cb8159bb401",
+      "components": ["tiab-truth"],
+      "role": "human-screening-adjudication",
+      "scope": "discordant validation records only",
+      "status": "pinned-unverified"
+    },
+    {
+      "path": "Batch Responses/GPT-5r-high-screening-output.jsonl",
+      "gitBlobSha": "3615a3a309e26b0c2e314e461b2b4a880b05e946",
+      "components": ["included-report-corpus", "extraction-truth"],
+      "role": "frozen-model-response",
+      "status": "pinned-unverified"
+    },
+    {
+      "path": "screening.ipynb",
+      "gitBlobSha": "80f321054b2dbbb66e1d6aa56acf79faa4ef00d6",
+      "components": ["search-strategy", "dedup-truth", "tiab-truth", "included-report-corpus", "extraction-truth", "analysis-runtime"],
+      "role": "pipeline-code",
+      "status": "pinned-unverified"
+    },
+    {
+      "path": "analysis-and-figures.ipynb",
+      "gitBlobSha": "563be676fc62a3e8c2ad1c0e108bfb61192dad63",
+      "components": ["analysis-runtime", "synthesis-targets"],
+      "role": "analysis-code",
+      "status": "pinned-unverified"
+    }
+  ],
+  "missingNamedArtifacts": [
+    {
+      "path": "embase_pubmed_scopus_batch-GPT-5r-high.jsonl",
+      "reason": "screening.ipynb creates and reopens this file, but it was not found as a committed root artifact at the pinned commit"
+    },
+    {
+      "path": "deduped_and_processed_studies-GPT-5r-high.jsonl",
+      "reason": "not found at the notebook-named root path in the pinned commit; reconstructability must be demonstrated before treating it as historical original artifact"
+    }
+  ],
+  "identityPolicy": {
+    "gitCommitIsImmutableSourceIdentity": true,
+    "gitBlobShaIsFineGrainedGitIdentity": true,
+    "gitBlobShaIsNotSha256Hobj": true,
+    "verificationRequiredBeforeGold": true
+  }
+}

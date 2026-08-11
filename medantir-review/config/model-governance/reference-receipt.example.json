@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "medantir-model-governance/1",
+  "task": "tiab-screening",
+  "evidenceSetHash": "REPLACE_WITH_BENCHMARK_CONTEXT_HASH_FIELD",
+  "authoritativeDecisionHash": "REPLACE_WITH_BENCHMARK_CONTEXT_HASH_FIELD",
+  "sampleDefinitionHash": "REPLACE_WITH_BENCHMARK_CONTEXT_HASH_FIELD",
+  "promptVersion": "tiab-shadow-v1",
+  "independentlyVerified": true,
+  "basis": "dual-human-adjudicated",
+  "verificationReceiptId": "reference-verification-001",
+  "verifierId": "REPLACE_WITH_REVIEWER_ID",
+  "verifiedAt": "REPLACE_WITH_ISO_TIMESTAMP"
+}
