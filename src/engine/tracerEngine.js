@@ -8,7 +8,21 @@
 
 const BASE_KEY = "medantir.tracer.baseUrl.v1";
 export const DEFAULT_TRACER_URL = "http://127.0.0.1:7999";
-export const TRACER_START_COMMAND = "cd ~/Documents/Tracer && PYTHONPATH=src .venv/bin/python -m tracer.api";
+
+// Where the service lives is the operator's business, not this file's. An
+// earlier version hardcoded a path that has since moved, which is exactly the
+// failure mode a hardcoded command invites: the workbench states what it needs
+// (an endpoint speaking the Tracer API) and remembers whatever command the
+// operator tells it starts one.
+const START_KEY = "medantir.tracer.startCommand.v1";
+
+export function tracerStartCommand() {
+  try { return localStorage.getItem(START_KEY) || ""; } catch { return ""; }
+}
+
+export function setTracerStartCommand(command) {
+  try { localStorage.setItem(START_KEY, String(command || "")); } catch { /* storage disabled */ }
+}
 
 export function tracerBaseUrl() {
   try { return localStorage.getItem(BASE_KEY) || DEFAULT_TRACER_URL; } catch { return DEFAULT_TRACER_URL; }
@@ -45,7 +59,7 @@ async function call(path, { method = "GET", body, timeoutMs = 180_000 } = {}) {
       offline: !aborted,
       error: aborted
         ? "Tracer did not answer in time."
-        : `Tracer is not reachable at ${tracerBaseUrl()}. Start it with: ${TRACER_START_COMMAND}`,
+        : `Tracer is not reachable at ${tracerBaseUrl()}.${tracerStartCommand() ? ` Recorded start command: ${tracerStartCommand()}` : " No start command recorded — set the endpoint and, if you want, the command that starts it."}`,
     };
   } finally {
     clearTimeout(timer);

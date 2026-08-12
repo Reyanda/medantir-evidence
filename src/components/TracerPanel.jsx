@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import {
   tracerHealth, tracerAnalyze, tracerConvert, tracerBaseUrl, setTracerBaseUrl,
-  OUTPUT_MODES, TRACER_START_COMMAND,
+  OUTPUT_MODES, tracerStartCommand, setTracerStartCommand,
 } from "../engine/tracerEngine.js";
 import { putFile, activeProject } from "../engine/projectstore.js";
 
@@ -86,7 +86,14 @@ export default function TracerPanel({ projectId = null }) {
         </div>
         {!health?.ok && (
           <div style={{ padding: "4px 8px", fontSize: 10.5, color: "var(--fg-faint)", userSelect: "text", lineHeight: 1.6 }}>
-            <div style={{ fontFamily: "var(--mono)" }}>{TRACER_START_COMMAND}</div>
+            <div className="wb-prop" style={{ padding: 0 }}>
+              <span className="k">Start command</span>
+              <input
+                className="wb-input" defaultValue={tracerStartCommand()}
+                placeholder="however you start it on this machine"
+                onBlur={(e) => setTracerStartCommand(e.target.value)}
+              />
+            </div>
             <div style={{ marginTop: 4 }}>
               Tracer accepts requests from http://localhost:5173 only. Serve the workbench there,
               or add this origin to the CORS list in Tracer&apos;s api.py.

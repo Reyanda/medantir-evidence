@@ -10,7 +10,7 @@ import {
 import {
   saveInstitutionalCredentials, forgetInstitutionalCredentials, storedCredentialProviders,
 } from "../engine/institutionalAccess.js";
-import { tracerBaseUrl, setTracerBaseUrl, tracerHealth, TRACER_START_COMMAND } from "../engine/tracerEngine.js";
+import { tracerBaseUrl, setTracerBaseUrl, tracerHealth, tracerStartCommand, setTracerStartCommand } from "../engine/tracerEngine.js";
 import {
   DATA_SOURCES, PLATFORMS, loadDataSources, setDataSource, sourceEnabled, platformEnabled,
   setPlatform, loadCustomSources, addCustomSource, removeCustomSource, setCustomSourceEnabled,
@@ -466,7 +466,14 @@ function Services() {
         <span className="k">State</span>
         <span className="v mono" style={{ color: health?.ok ? "var(--ok)" : "var(--err)" }}>{health?.ok ? "reachable" : "unreachable"}</span>
       </div>
-      <div className="wb-prop"><span className="k">Start with</span><span className="v mono" style={{ userSelect: "text" }}>{TRACER_START_COMMAND}</span></div>
+      <div className="wb-prop">
+        <span className="k">Start command</span>
+        <input
+          className="wb-input" defaultValue={tracerStartCommand()}
+          placeholder="however you start it on this machine — recorded, never assumed"
+          onBlur={(e) => setTracerStartCommand(e.target.value)}
+        />
+      </div>
       <div style={{ padding: "4px 8px" }}><button className="wb-btn" onClick={check}>Re-check</button></div>
     </div>
   );

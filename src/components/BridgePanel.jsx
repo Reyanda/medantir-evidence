@@ -5,7 +5,7 @@ import {
 } from "../engine/folderSource.js";
 import { getProject, updateProject, putFile } from "../engine/projectstore.js";
 import { PROVIDERS, providerStatus, setProviderConfig, testProvider } from "../engine/providers.js";
-import { tracerBaseUrl, setTracerBaseUrl, tracerHealth, TRACER_START_COMMAND } from "../engine/tracerEngine.js";
+import { tracerBaseUrl, setTracerBaseUrl, tracerHealth, tracerStartCommand, setTracerStartCommand } from "../engine/tracerEngine.js";
 
 // The bridge: where the operator attaches their own machine to the workbench.
 // Two things can be attached — the working folder the review's documents live
@@ -197,7 +197,16 @@ export default function BridgePanel({ projectId, onNote }) {
           <span className="k">State</span>
           <span className="v mono" style={{ color: tracer.ok ? "var(--ok)" : "var(--err)" }}>{tracer.ok ? "reachable" : "unreachable"}</span>
         </div>
-        {!tracer.ok && <div style={{ padding: "2px 8px", fontFamily: "var(--mono)", fontSize: 10.5, color: "var(--fg-faint)", userSelect: "text" }}>{TRACER_START_COMMAND}</div>}
+        {!tracer.ok && (
+          <div className="wb-prop">
+            <span className="k">Start command</span>
+            <input
+              className="wb-input" defaultValue={tracerStartCommand()}
+              placeholder="however you start it on this machine"
+              onBlur={(e) => setTracerStartCommand(e.target.value)}
+            />
+          </div>
+        )}
         <div className="wb-prop">
           <span className="k">In-browser</span>
           <span className="v">always available — no network, minutes per stage, model cached after first use</span>
