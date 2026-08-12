@@ -30,6 +30,8 @@ import SettingsPanel from "./SettingsPanel.jsx";
 import BrowserTab from "./BrowserTab.jsx";
 import ReaderPanel from "./ReaderPanel.jsx";
 import TracerPanel from "./TracerPanel.jsx";
+import CommandDock from "./CommandDock.jsx";
+import QuestionBuilder from "./QuestionBuilder.jsx";
 import "../styles/workbench.css";
 
 // The LLM-backed stages of the review pipeline. The studio exposes their route
@@ -42,6 +44,7 @@ const LLM_TASKS = [
 ];
 
 const MODULES = [
+  { label: "Question", view: "Question", tab: "QUESTION" },
   { label: "Overview", view: "Overview", tab: "BUILD" },
   { label: "Protocols", view: "Protocols", tab: "BUILD" },
   { label: "Search", view: "Search", tab: "ANALYZE" },
@@ -58,11 +61,13 @@ const MODULES = [
 ];
 
 // Modules that already speak the workbench language and own their whole pane.
-const NATIVE_VIEWS = ["Reader", "Tracer", "Browser", "Settings"];
+const NATIVE_VIEWS = ["Question", "Reader", "Tracer", "Browser", "Settings"];
 
+// The question comes before the build: it is what everything downstream compiles
+// from, so it leads the mode bar.
 const MODES = [
-  ["BUILD", "Protocols"], ["ANALYZE", "Search"], ["SYNTHESIZE", "Synthesis"],
-  ["VISUALIZE", "Figures"], ["PUBLISH", "Reports"],
+  ["QUESTION", "Question"], ["BUILD", "Protocols"], ["ANALYZE", "Search"],
+  ["SYNTHESIZE", "Synthesis"], ["VISUALIZE", "Figures"], ["PUBLISH", "Reports"],
 ];
 
 export default function ForestPlotStudio({
@@ -95,10 +100,14 @@ export default function ForestPlotStudio({
   const [tableTab, setTableTab] = useState("DATA");
   const [showKeys, setShowKeys] = useState(false);
   const [settingsTab, setSettingsTab] = useState("Providers");
+  // Handed to the Search Strategy builder when the question tab builds a strategy,
+  // so the strategy surface opens already carrying it.
+  const [strategyQuestion, setStrategyQuestion] = useState("");
   // Docks are furniture: same place every time, resizable by their gutter,
   // collapsible to reclaim width. Nothing slides in, nothing floats.
   const [leftDock, setLeftDock] = useState({ open: true, width: 270 });
   const [rightDock, setRightDock] = useState({ open: true, width: 300 });
+  const [bottomDock, setBottomDock] = useState({ open: true, height: 210 });
   const dragging = useRef(null);
   const [layers, setLayers] = useState({ studies: true, summary: true, axis: true, nullLine: true });
 
@@ -168,7 +177,8 @@ export default function ForestPlotStudio({
     const move = (e) => {
       if (!dragging.current) return;
       if (dragging.current === "left") setLeftDock((d) => ({ ...d, width: Math.max(200, Math.min(480, e.clientX)) }));
-      else setRightDock((d) => ({ ...d, width: Math.max(220, Math.min(560, window.innerWidth - e.clientX)) }));
+      else if (dragging.current === "right") setRightDock((d) => ({ ...d, width: Math.max(220, Math.min(560, window.innerWidth - e.clientX)) }));
+      else setBottomDock((d) => ({ ...d, height: Math.max(90, Math.min(window.innerHeight - 220, window.innerHeight - e.clientY - 20)) }));
     };
     const up = () => { dragging.current = null; document.body.style.cursor = ""; };
     window.addEventListener("mousemove", move);
@@ -187,6 +197,7 @@ export default function ForestPlotStudio({
 
       if ((e.metaKey || e.ctrlKey) && e.key === "1") { e.preventDefault(); setLeftDock((d) => ({ ...d, open: !d.open })); return; }
       if ((e.metaKey || e.ctrlKey) && e.key === "2") { e.preventDefault(); setRightDock((d) => ({ ...d, open: !d.open })); return; }
+      if ((e.metaKey || e.ctrlKey) && e.key === "3") { e.preventDefault(); setBottomDock((d) => ({ ...d, open: !d.open })); return; }
       if (e.metaKey || e.ctrlKey || e.altKey) return;
 
       const advance = () => { const next = rows[Math.min(rows.length - 1, idx + 1)]; if (next) setSelectedRowId(next.studyId); };
@@ -363,8 +374,10 @@ export default function ForestPlotStudio({
           </span>
         ))}
         <span className="wb-spacer" />
-        <span className="wb-env">
-          {project ? `${project.name} · review.json` : "no project"} · {overall.done}/{overall.total} stages
+        <span className="wb-env" title={review?.question || ""}>
+          {project ? project.name : "no project"}
+          {review?.question ? ` · ${review.question.slice(0, 78)}${review.question.length > 78 ? "…" : ""}` : ""}
+          {" · "}{overall.done}/{overall.total} stages
         </span>
       </div>
 
@@ -426,6 +439,7 @@ export default function ForestPlotStudio({
         <div className="wb-tb-group">
           <button className={`wb-btn ${leftDock.open ? "on" : ""}`} onClick={() => setLeftDock((d) => ({ ...d, open: !d.open }))} title="Toggle left dock (Cmd-1)">Left</button>
           <button className={`wb-btn ${rightDock.open ? "on" : ""}`} onClick={() => setRightDock((d) => ({ ...d, open: !d.open }))} title="Toggle right dock (Cmd-2)">Right</button>
+          <button className={`wb-btn ${bottomDock.open ? "on" : ""}`} onClick={() => setBottomDock((d) => ({ ...d, open: !d.open }))} title="Toggle question and composer dock (Cmd-3)">Dock</button>
           <button className={`wb-btn ${showKeys ? "on" : ""}`} onClick={() => setShowKeys((v) => !v)} title="Keyboard map (?)">Keys</button>
         </div>
       </div>
@@ -546,6 +560,15 @@ export default function ForestPlotStudio({
                 )}
               </div>
               <div className={`wb-panel-body ${activeView === "Browser" ? "wb-embed" : ""}`}>
+                {activeView === "Question" && (
+                  <QuestionBuilder
+                    projectId={pid}
+                    review={review}
+                    onReviewChange={(r) => { setReview(r); setDataset(readDataset(r)); }}
+                    onNote={note}
+                    onOpenStrategy={(q) => { setStrategyQuestion(q); setActiveView("Protocols"); setActiveTab("BUILD"); }}
+                  />
+                )}
                 {activeView === "Reader" && <ReaderPanel projectId={pid} />}
                 {activeView === "Tracer" && <TracerPanel projectId={pid} />}
                 {activeView === "Browser" && <BrowserTab />}
@@ -556,7 +579,7 @@ export default function ForestPlotStudio({
             <>
               <div className="wb-panel-head"><span className="title">{activeView}</span></div>
               <div className="wb-panel-body wb-embed" style={{ padding: 8 }}>
-                {activeView === "Protocols" && <SearchStrategyBuilder />}
+                {activeView === "Protocols" && <SearchStrategyBuilder initialQuestion={strategyQuestion || review?.question || ""} />}
                 {activeView === "Search" && <SearchView />}
                 {(activeView === "Screening" || activeView === "Extraction" || activeView === "Synthesis") && <ReviewTab embedded />}
                 {activeView === "Evidence Map" && <ResearchLoopView />}
@@ -582,6 +605,10 @@ export default function ForestPlotStudio({
                     <textarea className="wb-textarea" rows={3} value={newQuestion} onChange={(e) => setNewQuestion(e.target.value)} placeholder="PICO is extracted from this at the protocol stage" style={{ width: "100%" }} />
                   </div>
                   <button className="wb-btn on" style={{ marginTop: 8 }} onClick={createReviewProject}>Create review project</button>
+                  <div style={{ marginTop: 8, fontSize: 11, color: "var(--fg-faint)" }}>
+                    Then open the Question tab: the PRISM decomposition written there is what the
+                    search strategy and the pipeline compile from.
+                  </div>
                 </div>
               </div>
             </>
@@ -971,6 +998,26 @@ export default function ForestPlotStudio({
         )}
       </div>
 
+      {/* COMMAND DOCK: the question and the conversation, always in the same place */}
+      {bottomDock.open && (
+        <>
+          <div
+            className="wb-dock-gutter"
+            onMouseDown={() => { dragging.current = "bottom"; document.body.style.cursor = "row-resize"; }}
+            onDoubleClick={() => setBottomDock((d) => ({ ...d, open: false }))}
+            title="Drag to resize, double-click to collapse (Cmd-3)"
+          />
+          <CommandDock
+            projectId={pid}
+            review={review}
+            onReviewChange={(r) => { setReview(r); setDataset(readDataset(r)); }}
+            onNote={note}
+            onOpenQuestion={() => { setActiveView("Question"); setActiveTab("QUESTION"); }}
+            height={bottomDock.height}
+          />
+        </>
+      )}
+
       {/* STATUS BAR */}
       <div className="wb-statusbar">
         {running ? (
@@ -994,13 +1041,15 @@ export default function ForestPlotStudio({
           <span className="sb warn">no pooled estimate</span>
         )}
         <span className="sb">{llmRoute} route</span>
+        <span className="sb" onClick={() => setBottomDock((d) => ({ ...d, open: !d.open }))}>dock</span>
         <span className="sb" onClick={() => setShowKeys((v) => !v)}>? keys</span>
       </div>
 
       {showKeys && (
         <div className="wb-kbd-hint" onClick={() => setShowKeys(false)}>
           <b>J</b> / <b>K</b> move selection &nbsp; <b>I</b> include &nbsp; <b>E</b> exclude &nbsp; <b>M</b> maybe (all auto-advance)<br />
-          <b>Cmd-1</b> left dock &nbsp; <b>Cmd-2</b> right dock &nbsp; <b>?</b> this map &nbsp; <b>Esc</b> close
+          <b>Cmd-1</b> left dock &nbsp; <b>Cmd-2</b> right dock &nbsp; <b>Cmd-3</b> command dock &nbsp; <b>/</b> composer<br />
+          <b>?</b> this map &nbsp; <b>Esc</b> close
         </div>
       )}
     </div>

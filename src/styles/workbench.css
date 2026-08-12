@@ -38,7 +38,7 @@
 
   height: 100vh;
   display: grid;
-  grid-template-rows: 22px 30px 1fr 20px;
+  grid-template-rows: 22px 30px minmax(0, 1fr) auto auto 20px;
   overflow: hidden;
   background: var(--bg-app);
   color: var(--fg);
@@ -234,14 +234,106 @@
 .wb ::-webkit-scrollbar-corner { background: var(--bg-panel); }
 
 /* --- embedded legacy views ------------------------------------------------
-   The pipeline modules predate this design layer. Rather than leave them
-   floating cards inside a docked tool, this scope strips their elevation,
-   rounds and oversized padding so they read as panel content. It is a
-   normaliser, not a rewrite — each view still owns its own markup. */
-.wb-embed { color: var(--fg); font-size: 12px; }
-.wb-embed * { box-shadow: none !important; }
+   The pipeline modules predate this design layer: tinted cards, brand-coloured
+   panels, 12-24px radii, light/dark design-system tokens. Rewriting six large
+   views is a separate job, so this scope forces them onto the workbench palette
+   instead. Two levers: the design-system custom properties are redefined here,
+   and the Tailwind colour utilities they hardcode are overridden by attribute
+   match. Semantic colour (green include, red exclude, amber warning) is left
+   alone — it carries meaning. Brand tints are not. */
+.wb-embed {
+  color: var(--fg);
+  font-size: 12px;
+
+  /* design-system tokens, re-pointed at the workbench palette */
+  --color-bg-canvas: var(--bg-panel);
+  --color-bg-surface: var(--bg-panel);
+  --color-bg-elevated: var(--bg-panel-2);
+  --color-text-primary: var(--fg-bright);
+  --color-text-secondary: var(--fg-dim);
+  --color-border-subtle: var(--line);
+  --color-brand-primary: var(--accent);
+  --color-brand-secondary: var(--fg-dim);
+  --accent-rgb: 78 161 255;
+  --shape-surface-radius: 2px;
+  --shape-control-radius: 2px;
+  --shape-input-radius: 2px;
+  --surface-opacity: 100%;
+  --surface-blur: 0px;
+  --surface-shadow: none;
+  --surface-optics-opacity: 0;
+  --ambient-opacity: 0;
+}
+
+/* no elevation, no glass, no oversized corners */
+.wb-embed *,
+.wb-embed *::before,
+.wb-embed *::after {
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  text-shadow: none !important;
+}
 .wb-embed [class*="rounded"] { border-radius: 2px !important; }
-.wb-embed [class*="bg-white"], .wb-embed [class*="bg-slate-9"], .wb-embed [class*="bg-slate-8"] { background-color: var(--bg-panel) !important; }
-.wb-embed [class*="border-slate"], .wb-embed [class*="border-white"] { border-color: var(--line) !important; }
-.wb-embed h1, .wb-embed h2, .wb-embed h3 { font-size: 12px !important; font-weight: 600; color: var(--fg-bright); }
-.wb-embed button { border-radius: 2px !important; }
+.wb-embed [class*="rounded-full"] { border-radius: 999px !important; }
+
+/* surfaces: every card, tint and gradient collapses onto two panel greys */
+.wb-embed [class*="bg-white"],
+.wb-embed [class*="bg-zinc-5"], .wb-embed [class*="bg-zinc-1"], .wb-embed [class*="bg-zinc-9"], .wb-embed [class*="bg-zinc-8"],
+.wb-embed [class*="bg-slate-"], .wb-embed [class*="bg-gray-"], .wb-embed [class*="bg-neutral-"],
+.wb-embed [class*="bg-stone-"] { background-color: var(--bg-panel) !important; }
+.wb-embed [class*="bg-indigo"], .wb-embed [class*="bg-violet"], .wb-embed [class*="bg-purple"],
+.wb-embed [class*="bg-fuchsia"], .wb-embed [class*="bg-sky"], .wb-embed [class*="bg-blue"],
+.wb-embed [class*="bg-cyan"], .wb-embed [class*="bg-teal"], .wb-embed [class*="bg-pink"],
+.wb-embed [class*="bg-orange"], .wb-embed [class*="bg-lime"] { background-color: var(--bg-panel-2) !important; }
+.wb-embed [class*="bg-gradient"] { background-image: none !important; background-color: var(--bg-panel-2) !important; }
+
+/* borders: one line colour, except the semantic bands */
+.wb-embed [class*="border-"] { border-color: var(--line) !important; }
+.wb-embed [class*="border-emerald"], .wb-embed [class*="border-green"] { border-color: var(--ok) !important; }
+.wb-embed [class*="border-rose"], .wb-embed [class*="border-red"] { border-color: var(--err) !important; }
+.wb-embed [class*="border-amber"], .wb-embed [class*="border-yellow"] { border-color: var(--warn) !important; }
+
+/* text: brand hues go neutral, judgement hues stay */
+.wb-embed [class*="text-zinc"], .wb-embed [class*="text-slate"], .wb-embed [class*="text-gray"],
+.wb-embed [class*="text-neutral"], .wb-embed [class*="text-stone"] { color: var(--fg) !important; }
+.wb-embed [class*="text-indigo"], .wb-embed [class*="text-violet"], .wb-embed [class*="text-purple"],
+.wb-embed [class*="text-fuchsia"], .wb-embed [class*="text-sky"], .wb-embed [class*="text-blue"],
+.wb-embed [class*="text-cyan"], .wb-embed [class*="text-teal"], .wb-embed [class*="text-pink"] { color: var(--accent) !important; }
+.wb-embed [class*="text-emerald"], .wb-embed [class*="text-green"] { color: var(--ok) !important; }
+.wb-embed [class*="text-rose"], .wb-embed [class*="text-red"] { color: var(--err) !important; }
+.wb-embed [class*="text-amber"], .wb-embed [class*="text-yellow"] { color: var(--warn) !important; }
+
+/* density: expert padding, not marketing padding */
+.wb-embed [class*="p-6"], .wb-embed [class*="p-5"], .wb-embed [class*="p-4"] { padding: 8px !important; }
+.wb-embed [class*="px-6"], .wb-embed [class*="px-5"], .wb-embed [class*="px-4"] { padding-left: 8px !important; padding-right: 8px !important; }
+.wb-embed [class*="py-6"], .wb-embed [class*="py-5"], .wb-embed [class*="py-4"] { padding-top: 6px !important; padding-bottom: 6px !important; }
+.wb-embed [class*="gap-6"], .wb-embed [class*="gap-5"], .wb-embed [class*="gap-4"] { gap: 8px !important; }
+.wb-embed [class*="space-y-6"] > * + *, .wb-embed [class*="space-y-5"] > * + * { margin-top: 8px !important; }
+.wb-embed h1, .wb-embed h2, .wb-embed h3, .wb-embed h4 { font-size: 12px !important; font-weight: 600; color: var(--fg-bright); }
+.wb-embed [class*="text-2xl"], .wb-embed [class*="text-xl"], .wb-embed [class*="text-lg"] { font-size: 13px !important; }
+
+/* controls */
+.wb-embed button, .wb-embed input, .wb-embed select, .wb-embed textarea { border-radius: 2px !important; }
+.wb-embed input, .wb-embed select, .wb-embed textarea {
+  background-color: var(--bg-input) !important; color: var(--fg) !important; border-color: var(--line-strong) !important;
+}
+.wb-embed input:focus, .wb-embed select:focus, .wb-embed textarea:focus { border-color: var(--line-focus) !important; outline: none; }
+
+/* --- composer dock -------------------------------------------------------- */
+.wb-dock { display: flex; flex-direction: column; border-top: 1px solid var(--line); background: var(--bg-panel); min-height: 0; }
+.wb-dock-gutter { height: 4px; cursor: row-resize; background: var(--bg-app); position: relative; flex-shrink: 0; }
+.wb-dock-gutter::after { content: ""; position: absolute; inset: 1px 0; background: var(--line); }
+.wb-dock-gutter:hover::after { background: var(--line-focus); }
+.wb-thread { flex: 1; overflow: auto; padding: 4px 8px; font-size: 11.5px; user-select: text; min-height: 0; }
+.wb-msg { padding: 3px 0; border-bottom: 1px solid var(--line); white-space: pre-wrap; line-height: 1.5; }
+.wb-msg .who { font-family: var(--mono); font-size: 10px; color: var(--fg-faint); text-transform: uppercase; letter-spacing: .4px; margin-right: 6px; }
+.wb-msg.user .who { color: var(--accent); }
+.wb-msg .tool { font-family: var(--mono); font-size: 10px; color: var(--fg-faint); }
+.wb-prompt { display: flex; gap: 4px; align-items: flex-end; padding: 4px 8px; border-top: 1px solid var(--line); background: var(--bg-panel-2); }
+.wb-prompt textarea {
+  flex: 1; background: var(--bg-input); border: 1px solid var(--line-strong); border-radius: 2px;
+  color: var(--fg); font-family: inherit; font-size: 12px; padding: 4px 6px; resize: none; outline: none; line-height: 1.4;
+}
+.wb-prompt textarea:focus { border-color: var(--line-focus); }
+.wb-qb { display: grid; grid-template-columns: 1fr 1fr; gap: 0 10px; padding: 4px 8px; overflow: auto; }
+.wb-qb .full { grid-column: 1 / -1; }

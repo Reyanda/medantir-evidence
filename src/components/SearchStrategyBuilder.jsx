@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Plus, X, Copy, Check, ClipboardList, ChevronDown, ChevronRight, Sparkles, Loader2, Atom, FileDown, AlertCircle, ExternalLink, ShieldCheck, Play, Database, LogIn } from "lucide-react";
 import { buildStrategy, STRATEGY_DBS, OPERATORS, VOCABULARIES, databaseName } from "../engine/searchStrategy.js";
 import { allKnownDatabases, loadSelection, toggleSelection } from "../engine/accessPoints.js";
@@ -23,7 +23,7 @@ import { activeProvider, callProvider } from "../engine/providers.js";
 import { openInApp } from "../engine/openBus.js";
 import { assessPress } from "../engine/pressReview.js";
 import { executeCompiledStrategies, toCsv, toRis } from "../engine/reviewsearch.js";
-import { activeProject, putFile } from "../engine/projectstore.js";
+import { activeProject, putFile, getFile } from "../engine/projectstore.js";
 
 const CORE_DBS = ["pubmed", "ovid_embase", "cochrane", "europepmc", "cinahl"];
 const OP_COLOR = { AND: "text-[var(--color-brand-primary)]", OR: "text-emerald-500", NOT: "text-rose-500" };
@@ -89,11 +89,29 @@ function CandidateGroup({ label, items = [], selected = [], onAdd, onAddAll, onO
   );
 }
 
+// The strategy this project already has, written either by this builder or by
+// the PRISM question builder. Hydrating from it is what stops the two surfaces
+// from holding different strategies for the same review.
+function savedIsr(projectId) {
+  if (!projectId) return null;
+  try {
+    const file = getFile(projectId, "search/isr.json");
+    return file?.content ? JSON.parse(file.content) : null;
+  } catch {
+    return null;
+  }
+}
+
 export default function SearchStrategyBuilder({ initialQuestion = "" }) {
-  const [concepts, setConcepts] = useState([
-    newConcept("Population"),
-    newConcept("Intervention"),
-  ]);
+  const [concepts, setConcepts] = useState(() => {
+    const isr = savedIsr(activeProject());
+    if (!isr?.concepts?.length) return [newConcept("Population"), newConcept("Intervention")];
+    return isr.concepts.map((concept) => ({
+      ...newConcept(concept.label || "Concept", (concept.terms || []).join(", ")),
+      op: concept.op || "AND",
+      vocab: { ...emptyVocab(), ...(concept.vocab || {}) },
+    }));
+  });
   const enabledDbs = STRATEGY_DBS.filter((id) => DATA_SOURCES.some((source) => source.id === id && sourceEnabled(id)));
   const [dbs, setDbs] = useState(enabledDbs.length ? enabledDbs : CORE_DBS);
   // Databases discovered behind the operator's gateways. These are not in the
@@ -104,7 +122,7 @@ export default function SearchStrategyBuilder({ initialQuestion = "" }) {
   const [copied, setCopied] = useState(null);
   const [openLines, setOpenLines] = useState({});
   const [busy, setBusy] = useState(null);
-  const [question, setQuestion] = useState(initialQuestion);
+  const [question, setQuestion] = useState(() => initialQuestion || savedIsr(activeProject())?.question || "");
   const [building, setBuilding] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState("");
@@ -116,6 +134,19 @@ export default function SearchStrategyBuilder({ initialQuestion = "" }) {
   const [credentialNotice, setCredentialNotice] = useState("");
   const [vocabularyDomain, setVocabularyDomain] = useState("medical");
   const provider = activeProvider();
+
+  useEffect(() => {
+    if (!initialQuestion) return;
+    setQuestion(initialQuestion);
+    const isr = savedIsr(activeProject());
+    if (isr?.question !== initialQuestion || !isr?.concepts?.length) return;
+    setConcepts(isr.concepts.map((concept) => ({
+      ...newConcept(concept.label || "Concept", (concept.terms || []).join(", ")),
+      op: concept.op || "AND",
+      vocab: { ...emptyVocab(), ...(concept.vocab || {}) },
+    })));
+    if (isr.databases?.length) setDbs(isr.databases.filter((id) => STRATEGY_DBS.includes(id)));
+  }, [initialQuestion]);
 
   const setC = (index, patch) => setConcepts((current) => current.map((concept, conceptIndex) => (conceptIndex === index ? { ...concept, ...patch } : concept)));
   const updateC = (index, updater) => setConcepts((current) => current.map((concept, conceptIndex) => (conceptIndex === index ? updater(concept) : concept)));
