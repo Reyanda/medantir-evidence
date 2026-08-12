@@ -1,47 +1,69 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
-  Eye,
-  EyeOff,
-  Search,
-  ChevronDown,
-  Lock,
-  Copy,
-  Trash2,
-  Share2,
-  Download,
-  Play,
-  Grid,
-  Sun,
-  Moon,
-  HelpCircle,
-  Bell,
-  CheckCircle2,
-  Activity,
-  Layers,
-  FileText,
-  Database,
-  Filter,
-  BarChart2,
-  Compass,
-  Zap,
-  MousePointer,
-  Hand,
-  ZoomIn,
-  Ruler,
-  Type,
-  Square,
-  Link2,
-  Maximize2,
-  Plus
-} from "lucide-react";
-import { metaAnalyze, effectFromBinary } from "../engine/metaanalysis.js";
+  listReviewProjects,
+  loadStudio,
+  persistDataset,
+  readDataset,
+  activeOutcome,
+  updateOutcome,
+  syncRowsFromReview,
+  computeOutcome,
+  outcomeToCsv,
+  newManualRow,
+  emptyOutcome,
+  robColor,
+  ROB_LEVELS
+} from "../engine/forestRuntime.js";
+import { createReview, saveReview, loadReview } from "../engine/reviewengine.js";
+import { runPipeline, runStage, stageDetails, stageProgress, reviewSummary } from "../engine/srOrchestrator.js";
+import { createProject, setActiveProject, activeProject } from "../engine/projectstore.js";
+import { runnableSources } from "../engine/academic.js";
+import { enabledProviders } from "../engine/providers.js";
+import { getTaskPreference, setTaskPreference } from "../engine/taskRouter.js";
 import ReviewTab from "./ReviewTab.jsx";
 import SearchStrategyBuilder from "./SearchStrategyBuilder.jsx";
-import { SearchView, SourcesView } from "./AcademicTab.jsx";
+import { SearchView } from "./AcademicTab.jsx";
 import ProjectFiles from "./ProjectFiles.jsx";
 import ResearchLoopView from "./ResearchLoopView.jsx";
-import MetaAnalysisWorkbench from "./MetaAnalysisWorkbench.jsx";
 import ScientificRuntimeView from "./ScientificRuntimeView.jsx";
+import SettingsPanel from "./SettingsPanel.jsx";
+import BrowserTab from "./BrowserTab.jsx";
+import ReaderPanel from "./ReaderPanel.jsx";
+import TracerPanel from "./TracerPanel.jsx";
+import "../styles/workbench.css";
+
+// The LLM-backed stages of the review pipeline. The studio exposes their route
+// because the default (local-first) runs an in-browser model that can take
+// minutes per stage on a laptop — an operator with a provider configured needs
+// to be able to say so without leaving the canvas.
+const LLM_TASKS = [
+  "extract-pico", "generate-eligibility", "tiab-screening", "fulltext-screening",
+  "extract-data", "assess-rob", "synthesize", "grade-assessment", "generate-prisma",
+];
+
+const MODULES = [
+  { label: "Overview", view: "Overview", tab: "BUILD" },
+  { label: "Protocols", view: "Protocols", tab: "BUILD" },
+  { label: "Search", view: "Search", tab: "ANALYZE" },
+  { label: "Screening", view: "Screening", tab: "ANALYZE" },
+  { label: "Extraction", view: "Extraction", tab: "SYNTHESIZE" },
+  { label: "Synthesis", view: "Synthesis", tab: "SYNTHESIZE" },
+  { label: "Evidence map", view: "Evidence Map", tab: "VISUALIZE" },
+  { label: "Figures", view: "Figures", tab: "VISUALIZE" },
+  { label: "Reports", view: "Reports", tab: "PUBLISH" },
+  { label: "Reader", view: "Reader", tab: "ANALYZE" },
+  { label: "Browser", view: "Browser", tab: "ANALYZE" },
+  { label: "Tracer", view: "Tracer", tab: "VISUALIZE" },
+  { label: "Settings", view: "Settings", tab: "BUILD" },
+];
+
+// Modules that already speak the workbench language and own their whole pane.
+const NATIVE_VIEWS = ["Reader", "Tracer", "Browser", "Settings"];
+
+const MODES = [
+  ["BUILD", "Protocols"], ["ANALYZE", "Search"], ["SYNTHESIZE", "Synthesis"],
+  ["VISUALIZE", "Figures"], ["PUBLISH", "Reports"],
+];
 
 export default function ForestPlotStudio({
   activeView = "Figures",
@@ -49,888 +71,938 @@ export default function ForestPlotStudio({
   activeTab = "VISUALIZE",
   setActiveTab = () => {}
 }) {
-  // Binary Study Data State (real 2x2 contingency table inputs)
-  const [studies, setStudies] = useState([
-    { id: "CORIMUNO-19", name: "CORIMUNO-19", eventsT: 3, totalT: 128, eventsC: 13, totalC: 130, rob: "Low", pmid: "32871097", shape: "Square", color: "#20C997" },
-    { id: "SAVE-MORE", name: "SAVE-MORE", eventsT: 5, totalT: 180, eventsC: 12, totalC: 178, rob: "Low", pmid: "32871098", shape: "Square", color: "#20C997" },
-    { id: "RCT-Szabo", name: "RCT-Szabo", eventsT: 2, totalT: 96, eventsC: 9, totalC: 94, rob: "Some", pmid: "32871099", shape: "Square", color: "#FCC419" },
-    { id: "BACC Bay", name: "BACC Bay", eventsT: 6, totalT: 224, eventsC: 20, totalC: 219, rob: "Low", pmid: "32871100", shape: "Square", color: "#20C997" },
-    { id: "JAK-COVID", name: "JAK-COVID", eventsT: 10, totalT: 211, eventsC: 20, totalC: 210, rob: "Low", pmid: "32871101", shape: "Square", color: "#20C997" },
-    { id: "COVID STEROID 2", name: "COVID STEROID 2", eventsT: 8, totalT: 150, eventsC: 14, totalC: 150, rob: "Some", pmid: "32871102", shape: "Square", color: "#FCC419" },
-    { id: "GLIMMER", name: "GLIMMER", eventsT: 4, totalT: 95, eventsC: 9, totalC: 95, rob: "Low", pmid: "32871103", shape: "Square", color: "#20C997" },
-    { id: "FLARE", name: "FLARE", eventsT: 7, totalT: 118, eventsC: 12, totalC: 118, rob: "Low", pmid: "32871104", shape: "Square", color: "#20C997" },
-    { id: "VENTILATE-JAK", name: "VENTILATE-JAK", eventsT: 3, totalT: 87, eventsC: 8, totalC: 87, rob: "High", pmid: "32871105", shape: "Square", color: "#FF6B6B" }
-  ]);
-
-  const [effectMeasure, setEffectMeasure] = useState("RR");
-  const [selectedStudyId, setSelectedStudyId] = useState("SAVE-MORE");
-  const [tableTab, setTableTab] = useState("DATA TABLE");
-  const [inspectorTab, setInspectorTab] = useState("PROPERTIES");
-  const [activeTool, setActiveTool] = useState("select");
-
-  const [layersVisibility, setLayersVisibility] = useState({
-    title: true,
-    subtitle: true,
-    axisX: true,
-    nullLine: true,
-    studies: true,
-    summary: true,
-    annotations: true
+  // --- runtime binding ------------------------------------------------------
+  const [projects, setProjects] = useState(() => listReviewProjects());
+  const [pid, setPid] = useState(() => {
+    const activeId = activeProject();
+    const reviews = listReviewProjects();
+    return reviews.find((p) => p.id === activeId)?.id || reviews[0]?.id || "";
   });
+  const [review, setReview] = useState(null);
+  const [dataset, setDataset] = useState(() => readDataset(null));
+  const [log, setLog] = useState([]);
+  const [running, setRunning] = useState(null); // { stage, pct, msg, startedAt } | null
+  const [elapsed, setElapsed] = useState(0);
+  const [newProjectName, setNewProjectName] = useState("");
+  const [newQuestion, setNewQuestion] = useState("");
+  const [llmRoute, setLlmRoute] = useState(() => getTaskPreference("extract-pico") || "auto");
+  // A detached run keeps executing (the stage saves itself into review.json when
+  // it finishes); the token stops THIS view from applying a stale result.
+  const runToken = useRef(0);
 
-  // Calculate live Meta-Analysis using real statistical engine metaanalysis.js
-  const metaAnalysisResult = useMemo(() => {
-    const preparedStudies = studies.map((s) => {
-      const effectData = effectFromBinary(
-        { events_t: s.eventsT, n_t: s.totalT, events_c: s.eventsC, n_c: s.totalC },
-        effectMeasure
-      );
-      return {
-        id: s.id,
-        name: s.name,
-        effect: effectData.effect,
-        se: effectData.se,
-        eventsT: s.eventsT,
-        totalT: s.totalT,
-        eventsC: s.eventsC,
-        totalC: s.totalC,
-        rob: s.rob,
-        pmid: s.pmid,
-        shape: s.shape,
-        color: s.color
-      };
-    });
+  // --- canvas state ---------------------------------------------------------
+  const [selectedRowId, setSelectedRowId] = useState(null);
+  const [tableTab, setTableTab] = useState("DATA");
+  const [showKeys, setShowKeys] = useState(false);
+  const [settingsTab, setSettingsTab] = useState("Providers");
+  // Docks are furniture: same place every time, resizable by their gutter,
+  // collapsible to reclaim width. Nothing slides in, nothing floats.
+  const [leftDock, setLeftDock] = useState({ open: true, width: 270 });
+  const [rightDock, setRightDock] = useState({ open: true, width: 300 });
+  const dragging = useRef(null);
+  const [layers, setLayers] = useState({ studies: true, summary: true, axis: true, nullLine: true });
 
-    const res = metaAnalyze(preparedStudies, { measure: effectMeasure });
-    return { preparedStudies, res };
-  }, [studies, effectMeasure]);
+  const allSources = useMemo(() => runnableSources().filter((s) => s.kind === "builtin"), []);
 
-  const { preparedStudies, res: ma } = metaAnalysisResult;
-  const randomModel = ma?.random;
-  const het = ma?.heterogeneity;
+  const note = useCallback((msg, kind = "info") => {
+    setLog((prev) => [...prev.slice(-199), { at: Date.now(), msg, kind }]);
+  }, []);
 
-  const calculatedStudies = useMemo(() => {
-    if (!randomModel?.studies) return [];
-    return preparedStudies.map((s, idx) => {
-      const calc = randomModel.studies[idx] || {};
-      return {
-        ...s,
-        rr: calc.effect ?? 1.0,
-        lower: calc.ci ? calc.ci[0] : 0.5,
-        upper: calc.ci ? calc.ci[1] : 1.5,
-        weight: calc.weight ?? 0
-      };
-    });
-  }, [preparedStudies, randomModel]);
+  // Load project → review → dataset, and reconcile rows with what the pipeline
+  // has actually included. The sync is written back so the canvas and review.json
+  // never drift apart.
+  useEffect(() => {
+    if (!pid) { setReview(null); setDataset(readDataset(null)); return; }
+    setActiveProject(pid);
+    const { review: r, dataset: d } = loadStudio(pid);
+    if (!r) { setReview(null); setDataset(d); return; }
+    const target = activeOutcome(d);
+    const synced = syncRowsFromReview(target, r);
+    const nextDataset = updateOutcome(d, target.id, { rows: synced.outcome.rows });
+    const nextReview = synced.added || synced.detached ? persistDataset(pid, r, nextDataset) : r;
+    setReview(nextReview);
+    setDataset(nextDataset);
+    setSelectedRowId(activeOutcome(nextDataset)?.rows[0]?.studyId || null);
+    if (synced.added) note(`${synced.added} included stud${synced.added === 1 ? "y" : "ies"} added to the canvas from the pipeline.`);
+    if (synced.detached) note(`${synced.detached} row(s) no longer map to an included study — flagged, not deleted.`, "warn");
+  }, [pid, note]);
 
-  const selectedStudy = calculatedStudies.find((s) => s.id === selectedStudyId) || calculatedStudies[0] || studies[0];
+  // An LLM stage on the in-browser engine can take minutes; a frozen-looking
+  // button is indistinguishable from a hang, so the run is always timed.
+  useEffect(() => {
+    if (!running) { setElapsed(0); return undefined; }
+    const started = running.startedAt;
+    const id = setInterval(() => setElapsed(Math.round((Date.now() - started) / 1000)), 1000);
+    return () => clearInterval(id);
+  }, [running]);
 
-  const toggleLayer = (key) => {
-    setLayersVisibility((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
+  // One up-front statement of which inference route the LLM stages will take.
+  useEffect(() => {
+    if (!review) return;
+    const providers = enabledProviders().filter((p) => p.shape !== "local");
+    if (providers.length) note(`LLM stages route to ${providers.map((p) => p.label || p.id).join(", ")}.`);
+    else note("No API provider is enabled — PICO, screening, extraction, RoB, synthesis and GRADE run on the in-browser model. Expect minutes per stage, and a model download on first use.", "warn");
+  }, [review?.question, note]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const updateSelectedStudy = (field, value) => {
-    setStudies((prev) =>
-      prev.map((s) => (s.id === selectedStudyId ? { ...s, [field]: value } : s))
-    );
-  };
+  const outcome = useMemo(() => activeOutcome(dataset), [dataset]);
+  const computed = useMemo(() => computeOutcome(outcome), [outcome]);
+  const summary = useMemo(() => (review ? reviewSummary(review) : null), [review]);
+  const stages = useMemo(() => (review ? stageDetails(review) : []), [review]);
+  const overall = useMemo(() => (review ? stageProgress(review) : { done: 0, total: 0, pct: 0 }), [review]);
 
-  const addStudyRow = () => {
-    const newId = `Study-${studies.length + 1}`;
-    const newStudy = {
-      id: newId,
-      name: newId,
-      eventsT: 5,
-      totalT: 100,
-      eventsC: 10,
-      totalC: 100,
-      rob: "Low",
-      pmid: `${32871100 + studies.length}`,
-      shape: "Square",
-      color: "#20C997"
+  const commit = useCallback((nextDataset) => {
+    setDataset(nextDataset);
+    setReview((r) => (r ? persistDataset(pid, r, nextDataset) : r));
+  }, [pid]);
+
+  const patchOutcome = useCallback((patch) => {
+    commit(updateOutcome(dataset, outcome.id, patch));
+  }, [commit, dataset, outcome]);
+
+  const patchRow = useCallback((studyId, patch) => {
+    patchOutcome({ rows: outcome.rows.map((r) => (r.studyId === studyId ? { ...r, ...patch } : r)) });
+  }, [outcome, patchOutcome]);
+
+  // Dock gutters: drag to resize, double-click to collapse.
+  useEffect(() => {
+    const move = (e) => {
+      if (!dragging.current) return;
+      if (dragging.current === "left") setLeftDock((d) => ({ ...d, width: Math.max(200, Math.min(480, e.clientX)) }));
+      else setRightDock((d) => ({ ...d, width: Math.max(220, Math.min(560, window.innerWidth - e.clientX)) }));
     };
-    setStudies((prev) => [...prev, newStudy]);
-    setSelectedStudyId(newId);
+    const up = () => { dragging.current = null; document.body.style.cursor = ""; };
+    window.addEventListener("mousemove", move);
+    window.addEventListener("mouseup", up);
+    return () => { window.removeEventListener("mousemove", move); window.removeEventListener("mouseup", up); };
+  }, []);
+
+  // Keyboard is the primary input: J/K to move, I/E/M to judge with auto-advance,
+  // Cmd-1 / Cmd-2 for the docks, ? for the map. The mouse is the fallback.
+  useEffect(() => {
+    const onKey = (e) => {
+      const el = e.target;
+      if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT" || el.isContentEditable)) return;
+      const rows = outcome.rows;
+      const idx = rows.findIndex((r) => r.studyId === selectedRowId);
+
+      if ((e.metaKey || e.ctrlKey) && e.key === "1") { e.preventDefault(); setLeftDock((d) => ({ ...d, open: !d.open })); return; }
+      if ((e.metaKey || e.ctrlKey) && e.key === "2") { e.preventDefault(); setRightDock((d) => ({ ...d, open: !d.open })); return; }
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+
+      const advance = () => { const next = rows[Math.min(rows.length - 1, idx + 1)]; if (next) setSelectedRowId(next.studyId); };
+      switch (e.key) {
+        case "j": case "ArrowDown": e.preventDefault(); if (rows.length) setSelectedRowId((rows[Math.min(rows.length - 1, idx + 1)] || rows[0]).studyId); break;
+        case "k": case "ArrowUp": e.preventDefault(); if (rows.length) setSelectedRowId((rows[Math.max(0, idx - 1)] || rows[0]).studyId); break;
+        case "i": if (selectedRowId) { patchRow(selectedRowId, { include: true }); advance(); } break;
+        case "e": if (selectedRowId) { patchRow(selectedRowId, { include: false }); advance(); } break;
+        case "m": if (selectedRowId) { patchRow(selectedRowId, { rob: "Some", robOverride: true }); advance(); } break;
+        case "?": setShowKeys((v) => !v); break;
+        case "Escape": setShowKeys(false); break;
+        default: break;
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [outcome, selectedRowId, patchRow]);
+
+  // --- project / review lifecycle -------------------------------------------
+  const createReviewProject = () => {
+    const name = newProjectName.trim();
+    const question = newQuestion.trim();
+    if (!name || !question) { note("A project name and a review question are both required.", "warn"); return; }
+    const project = createProject(name, { projectType: "systematic-review", mode: "academic" });
+    const r = createReview(question);
+    r.createdAt = Date.now();
+    r.selectedSources = allSources.slice(0, 2).map((s) => s.id);
+    saveReview(project.id, r);
+    setProjects(listReviewProjects());
+    setPid(project.id);
+    setNewProjectName("");
+    setNewQuestion("");
+    note(`Review project "${project.name}" created — run the pipeline from the protocol stage.`);
+  };
+
+  const reloadReview = useCallback(() => {
+    const r = loadReview(pid);
+    if (!r) return null;
+    const d = readDataset(r);
+    const target = activeOutcome(d);
+    const synced = syncRowsFromReview(target, r);
+    const nextDataset = updateOutcome(d, target.id, { rows: synced.outcome.rows });
+    const nextReview = persistDataset(pid, r, nextDataset);
+    setReview(nextReview);
+    setDataset(nextDataset);
+    if (synced.added) note(`${synced.added} included stud${synced.added === 1 ? "y" : "ies"} added to the canvas.`);
+    return nextReview;
+  }, [pid, note]);
+
+  // Eligibility criteria are a human artifact: the protocol stage drafts them
+  // from PICO when an LLM is reachable, but the gate must be satisfiable
+  // without one, so they stay directly editable.
+  const patchReview = (patch) => {
+    if (!review) return;
+    const updated = { ...review, ...patch };
+    saveReview(pid, updated);
+    setReview(updated);
+  };
+  const setEligibility = (text) => patchReview({ objects: { ...review.objects, eligibility: text } });
+  const toggleSource = (id) => {
+    if (!review) return;
+    const current = review.selectedSources || [];
+    patchReview({ selectedSources: current.includes(id) ? current.filter((s) => s !== id) : [...current, id] });
+  };
+
+  // --- pipeline execution ---------------------------------------------------
+  const track = useCallback((token, startedAt) => ({
+    onProgress: (p) => { if (runToken.current === token) setRunning({ stage: p.stage, pct: p.pct, msg: p.msg, startedAt }); },
+    onNote: (m) => { if (runToken.current === token) note(m); },
+  }), [note]);
+
+  const detach = () => {
+    runToken.current += 1;
+    setRunning(null);
+    note("Detached from the run. The stage keeps executing and writes its result to review.json when it finishes — press Sync to pick it up.", "warn");
+  };
+
+  const executePipeline = async () => {
+    if (!review || running) return;
+    const token = ++runToken.current;
+    const startedAt = Date.now();
+    setRunning({ stage: "pipeline", pct: 0, msg: "starting", startedAt });
+    note("Pipeline started.");
+    const result = await runPipeline(pid, review, track(token, startedAt));
+    if (runToken.current !== token) return;
+    setRunning(null);
+    if (result.ok) note(`Pipeline complete — ${stageProgress(result.review).pct}% of stages validated.`, "ok");
+    else note(`Pipeline stopped at "${result.stage}": ${result.reason || (result.issues || []).join(" ")}`, "err");
+    reloadReview();
+  };
+
+  const executeStage = async (stageId) => {
+    if (!review || running) return;
+    const token = ++runToken.current;
+    const startedAt = Date.now();
+    setRunning({ stage: stageId, pct: 0, msg: "starting", startedAt });
+    const result = await runStage(pid, review, stageId, track(token, startedAt));
+    if (runToken.current !== token) return;
+    setRunning(null);
+    if (result.ok) note(`Stage "${stageId}" validated and completed.`, "ok");
+    else note(`Stage "${stageId}" did not complete: ${result.reason || (result.issues || []).join(" ")}`, "err");
+    reloadReview();
+  };
+
+  // --- canvas actions -------------------------------------------------------
+  const addManual = () => {
+    const row = newManualRow(outcome.rows.length);
+    patchOutcome({ rows: [...outcome.rows, row] });
+    setSelectedRowId(row.studyId);
+    note(`Manual row "${row.label}" added — it is not derived from the pipeline.`, "warn");
+  };
+
+  const addOutcome = () => {
+    const id = `outcome_${dataset.outcomes.length + 1}`;
+    commit({ ...dataset, outcomes: [...dataset.outcomes, emptyOutcome(`Outcome ${dataset.outcomes.length + 1}`, id)], activeOutcomeId: id });
+  };
+
+  const removeRow = (studyId) => {
+    const row = outcome.rows.find((r) => r.studyId === studyId);
+    if (!row) return;
+    if (row.source === "runtime") {
+      patchRow(studyId, { include: false });
+      note(`"${row.label}" comes from the pipeline — excluded from this analysis rather than deleted.`, "warn");
+      return;
+    }
+    patchOutcome({ rows: outcome.rows.filter((r) => r.studyId !== studyId) });
+    setSelectedRowId(null);
   };
 
   const exportCSV = () => {
-    const headers = ["Study ID", "Events(T)", "Total(T)", "Events(C)", "Total(C)", "Effect Estimate", "Lower CI", "Upper CI", "Weight(%)", "RoB", "PMID"];
-    const rows = calculatedStudies.map((s) => [
-      s.name, s.eventsT, s.totalT, s.eventsC, s.totalC, s.rr, s.lower, s.upper, s.weight, s.rob, s.pmid
-    ]);
-    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `medantir_meta_analysis_${Date.now()}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const blob = new Blob([outcomeToCsv(outcome, computed)], { type: "text/csv;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `${(outcome.name || "outcome").replace(/\W+/g, "-").toLowerCase()}-${outcome.measure}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
   };
 
-  const getRoBBadge = (rob) => {
-    switch (rob) {
-      case "Low":
-        return { text: "Low", bg: "bg-emerald-950/60", border: "border-emerald-500/40", textCol: "text-emerald-400", dot: "bg-emerald-400" };
-      case "Some":
-        return { text: "Some", bg: "bg-amber-950/60", border: "border-amber-500/40", textCol: "text-amber-400", dot: "bg-amber-400" };
-      case "High":
-        return { text: "High", bg: "bg-rose-950/60", border: "border-rose-500/40", textCol: "text-rose-400", dot: "bg-rose-400" };
-      default:
-        return { text: rob, bg: "bg-slate-900", border: "border-slate-700", textCol: "text-slate-400", dot: "bg-slate-400" };
-    }
-  };
+  const selectedRow = outcome.rows.find((r) => r.studyId === selectedRowId) || null;
+  const selectedCalc = computed.rows.find((r) => r.studyId === selectedRowId) || null;
+  const het = computed.ok ? computed.heterogeneity : null;
+  const project = projects.find((p) => p.id === pid) || null;
 
-  // Log scale conversion (mapping log(0.05) to log(10) to 0-100% SVG width)
-  const minVal = 0.05;
-  const maxVal = 10.0;
-  const logMin = Math.log(minVal);
-  const logMax = Math.log(maxVal);
+  // Log scale bounded by the data actually present.
+  const bounds = useMemo(() => {
+    if (!computed.ok) return { min: 0.05, max: 10 };
+    const vals = computed.rows.flatMap((r) => [r.lower, r.upper]).concat(computed.pooled.ci).filter((v) => Number.isFinite(v) && v > 0);
+    if (!vals.length) return { min: 0.05, max: 10 };
+    return { min: Math.min(0.05, Math.min(...vals) * 0.8), max: Math.max(10, Math.max(...vals) * 1.25) };
+  }, [computed]);
 
   const getXPos = (val) => {
-    if (val <= 0) return 0;
-    const logVal = Math.log(val);
-    return Math.max(0, Math.min(100, ((logVal - logMin) / (logMax - logMin)) * 100));
+    if (!Number.isFinite(val) || val <= 0) return 0;
+    const lo = Math.log(bounds.min), hi = Math.log(bounds.max);
+    return Math.max(0, Math.min(100, ((Math.log(val) - lo) / (hi - lo)) * 100));
   };
+  const ticks = [0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10].filter((t) => t >= bounds.min && t <= bounds.max);
+
+  const decisionClass = (row) => (row.detached ? "pend" : !row.include ? "exc" : computed.rows.some((c) => c.studyId === row.studyId) ? "inc" : "maybe");
+  const decisionLabel = (row) => (row.detached ? "DETACH" : !row.include ? "EXCL" : computed.rows.some((c) => c.studyId === row.studyId) ? "POOLED" : "NO 2x2");
 
   return (
-    <div className="flex flex-col h-screen w-screen bg-[#090D14] text-slate-200 font-sans overflow-hidden select-none antialiased">
-      {/* 1. TOP HEADER */}
-      <header className="h-11 bg-[#0D131F] border-b border-slate-800 flex items-center justify-between px-3 shrink-0 z-30">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 pr-3 border-r border-slate-800">
-            <div className="h-6 w-6 rounded-sm bg-gradient-to-br from-cyan-600 to-blue-700 flex items-center justify-center text-white font-black text-xs tracking-wider shadow-inner">
-              M
-            </div>
-            <div className="flex items-baseline gap-1.5">
-              <span className="font-bold text-xs tracking-wider text-white">MEDANTIR</span>
-              <span className="text-[9px] uppercase tracking-widest text-cyan-400/90 font-mono">STUDIO</span>
-            </div>
-          </div>
+    <div className="wb">
+      {/* MENU BAR — permanent, never conjured */}
+      <div className="wb-menubar">
+        <span className="wb-brand">MED<b>ANTIR</b> Workbench</span>
+        {MODES.map(([mode, view]) => (
+          <span
+            key={mode}
+            className={`wb-menu-item ${activeTab === mode ? "on" : ""}`}
+            onClick={() => { setActiveTab(mode); setActiveView(view); }}
+          >
+            {mode.charAt(0) + mode.slice(1).toLowerCase()}
+          </span>
+        ))}
+        <span className="wb-spacer" />
+        <span className="wb-env">
+          {project ? `${project.name} · review.json` : "no project"} · {overall.done}/{overall.total} stages
+        </span>
+      </div>
 
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-slate-100">JAK Inhibitors in COVID-19</span>
-            <span className="text-[9px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded-sm bg-slate-800 text-slate-300 border border-slate-700">
-              Living Review
-            </span>
-            <span className="text-[10px] text-slate-500 font-mono">v1.4 • Saved 2m ago</span>
-          </div>
+      {/* TOOLBAR RIBBON */}
+      <div className="wb-toolbar">
+        <div className="wb-tb-group">
+          <select className="wb-select" value={pid} onChange={(e) => setPid(e.target.value)} style={{ width: 190, height: 22 }}>
+            {projects.length === 0 && <option value="">No review project</option>}
+            {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+          </select>
         </div>
 
-        <div className="flex items-center bg-[#090D14] border border-slate-800 p-0.5 rounded-sm">
-          {[
-            ["BUILD", "Protocols"],
-            ["ANALYZE", "Search"],
-            ["SYNTHESIZE", "Synthesis"],
-            ["VISUALIZE", "Figures"],
-            ["PUBLISH", "Reports"]
-          ].map(([tabLabel, targetView]) => {
-            const isActive = activeTab === tabLabel || (activeView === targetView && activeTab === tabLabel);
-            return (
-              <button
-                key={tabLabel}
-                onClick={() => {
-                  setActiveTab(tabLabel);
-                  setActiveView(targetView);
-                }}
-                className={`px-3 py-1 text-[11px] font-mono font-medium transition-all ${
-                  isActive
-                    ? "bg-[#162032] text-cyan-300 font-bold border-b-2 border-cyan-400"
-                    : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/40"
-                }`}
-              >
-                {tabLabel}
+        <div className="wb-tb-group">
+          {running ? (
+            <button className="wb-btn on" onClick={detach} title="Stop waiting — the run continues in the background">
+              Running {elapsed}s · Detach
+            </button>
+          ) : (
+            <button className="wb-btn" onClick={executePipeline} disabled={!review} title="Run every stage the gates allow">
+              Run pipeline
+            </button>
+          )}
+          <button className="wb-btn" onClick={reloadReview} disabled={!review} title="Re-read review.json and re-sync canvas rows">Sync</button>
+          <button className="wb-btn" onClick={exportCSV} disabled={!review} title="Export this outcome with pooled row">Export CSV</button>
+        </div>
+
+        {review && activeView === "Figures" && (
+          <div className="wb-tb-group">
+            <select className="wb-select" value={dataset.activeOutcomeId} onChange={(e) => commit({ ...dataset, activeOutcomeId: e.target.value })} style={{ width: 150, height: 22 }}>
+              {dataset.outcomes.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
+            </select>
+            <button className="wb-btn" onClick={addOutcome} title="Add outcome">+</button>
+            <span className="wb-sep" />
+            <select className="wb-select" value={outcome.measure} onChange={(e) => patchOutcome({ measure: e.target.value })} style={{ height: 22 }}>
+              <option value="RR">Risk ratio</option>
+              <option value="OR">Odds ratio</option>
+            </select>
+            <select className="wb-select" value={outcome.model} onChange={(e) => patchOutcome({ model: e.target.value })} style={{ height: 22 }}>
+              <option value="random">Random effects</option>
+              <option value="fixed">Fixed effect</option>
+            </select>
+          </div>
+        )}
+
+        {review && activeView === "Figures" && (
+          <div className="wb-tb-group">
+            {[["studies", "Studies"], ["summary", "Diamond"], ["axis", "Axis"], ["nullLine", "Null"]].map(([key, label]) => (
+              <button key={key} className={`wb-btn ${layers[key] ? "on" : ""}`} onClick={() => setLayers((l) => ({ ...l, [key]: !l[key] }))}>
+                {label}
               </button>
-            );
-          })}
-        </div>
-
-        <div className="flex items-center gap-2">
-          <div className="relative w-44">
-            <Search className="absolute left-2 top-1.5 h-3 w-3 text-slate-500" />
-            <input
-              type="text"
-              placeholder="Search..."
-              className="w-full bg-[#131B2B] border border-slate-800 rounded-sm pl-7 pr-2 py-0.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-500/60"
-            />
+            ))}
+            <span className="wb-sep" />
+            <button className="wb-btn" onClick={addManual} title="Add a row not derived from the pipeline">Add row</button>
           </div>
+        )}
 
-          <button onClick={exportCSV} className="px-2.5 py-1 text-xs font-medium text-slate-300 bg-[#131B2B] border border-slate-700/80 rounded-sm hover:bg-slate-800 hover:text-white transition-colors flex items-center gap-1.5">
-            <Download className="h-3 w-3 text-slate-400" /> Export CSV
-          </button>
+        <span className="wb-spacer" />
 
-          <button className="px-3 py-1 text-xs font-bold text-slate-950 bg-cyan-400 hover:bg-cyan-300 rounded-sm shadow-sm transition-all flex items-center gap-1.5 active:scale-95">
-            <Play className="h-3 w-3 fill-slate-950" /> Run Pipeline
-          </button>
-        </div>
-      </header>
-
-      {/* Sub-header Breadcrumb Bar */}
-      <div className="h-7 bg-[#090D14] border-b border-slate-800/90 px-3 flex items-center justify-between text-[11px] text-slate-400 shrink-0">
-        <div className="flex items-center gap-2 font-mono">
-          <span className="text-slate-500">MODULE</span>
-          <span className="text-slate-700">/</span>
-          <span className="text-slate-200 font-semibold flex items-center gap-1">
-            {activeView} <ChevronDown className="h-3 w-3 text-slate-500" />
-          </span>
-        </div>
-
-        <div className="flex items-center gap-4 font-mono text-[10px]">
-          <span>EFFECT: <strong className="text-slate-200">{effectMeasure}</strong></span>
-          <span>STUDIES: <strong className="text-cyan-400">{calculatedStudies.length}</strong></span>
-          <span className="text-emerald-400 flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" /> STATISTICAL ENGINE ACTIVE
-          </span>
+        <div className="wb-tb-group">
+          <button className={`wb-btn ${leftDock.open ? "on" : ""}`} onClick={() => setLeftDock((d) => ({ ...d, open: !d.open }))} title="Toggle left dock (Cmd-1)">Left</button>
+          <button className={`wb-btn ${rightDock.open ? "on" : ""}`} onClick={() => setRightDock((d) => ({ ...d, open: !d.open }))} title="Toggle right dock (Cmd-2)">Right</button>
+          <button className={`wb-btn ${showKeys ? "on" : ""}`} onClick={() => setShowKeys((v) => !v)} title="Keyboard map (?)">Keys</button>
         </div>
       </div>
 
-      {/* 2. DENSE 3-COLUMN WORKSPACE */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* LEFT COLUMN: DOCKABLE WORKSPACE NAV & SCENE GRAPH */}
-        <div className="w-60 bg-[#0C121D] border-r border-slate-800 flex flex-col shrink-0">
-          <div className="p-2 border-b border-slate-800/80 space-y-0.5">
-            <div className="text-[9px] font-mono uppercase font-bold text-slate-500 px-2 mb-1 tracking-wider">
-              Workspace Modules
-            </div>
-            {[
-              { label: "Overview", icon: Layers, view: "Overview", tab: "BUILD" },
-              { label: "Protocols", icon: FileText, view: "Protocols", tab: "BUILD" },
-              { label: "Search", icon: Search, view: "Search", tab: "ANALYZE" },
-              { label: "Screening", icon: Filter, view: "Screening", tab: "ANALYZE" },
-              { label: "Extraction", icon: Database, view: "Extraction", tab: "SYNTHESIZE" },
-              { label: "Synthesis", icon: Zap, view: "Synthesis", tab: "SYNTHESIZE" },
-              { label: "Evidence Map", icon: Compass, view: "Evidence Map", tab: "VISUALIZE" },
-              { label: "Figures (Canvas)", icon: BarChart2, view: "Figures", tab: "VISUALIZE" },
-              { label: "Reports", icon: FileText, view: "Reports", tab: "PUBLISH" }
-            ].map((item) => {
-              const Icon = item.icon;
-              const isActive = activeView === item.view;
-              return (
-                <button
-                  key={item.label}
-                  onClick={() => {
-                    setActiveView(item.view);
-                    setActiveTab(item.tab);
-                  }}
-                  className={`w-full flex items-center gap-2 px-2 py-1 rounded-sm text-[11px] transition-colors ${
-                    isActive
-                      ? "bg-[#162236] text-cyan-300 font-semibold border-l-2 border-cyan-400"
-                      : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/30"
-                  }`}
-                >
-                  <Icon className={`h-3.5 w-3.5 ${isActive ? "text-cyan-400" : "text-slate-500"}`} />
-                  {item.label}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Scene Graph (Layers Docker) */}
-          <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-            <div className="px-3 py-1.5 bg-[#090D14] border-b border-slate-800 flex items-center justify-between">
-              <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400">
-                Scene Graph Layers
-              </span>
-              <button onClick={addStudyRow} className="text-[10px] text-cyan-400 hover:text-cyan-300 font-mono flex items-center gap-0.5">
-                <Plus className="h-3 w-3" /> Add Study
-              </button>
+      {/* WORKSPACE: left = pipeline/filters, centre = the grid, right = inspector */}
+      <div className="wb-workspace">
+        {leftDock.open && (
+          <div className="wb-panel" style={{ width: leftDock.width, flexShrink: 0 }}>
+            <div className="wb-panel-head">
+              <span className="title">Pipeline</span>
+              <span className="wb-count">{overall.done}/{overall.total}</span>
+              <span className="wb-spacer" />
+              <span className="wb-count">{overall.pct}%</span>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-1.5 space-y-0.5 text-xs font-mono">
-              <div className="text-slate-200 font-bold py-1 px-1 flex items-center justify-between text-[11px]">
-                <span>▼ Figure: forest-plot-mortality</span>
-              </div>
-
-              <div className="pl-2 space-y-0.5 border-l border-slate-800/80 ml-1.5">
-                <div className="flex items-center justify-between py-0.5 px-1 text-slate-400 hover:text-slate-200 hover:bg-slate-800/20 rounded-sm">
-                  <span className="text-[10px]">▼ Canvas Annotations</span>
-                  <button onClick={() => toggleLayer("title")}>
-                    {layersVisibility.title ? <Eye className="h-3 w-3 text-cyan-400" /> : <EyeOff className="h-3 w-3 text-slate-600" />}
-                  </button>
-                </div>
-
-                <div className="flex items-center justify-between py-0.5 px-1 text-slate-400 hover:text-slate-200 hover:bg-slate-800/20 rounded-sm">
-                  <span className="text-[10px]">▼ Null Line (RR=1.0)</span>
-                  <button onClick={() => toggleLayer("nullLine")}>
-                    {layersVisibility.nullLine ? <Eye className="h-3 w-3 text-cyan-400" /> : <EyeOff className="h-3 w-3 text-slate-600" />}
-                  </button>
-                </div>
-
-                <div className="pt-1">
-                  <div className="flex items-center justify-between py-0.5 px-1 text-slate-300 font-semibold text-[10px]">
-                    <span>▼ Studies ({calculatedStudies.length})</span>
-                    <button onClick={() => toggleLayer("studies")}>
-                      {layersVisibility.studies ? <Eye className="h-3 w-3 text-cyan-400" /> : <EyeOff className="h-3 w-3 text-slate-600" />}
-                    </button>
-                  </div>
-                  <div className="pl-2 space-y-0.5 max-h-44 overflow-y-auto">
-                    {calculatedStudies.map((s) => {
-                      const isSel = selectedStudyId === s.id;
-                      return (
-                        <div
-                          key={s.id}
-                          onClick={() => setSelectedStudyId(s.id)}
-                          className={`flex items-center justify-between py-0.5 px-1.5 rounded-sm cursor-pointer text-[10px] ${
-                            isSel
-                              ? "bg-[#18283E] text-cyan-300 font-bold border-l-2 border-cyan-400"
-                              : "text-slate-400 hover:bg-slate-800/30 hover:text-slate-200"
-                          }`}
+            <div className="wb-panel-body">
+              {!review && <div style={{ padding: "6px 8px", color: "var(--fg-faint)", fontSize: 11 }}>No review loaded.</div>}
+              {stages.map((s, i) => {
+                const isRunning = running?.stage === s.id;
+                const firstBlocked = stages.findIndex((x) => x.blocked && x.status !== "complete") === i;
+                const colour = s.status === "complete" ? "var(--ok)" : isRunning ? "var(--warn)" : "var(--fg-faint)";
+                return (
+                  <div key={s.id}>
+                    <div className={`wb-row ${isRunning ? "soft" : ""}`}>
+                      <span className="dot" style={{ background: colour }} />
+                      <span className="lbl">{s.name}</span>
+                      {s.pendingCount > 0 && <span className="n" style={{ color: "var(--warn)" }}>{s.pendingCount}</span>}
+                      {s.status !== "complete" && (
+                        <button
+                          className="wb-btn"
+                          style={{ height: 16, padding: "0 5px", fontSize: 10 }}
+                          onClick={() => executeStage(s.id)}
+                          disabled={!!running || s.blocked}
+                          title={s.blocked ? s.blockReason : `Run ${s.name}`}
                         >
-                          <span className="truncate">{s.name}</span>
-                          <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: s.color }} />
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between py-0.5 px-1 text-slate-400 hover:text-slate-200 hover:bg-slate-800/20 rounded-sm mt-1">
-                  <span className="text-[10px]">▼ Pooled Diamond</span>
-                  <button onClick={() => toggleLayer("summary")}>
-                    {layersVisibility.summary ? <Eye className="h-3 w-3 text-cyan-400" /> : <EyeOff className="h-3 w-3 text-slate-600" />}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="p-2 border-t border-slate-800 bg-[#090D14] space-y-1.5 text-[10px] font-mono text-slate-400">
-            <div className="flex items-center justify-between text-slate-500 uppercase font-bold">
-              <span>SYSTEM STATE</span>
-              <span className="text-emerald-400 font-semibold">● ONLINE</span>
-            </div>
-            <div className="grid grid-cols-2 gap-1 text-[10px]">
-              <div className="bg-[#0D131F] p-1 border border-slate-800 rounded-sm">
-                <span className="text-slate-500 block">Heterogeneity I²</span>
-                <span className="text-white font-bold">{het ? `${het.I2}%` : "37%"}</span>
-              </div>
-              <div className="bg-[#0D131F] p-1 border border-slate-800 rounded-sm">
-                <span className="text-slate-500 block">Studies k</span>
-                <span className="text-cyan-400 font-bold">{calculatedStudies.length}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* CENTER COLUMN: HIGH-PRECISION VECTOR CANVAS OR ENGINE SUBVIEWS */}
-        <div className="flex-1 flex flex-col bg-[#070B12] min-w-0 overflow-hidden relative">
-          {activeView === "Figures" ? (
-            <>
-              {/* Viewport Floating Toolbar */}
-              <div className="h-9 bg-[#0C121D] border-b border-slate-800 px-3 flex items-center justify-between shrink-0">
-                <div className="flex items-center gap-0.5 bg-[#070B12] p-0.5 border border-slate-800 rounded-sm">
-                  {[
-                    { id: "select", icon: MousePointer, label: "Select (V)" },
-                    { id: "pan", icon: Hand, label: "Pan (H)" },
-                    { id: "zoom", icon: ZoomIn, label: "Zoom (Z)" },
-                    { id: "measure", icon: Ruler, label: "Measure (M)" },
-                    { id: "text", icon: Type, label: "Text (T)" },
-                    { id: "shape", icon: Square, label: "Shape (R)" },
-                    { id: "link", icon: Link2, label: "Link Node" }
-                  ].map((tool) => {
-                    const Icon = tool.icon;
-                    const isActive = activeTool === tool.id;
-                    return (
-                      <button
-                        key={tool.id}
-                        onClick={() => setActiveTool(tool.id)}
-                        title={tool.label}
-                        className={`p-1.5 rounded-sm transition-colors ${
-                          isActive
-                            ? "bg-[#162236] text-cyan-400 border border-cyan-500/40 shadow-inner"
-                            : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/40"
-                        }`}
-                      >
-                        <Icon className="h-3.5 w-3.5" />
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <div className="flex items-center gap-3 text-slate-400 text-xs font-mono">
-                  <span className="text-[10px] text-slate-500">MEASURE:</span>
-                  <select
-                    value={effectMeasure}
-                    onChange={(e) => setEffectMeasure(e.target.value)}
-                    className="bg-[#131B2B] border border-slate-800 text-cyan-400 font-bold px-2 py-0.5 text-xs focus:outline-none rounded-sm"
-                  >
-                    <option value="RR">Risk Ratio (RR)</option>
-                    <option value="OR">Odds Ratio (OR)</option>
-                  </select>
-
-                  <button onClick={addStudyRow} className="px-2 py-0.5 bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 rounded-sm text-[10px] font-bold hover:bg-cyan-500/30">
-                    + Add Study
-                  </button>
-                </div>
-              </div>
-
-              {/* Viewport Canvas Area with Grid Pattern */}
-              <div
-                className="flex-1 bg-[#090D15] p-6 overflow-auto flex flex-col items-center justify-start relative border-b border-slate-800"
-                style={{
-                  backgroundImage: `radial-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px)`,
-                  backgroundSize: "20px 20px"
-                }}
-              >
-                <div className="w-full max-w-4xl bg-[#0D131F] border border-slate-800/90 rounded-sm p-6 shadow-2xl space-y-5 relative">
-                  <div className="absolute top-1 left-2 text-[9px] font-mono text-slate-600">X: 0.0 Y: 0.0</div>
-                  <div className="absolute top-1 right-2 text-[9px] font-mono text-slate-600">VIEWPORT_BOUNDS: 800x480</div>
-
-                  {layersVisibility.title && (
-                    <div className="text-center space-y-0.5 pt-2">
-                      <h2 className="text-base font-bold text-white tracking-tight">All-cause Mortality (28-day)</h2>
-                      {layersVisibility.subtitle && (
-                        <p className="text-xs text-slate-400 font-mono">Random-effects (DerSimonian–Laird)</p>
+                          Run
+                        </button>
                       )}
-                      <div className="flex items-center justify-center gap-6 text-xs text-slate-400 font-mono pt-1">
-                        <span className="font-semibold text-cyan-400">{effectMeasure === "RR" ? "Risk Ratio (RR)" : "Odds Ratio (OR)"}</span>
-                        <span>I² = {het ? `${het.I2}%` : "37%"}</span>
-                        <span>Q = {het ? `${het.Q} (df = ${het.df}, p = ${het.pQ})` : "12.6 (df = 8, p = 0.13)"}</span>
-                      </div>
                     </div>
-                  )}
-
-                  <div className="grid grid-cols-12 gap-2 text-xs font-mono font-bold text-slate-400 border-b border-slate-800 pb-2 px-2 uppercase tracking-wider">
-                    <div className="col-span-3">Study</div>
-                    <div className="col-span-1 text-center">Events</div>
-                    <div className="col-span-1 text-center">Total</div>
-                    <div className="col-span-5 text-center">Risk Ratio IV, Random, 95% CI</div>
-                    <div className="col-span-1 text-right">Weight (%)</div>
-                    <div className="col-span-1 text-center">RoB</div>
+                    {s.blocked && s.status !== "complete" && firstBlocked && (
+                      <div style={{ padding: "0 8px 2px 22px", fontSize: 10, color: "var(--fg-faint)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={s.blockReason}>
+                        {s.blockReason}
+                      </div>
+                    )}
                   </div>
+                );
+              })}
 
-                  {layersVisibility.studies && (
-                    <div className="space-y-1.5">
-                      {calculatedStudies.map((study) => {
-                        const isSelected = selectedStudyId === study.id;
-                        const leftPos = getXPos(study.lower);
-                        const rightPos = getXPos(study.upper);
-                        const pointPos = getXPos(study.rr);
-                        const robBadge = getRoBBadge(study.rob);
-
-                        return (
-                          <div
-                            key={study.id}
-                            onClick={() => setSelectedStudyId(study.id)}
-                            className={`grid grid-cols-12 gap-2 items-center text-xs py-1 px-2 rounded-sm transition-all cursor-pointer relative ${
-                              isSelected
-                                ? "bg-[#142235] border border-cyan-500/60 shadow-[0_0_8px_rgba(0,242,254,0.15)]"
-                                : "hover:bg-slate-800/30 border border-transparent"
-                            }`}
-                          >
-                            {isSelected && (
-                              <>
-                                <div className="absolute -top-1 -left-1 w-2 h-2 bg-white border border-cyan-500 shadow-sm z-30" />
-                                <div className="absolute -top-1 -right-1 w-2 h-2 bg-white border border-cyan-500 shadow-sm z-30" />
-                                <div className="absolute -bottom-1 -left-1 w-2 h-2 bg-white border border-cyan-500 shadow-sm z-30" />
-                                <div className="absolute -bottom-1 -right-1 w-2 h-2 bg-white border border-cyan-500 shadow-sm z-30" />
-                              </>
-                            )}
-
-                            <div className="col-span-3 font-medium text-slate-100 truncate flex items-center gap-1.5 font-mono">
-                              {study.name}
-                              {isSelected && <span className="w-1.5 h-1.5 bg-cyan-400" />}
-                            </div>
-                            <div className="col-span-1 text-center font-mono text-slate-300">{study.eventsT}</div>
-                            <div className="col-span-1 text-center font-mono text-slate-400">{study.totalT}</div>
-
-                            <div className="col-span-5 relative h-5 flex items-center px-2">
-                              <div className="w-full relative h-full flex items-center">
-                                {layersVisibility.nullLine && (
-                                  <div
-                                    className="absolute top-0 bottom-0 w-[1px] bg-slate-700 z-0"
-                                    style={{ left: `${getXPos(1.0)}%` }}
-                                  />
-                                )}
-
-                                <div
-                                  className="absolute h-[1.5px] bg-slate-300 z-10"
-                                  style={{
-                                    left: `${leftPos}%`,
-                                    width: `${Math.max(2, rightPos - leftPos)}%`
-                                  }}
-                                />
-
-                                <div
-                                  className="absolute w-2.5 h-2.5 -ml-1.25 z-20 shadow-sm rounded-none"
-                                  style={{
-                                    left: `${pointPos}%`,
-                                    backgroundColor: study.color
-                                  }}
-                                />
-                              </div>
-                            </div>
-
-                            <div className="col-span-1 text-right font-mono text-slate-300">{study.weight.toFixed(1)}</div>
-                            <div className="col-span-1 flex justify-center">
-                              <span className={`w-2.5 h-2.5 rounded-full ${robBadge.dot}`} title={`RoB: ${study.rob}`} />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-
-                  {layersVisibility.summary && (
-                    <div className="border-t border-slate-700/80 pt-2">
-                      <div className="grid grid-cols-12 gap-2 items-center text-xs font-mono font-bold text-white px-2">
-                        <div className="col-span-3">Total (95% CI)</div>
-                        <div className="col-span-1 text-center">
-                          {calculatedStudies.reduce((sum, s) => sum + s.eventsT, 0)}
-                        </div>
-                        <div className="col-span-1 text-center">
-                          {calculatedStudies.reduce((sum, s) => sum + s.totalT, 0)}
-                        </div>
-
-                        <div className="col-span-5 relative h-5 flex items-center px-2">
-                          <div className="w-full relative h-full flex items-center">
-                            <div
-                              className="absolute top-0 bottom-0 w-[1px] bg-slate-700"
-                              style={{ left: `${getXPos(1.0)}%` }}
-                            />
-                            <div
-                              className="absolute h-3.5 w-7 -ml-3.5 z-20"
-                              style={{ left: `${getXPos(randomModel?.effect || 0.40)}%` }}
-                            >
-                              <svg viewBox="0 0 32 16" className="w-full h-full fill-amber-200/40 stroke-amber-400 stroke-[1.5]">
-                                <polygon points="0,8 16,0 32,8 16,16" />
-                              </svg>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="col-span-1 text-right text-cyan-400">100.0</div>
-                        <div className="col-span-1" />
-                      </div>
-                    </div>
-                  )}
-
-                  {layersVisibility.axisX && (
-                    <div className="pt-2 border-t border-slate-800 space-y-1.5 font-mono">
-                      <div className="relative h-5 text-[10px] text-slate-400">
-                        {[0.05, 0.1, 0.2, 0.5, 1.0, 2.0, 5.0, 10.0].map((val) => (
-                          <div
-                            key={val}
-                            className="absolute transform -translate-x-1/2 flex flex-col items-center"
-                            style={{ left: `${getXPos(val)}%` }}
-                          >
-                            <div className="h-1 w-[1px] bg-slate-600 mb-0.5" />
-                            <span>{val}</span>
-                          </div>
-                        ))}
-                      </div>
-
-                      <div className="flex items-center justify-between text-xs font-semibold px-4 pt-1">
-                        <span className="text-cyan-400 font-mono">◄ Favours Treatment</span>
-                        <span className="text-slate-500 font-normal text-[10px] uppercase tracking-wider">Risk Ratio (log scale)</span>
-                        <span className="text-rose-400 font-mono">Favours Control ►</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Bottom Dockable Data Table */}
-              <div className="h-48 bg-[#0C121D] flex flex-col shrink-0 border-t border-slate-800">
-                <div className="h-8 bg-[#090D14] border-b border-slate-800 px-3 flex items-center justify-between">
-                  <div className="flex items-center font-mono">
-                    {["DATA TABLE", "ACCESSIBILITY", "NOTES", "PROVENANCE"].map((t) => (
+              {review && (
+                <>
+                  <div className="wb-insp-title">Inference route</div>
+                  <div style={{ display: "flex", gap: 4, padding: "4px 8px" }}>
+                    {[["auto", "Auto"], ["local", "In-browser"], ["api", "Provider"]].map(([value, label]) => (
                       <button
-                        key={t}
-                        onClick={() => setTableTab(t)}
-                        className={`px-3 py-1 text-[10px] font-bold tracking-wider transition-colors ${
-                          tableTab === t
-                            ? "text-cyan-400 bg-[#0C121D] border-t-2 border-cyan-400 border-x border-slate-800"
-                            : "text-slate-400 hover:text-slate-200"
-                        }`}
+                        key={value}
+                        className={`wb-tag ${llmRoute === value ? "on" : ""}`}
+                        onClick={() => {
+                          LLM_TASKS.forEach((t) => setTaskPreference(t, value === "auto" ? null : value));
+                          setLlmRoute(value);
+                          note(`LLM stages routed to: ${label.toLowerCase()}.`);
+                        }}
+                        title={value === "local" ? "In-browser model: no network, minutes per stage" : value === "api" ? "Configured API provider" : "Local first, provider on failure"}
                       >
-                        {t}
+                        {label}
                       </button>
                     ))}
                   </div>
 
-                  <div className="flex items-center gap-2 text-xs font-mono">
-                    <span className="text-slate-500 text-[10px]">{calculatedStudies.length} ENTRIES</span>
-                    <button onClick={exportCSV} className="px-2 py-0.5 text-[10px] text-slate-300 bg-[#131B2B] border border-slate-700 rounded-sm hover:bg-slate-800 flex items-center gap-1">
-                      <Download className="h-3 w-3 text-slate-400" /> Export CSV
-                    </button>
+                  <div className="wb-insp-title">Search sources</div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 4, padding: "4px 8px" }}>
+                    {allSources.map((s) => (
+                      <button key={s.id} className={`wb-tag ${(review.selectedSources || []).includes(s.id) ? "on" : ""}`} onClick={() => toggleSource(s.id)}>
+                        {s.name}
+                      </button>
+                    ))}
                   </div>
-                </div>
 
-                <div className="flex-1 overflow-auto p-1 font-mono text-xs">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="text-slate-400 border-b border-slate-800 text-[10px] uppercase tracking-wider bg-[#090D14]">
-                        <th className="py-1 px-2">Study ID</th>
-                        <th className="py-1 px-2 text-center">Events (T)</th>
-                        <th className="py-1 px-2 text-center">Total (T)</th>
-                        <th className="py-1 px-2 text-center">Events (C)</th>
-                        <th className="py-1 px-2 text-center">Total (C)</th>
-                        <th className="py-1 px-2 text-center">Effect (RR)</th>
-                        <th className="py-1 px-2 text-center">Lower CI</th>
-                        <th className="py-1 px-2 text-center">Upper CI</th>
-                        <th className="py-1 px-2 text-right">Weight (%)</th>
-                        <th className="py-1 px-2 text-center">RoB</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-800/40 text-slate-300">
-                      {calculatedStudies.map((s) => {
-                        const isSel = selectedStudyId === s.id;
-                        const badge = getRoBBadge(s.rob);
-                        return (
-                          <tr
-                            key={s.id}
-                            onClick={() => setSelectedStudyId(s.id)}
-                            className={`hover:bg-slate-800/40 cursor-pointer ${
-                              isSel ? "bg-[#142235] text-cyan-300 font-bold" : ""
-                            }`}
-                          >
-                            <td className="py-1 px-2 font-medium">{s.name}</td>
-                            <td className="py-1 px-2 text-center">{s.eventsT}</td>
-                            <td className="py-1 px-2 text-center">{s.totalT}</td>
-                            <td className="py-1 px-2 text-center">{s.eventsC}</td>
-                            <td className="py-1 px-2 text-center">{s.totalC}</td>
-                            <td className="py-1 px-2 text-center">{s.rr.toFixed(2)}</td>
-                            <td className="py-1 px-2 text-center">{s.lower.toFixed(2)}</td>
-                            <td className="py-1 px-2 text-center">{s.upper.toFixed(2)}</td>
-                            <td className="py-1 px-2 text-right">{s.weight.toFixed(1)}</td>
-                            <td className="py-1 px-2 text-center">
-                              <span className={`px-1.5 py-0.5 rounded-sm text-[9px] font-bold border ${badge.bg} ${badge.textCol} ${badge.border}`}>
-                                {badge.text}
-                              </span>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                  <div className="wb-insp-title">Modules</div>
+                  {MODULES.map((m) => (
+                    <div
+                      key={m.view}
+                      className={`wb-row ${activeView === m.view ? "sel" : ""}`}
+                      onClick={() => { setActiveView(m.view); setActiveTab(m.tab); }}
+                    >
+                      <span className="lbl">{m.label}</span>
+                    </div>
+                  ))}
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
+        {leftDock.open && (
+          <div
+            className="wb-gutter"
+            onMouseDown={() => { dragging.current = "left"; document.body.style.cursor = "col-resize"; }}
+            onDoubleClick={() => setLeftDock((d) => ({ ...d, open: false }))}
+            title="Drag to resize, double-click to collapse (Cmd-1)"
+          />
+        )}
+
+        {/* CENTRE */}
+        <div className="wb-panel center">
+          {NATIVE_VIEWS.includes(activeView) ? (
+            /* Modules already speaking the workbench language: no embed wrapper,
+               no padding — they own their full pane like any other dock. */
+            <>
+              <div className="wb-panel-head">
+                <span className="title">{activeView}</span>
+                {activeView === "Settings" && (
+                  <>
+                    <span className="wb-spacer" />
+                    {["Providers", "Logins", "Services"].map((t) => (
+                      <button key={t} className={`wb-btn ${settingsTab === t ? "on" : ""}`} onClick={() => setSettingsTab(t)}>{t}</button>
+                    ))}
+                  </>
+                )}
+              </div>
+              <div className={`wb-panel-body ${activeView === "Browser" ? "wb-embed" : ""}`}>
+                {activeView === "Reader" && <ReaderPanel projectId={pid} />}
+                {activeView === "Tracer" && <TracerPanel projectId={pid} />}
+                {activeView === "Browser" && <BrowserTab />}
+                {activeView === "Settings" && <SettingsPanel tab={settingsTab} />}
+              </div>
+            </>
+          ) : activeView !== "Figures" ? (
+            <>
+              <div className="wb-panel-head"><span className="title">{activeView}</span></div>
+              <div className="wb-panel-body wb-embed" style={{ padding: 8 }}>
+                {activeView === "Protocols" && <SearchStrategyBuilder />}
+                {activeView === "Search" && <SearchView />}
+                {(activeView === "Screening" || activeView === "Extraction" || activeView === "Synthesis") && <ReviewTab embedded />}
+                {activeView === "Evidence Map" && <ResearchLoopView />}
+                {activeView === "Overview" && <ScientificRuntimeView />}
+                {activeView === "Reports" && <ProjectFiles />}
+              </div>
+            </>
+          ) : !review ? (
+            <>
+              <div className="wb-panel-head"><span className="title">No review bound</span></div>
+              <div className="wb-panel-body" style={{ padding: 16 }}>
+                <div style={{ maxWidth: 420 }}>
+                  <p style={{ fontSize: 11.5, color: "var(--fg-dim)", lineHeight: 1.6, marginBottom: 10 }}>
+                    The forest plot renders the studies a review pipeline has included. Create a
+                    review project and run the pipeline, or pick an existing project in the toolbar.
+                  </p>
+                  <div className="wb-prop" style={{ gridTemplateColumns: "92px 1fr", padding: "3px 0" }}>
+                    <span className="k">Project</span>
+                    <input className="wb-input" value={newProjectName} onChange={(e) => setNewProjectName(e.target.value)} placeholder="Project name" />
+                  </div>
+                  <div className="wb-prop" style={{ gridTemplateColumns: "92px 1fr", padding: "3px 0", alignItems: "start" }}>
+                    <span className="k">Question</span>
+                    <textarea className="wb-textarea" rows={3} value={newQuestion} onChange={(e) => setNewQuestion(e.target.value)} placeholder="PICO is extracted from this at the protocol stage" style={{ width: "100%" }} />
+                  </div>
+                  <button className="wb-btn on" style={{ marginTop: 8 }} onClick={createReviewProject}>Create review project</button>
                 </div>
               </div>
             </>
           ) : (
-            /* Subviews embedded within Penpot Studio Workbench Container */
-            <div className="flex-1 p-6 overflow-auto bg-[#090D15]">
-              {activeView === "Protocols" && <SearchStrategyBuilder />}
-              {activeView === "Search" && <SearchView />}
-              {(activeView === "Screening" || activeView === "Extraction" || activeView === "Synthesis") && <ReviewTab embedded />}
-              {activeView === "Evidence Map" && <ResearchLoopView />}
-              {activeView === "Overview" && <ScientificRuntimeView />}
-              {activeView === "Reports" && <ProjectFiles />}
-            </div>
+            <>
+              {/* grid toolbar: the numbers that matter, always visible */}
+              <div className="wb-panel-head">
+                <input
+                  className="wb-input"
+                  value={outcome.name}
+                  onChange={(e) => patchOutcome({ name: e.target.value })}
+                  style={{ width: 240, textTransform: "none", letterSpacing: 0, color: "var(--fg-bright)" }}
+                />
+                <span className="wb-count">k={computed.ok ? computed.k : 0}</span>
+                <span className="wb-count">
+                  {computed.ok ? `${outcome.measure} ${computed.pooled.effect} (${computed.pooled.ci[0]}–${computed.pooled.ci[1]})` : "no pooled estimate"}
+                </span>
+                {het && <span className="wb-count">I2 {het.I2}% · Q {het.Q} · df {het.df} · p {het.pQ}</span>}
+                <span className="wb-spacer" />
+                <span className="wb-count">{computed.ok ? computed.modelName : outcome.model}</span>
+              </div>
+
+              {/* the plot */}
+              <div style={{ flex: "1 1 auto", overflow: "auto", minHeight: 0, borderBottom: "1px solid var(--line)" }}>
+                {!computed.ok ? (
+                  <div style={{ padding: 16, fontSize: 11.5, color: "var(--fg-dim)", maxWidth: 620, lineHeight: 1.6 }}>
+                    <div style={{ color: "var(--warn)", fontFamily: "var(--mono)", marginBottom: 6 }}>{computed.reason}</div>
+                    {outcome.rows.length
+                      ? "Rows are bound to the studies the pipeline included. Enter each study's 2x2 counts in the grid below or the inspector; the pool recomputes as soon as one row is complete."
+                      : "Run the pipeline through full-text screening. Every included study lands here as a row."}
+                  </div>
+                ) : (
+                  <table className="wb-grid">
+                    <thead>
+                      <tr>
+                        <th style={{ width: "22%" }}>Study</th>
+                        <th style={{ width: 60 }}>Ev T</th>
+                        <th style={{ width: 60 }}>N T</th>
+                        <th style={{ width: 60 }}>Ev C</th>
+                        <th style={{ width: 60 }}>N C</th>
+                        <th>{outcome.measure} IV, {outcome.model === "fixed" ? "fixed" : "random"}, 95% CI</th>
+                        <th style={{ width: 168 }}>{outcome.measure} (95% CI)</th>
+                        <th style={{ width: 62 }}>Weight</th>
+                        <th style={{ width: 34 }}>RoB</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {layers.studies && computed.rows.map((row) => (
+                        <tr key={row.studyId} className={selectedRowId === row.studyId ? "sel" : ""} onClick={() => setSelectedRowId(row.studyId)}>
+                          <td title={row.label}>{row.label}</td>
+                          <td className="wb-num">{row.eventsT}</td>
+                          <td className="wb-num">{row.totalT}</td>
+                          <td className="wb-num">{row.eventsC}</td>
+                          <td className="wb-num">{row.totalC}</td>
+                          <td style={{ position: "relative", padding: 0 }}>
+                            <div style={{ position: "relative", height: "var(--row-h)" }}>
+                              {layers.nullLine && <div style={{ position: "absolute", top: 0, bottom: 0, left: `${getXPos(1)}%`, width: 1, background: "var(--line-strong)" }} />}
+                              <div style={{ position: "absolute", top: "50%", left: `${getXPos(row.lower)}%`, width: `${Math.max(0.4, getXPos(row.upper) - getXPos(row.lower))}%`, height: 1, background: "var(--fg-dim)" }} />
+                              <div
+                                style={{
+                                  position: "absolute", top: "50%", left: `${getXPos(row.effect)}%`,
+                                  width: Math.max(5, Math.min(13, 5 + row.weight / 5)),
+                                  height: Math.max(5, Math.min(13, 5 + row.weight / 5)),
+                                  transform: "translate(-50%, -50%)", background: robColor(row.rob),
+                                }}
+                              />
+                            </div>
+                          </td>
+                          <td className="wb-num">{row.effect} ({row.lower}–{row.upper})</td>
+                          <td className="wb-num">{row.weight?.toFixed(1)}</td>
+                          <td style={{ textAlign: "center" }}>
+                            <span style={{ display: "inline-block", width: 9, height: 9, borderRadius: "50%", background: robColor(row.rob) }} title={`Risk of bias: ${row.rob}`} />
+                          </td>
+                        </tr>
+                      ))}
+                      {layers.summary && (
+                        <tr style={{ background: "var(--bg-header)" }}>
+                          <td style={{ fontWeight: 600, color: "var(--fg-bright)" }}>Total (95% CI)</td>
+                          <td className="wb-num">{computed.totals.eventsT}</td>
+                          <td className="wb-num">{computed.totals.totalT}</td>
+                          <td className="wb-num">{computed.totals.eventsC}</td>
+                          <td className="wb-num">{computed.totals.totalC}</td>
+                          <td style={{ position: "relative", padding: 0 }}>
+                            <div style={{ position: "relative", height: "var(--row-h)" }}>
+                              <div style={{ position: "absolute", top: 0, bottom: 0, left: `${getXPos(1)}%`, width: 1, background: "var(--line-strong)" }} />
+                              <svg
+                                viewBox="0 0 100 16" preserveAspectRatio="none"
+                                style={{
+                                  position: "absolute", top: "50%", transform: "translateY(-50%)",
+                                  left: `${getXPos(computed.pooled.ci[0])}%`,
+                                  width: `${Math.max(1, getXPos(computed.pooled.ci[1]) - getXPos(computed.pooled.ci[0]))}%`,
+                                  height: 12,
+                                }}
+                              >
+                                <polygon points="0,8 50,0 100,8 50,16" fill="var(--fg-dim)" stroke="var(--fg-bright)" strokeWidth="1" />
+                              </svg>
+                            </div>
+                          </td>
+                          <td className="wb-num" style={{ color: "var(--fg-bright)" }}>
+                            {computed.pooled.effect} ({computed.pooled.ci[0]}–{computed.pooled.ci[1]})
+                          </td>
+                          <td className="wb-num" style={{ color: "var(--fg-bright)" }}>100.0</td>
+                          <td />
+                        </tr>
+                      )}
+                    </tbody>
+                    {layers.axis && (
+                      /* The axis lives in the table so its ticks cannot drift out
+                         of register with the column the intervals are drawn in. */
+                      <tfoot>
+                        <tr>
+                          <td colSpan={5} style={{ borderRight: "1px solid var(--line)" }} />
+                          <td style={{ padding: 0, height: 34 }}>
+                            <div style={{ position: "relative", height: 34, fontFamily: "var(--mono)", fontSize: 10, color: "var(--fg-dim)" }}>
+                              {ticks.map((t) => (
+                                <div key={t} style={{ position: "absolute", left: `${getXPos(t)}%`, transform: "translateX(-50%)", textAlign: "center" }}>
+                                  <div style={{ width: 1, height: 4, background: "var(--line-strong)", margin: "0 auto 2px" }} />
+                                  {t}
+                                </div>
+                              ))}
+                            </div>
+                          </td>
+                          <td colSpan={3} />
+                        </tr>
+                        <tr>
+                          <td colSpan={5} style={{ borderRight: "1px solid var(--line)" }} />
+                          <td colSpan={4} style={{ padding: "0 8px 4px" }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "var(--mono)", fontSize: 10, color: "var(--fg-dim)" }}>
+                              <span>{"<"} favours intervention</span>
+                              <span>favours comparator {">"}</span>
+                            </div>
+                          </td>
+                        </tr>
+                      </tfoot>
+                    )}
+                  </table>
+                )}
+
+                {computed.excluded.length > 0 && (
+                  <div style={{ borderTop: "1px solid var(--line)", padding: "4px 8px", fontFamily: "var(--mono)", fontSize: 10.5, color: "var(--fg-faint)" }}>
+                    <div style={{ textTransform: "uppercase", letterSpacing: ".4px", marginBottom: 2 }}>Not in the pooled estimate ({computed.excluded.length})</div>
+                    {computed.excluded.slice(0, 8).map((e, i) => <div key={i}>{e.label} — {e.reason}</div>)}
+                    {computed.excluded.length > 8 && <div>…{computed.excluded.length - 8} more</div>}
+                  </div>
+                )}
+              </div>
+
+              {/* bottom dock */}
+              <div style={{ height: 190, display: "flex", flexDirection: "column", flexShrink: 0 }}>
+                <div className="wb-tabs">
+                  {["DATA", "PROTOCOL", "RECORDS", "LOG", "PROVENANCE"].map((t) => (
+                    <div key={t} className={`pt ${tableTab === t ? "active" : ""}`} onClick={() => setTableTab(t)}>{t}</div>
+                  ))}
+                  <span className="wb-spacer" />
+                  <div className="pt" style={{ borderRight: "none", color: "var(--fg-faint)" }}>
+                    {outcome.rows.length} rows · {computed.ok ? computed.k : 0} pooled
+                  </div>
+                </div>
+
+                <div className="wb-panel-body">
+                  {tableTab === "DATA" && (
+                    <table className="wb-grid">
+                      <thead>
+                        <tr>
+                          <th style={{ width: "26%" }}>Study</th>
+                          <th style={{ width: 64 }}>Ev T</th>
+                          <th style={{ width: 64 }}>N T</th>
+                          <th style={{ width: 64 }}>Ev C</th>
+                          <th style={{ width: 64 }}>N C</th>
+                          <th style={{ width: 70 }}>{outcome.measure}</th>
+                          <th style={{ width: 120 }}>95% CI</th>
+                          <th style={{ width: 64 }}>Weight</th>
+                          <th style={{ width: 70 }}>RoB</th>
+                          <th style={{ width: 76 }}>State</th>
+                          <th style={{ width: 76 }}>Origin</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {outcome.rows.map((r) => {
+                          const calc = computed.rows.find((c) => c.studyId === r.studyId);
+                          const cell = (field) => (
+                            <input
+                              className="wb-cell-input"
+                              type="number"
+                              value={r[field] ?? ""}
+                              onChange={(e) => patchRow(r.studyId, { [field]: e.target.value === "" ? null : Number(e.target.value) })}
+                            />
+                          );
+                          return (
+                            <tr
+                              key={r.studyId}
+                              className={`${selectedRowId === r.studyId ? "sel" : ""} ${r.detached || !r.include ? "muted" : ""}`}
+                              onClick={() => setSelectedRowId(r.studyId)}
+                            >
+                              <td title={r.label}>{r.label}</td>
+                              <td>{cell("eventsT")}</td>
+                              <td>{cell("totalT")}</td>
+                              <td>{cell("eventsC")}</td>
+                              <td>{cell("totalC")}</td>
+                              <td className="wb-num">{calc ? calc.effect : "—"}</td>
+                              <td className="wb-num">{calc ? `${calc.lower}–${calc.upper}` : "—"}</td>
+                              <td className="wb-num">{calc ? calc.weight.toFixed(1) : "—"}</td>
+                              <td><span className="wb-dec" style={{ background: "transparent", color: robColor(r.rob), border: "1px solid var(--line-strong)" }}>{r.rob}</span></td>
+                              <td><span className={`wb-dec ${decisionClass(r)}`}>{decisionLabel(r)}</span></td>
+                              <td style={{ color: "var(--fg-faint)", fontFamily: "var(--mono)", fontSize: 10.5 }}>{r.source}</td>
+                            </tr>
+                          );
+                        })}
+                        {outcome.rows.length === 0 && (
+                          <tr><td colSpan={11} style={{ color: "var(--fg-faint)" }}>No rows — run the pipeline through full-text screening.</td></tr>
+                        )}
+                      </tbody>
+                    </table>
+                  )}
+
+                  {tableTab === "PROTOCOL" && (
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, padding: 8 }}>
+                      <div>
+                        <div className="wb-insp-title" style={{ background: "transparent", borderBottom: "none", padding: "0 0 4px" }}>Eligibility criteria — gates the protocol stage</div>
+                        <textarea className="wb-textarea" style={{ width: "100%" }} rows={7} value={review.objects.eligibility || ""} onChange={(e) => setEligibility(e.target.value)} placeholder={"INCLUDE: …\nEXCLUDE: …"} />
+                      </div>
+                      <div>
+                        <div className="wb-insp-title" style={{ background: "transparent", borderBottom: "none", padding: "0 0 4px" }}>PICO — from the protocol stage</div>
+                        {review.protocol?.pico ? (
+                          <>
+                            {["population", "intervention", "comparator"].map((k) => (
+                              <div className="wb-prop" key={k}><span className="k">{k}</span><span className="v">{review.protocol.pico[k] || "—"}</span></div>
+                            ))}
+                            <div className="wb-prop"><span className="k">outcomes</span><span className="v">{(review.protocol.pico.outcomes || []).join(", ") || "—"}</span></div>
+                            <div className="wb-prop"><span className="k">concepts</span><span className="v mono">{(review.protocol.concepts || []).length} · {review.protocol.strategySource || "—"}</span></div>
+                          </>
+                        ) : (
+                          <div style={{ padding: "4px 8px", color: "var(--fg-faint)", fontSize: 11 }}>Not extracted yet — run the protocol stage.</div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {tableTab === "RECORDS" && (
+                    <table className="wb-grid">
+                      <thead>
+                        <tr>
+                          <th>Title</th><th style={{ width: 56 }}>Year</th><th style={{ width: 110 }}>Source</th>
+                          <th style={{ width: 80 }}>TIAB</th><th style={{ width: 90 }}>Full text</th><th style={{ width: 52 }}>Dup</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(review.objects.records || []).slice(0, 400).map((rec) => (
+                          <tr key={rec.id}>
+                            <td title={rec.title}>{rec.title}</td>
+                            <td className="wb-num">{rec.year || "—"}</td>
+                            <td style={{ color: "var(--fg-faint)" }}>{rec.source || "—"}</td>
+                            <td>{rec.tiab ? <span className={`wb-dec ${rec.tiab === "include" ? "inc" : rec.tiab === "exclude" ? "exc" : "maybe"}`}>{rec.tiab}</span> : <span className="wb-dec pend">pending</span>}</td>
+                            <td>{rec.fulltext?.decision || "—"}</td>
+                            <td>{rec.isDuplicate ? "dup" : ""}</td>
+                          </tr>
+                        ))}
+                        {(review.objects.records || []).length === 0 && (
+                          <tr><td colSpan={6} style={{ color: "var(--fg-faint)" }}>No records — run the search stage.</td></tr>
+                        )}
+                      </tbody>
+                    </table>
+                  )}
+
+                  {tableTab === "LOG" && (
+                    <div className="wb-log">
+                      {log.length === 0 && <div style={{ color: "var(--fg-faint)" }}>Nothing has run in this session yet.</div>}
+                      {log.slice().reverse().map((l, i) => (
+                        <div key={i} className={l.kind}>
+                          <span className="t">{new Date(l.at).toLocaleTimeString()} </span>{l.msg}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {tableTab === "PROVENANCE" && (
+                    <table className="wb-grid">
+                      <thead>
+                        <tr><th style={{ width: 140 }}>Database</th><th>Executed query</th><th style={{ width: 80 }}>Records</th><th style={{ width: 90 }}>Status</th></tr>
+                      </thead>
+                      <tbody>
+                        {(review.objects.searches || []).map((s, i) => (
+                          <tr key={i}>
+                            <td>{s.name || s.db}</td>
+                            <td style={{ color: "var(--fg-faint)", fontFamily: "var(--mono)", fontSize: 10.5 }} title={s.query}>{s.query}</td>
+                            <td className="wb-num">{s.count ?? 0}</td>
+                            <td style={{ color: s.status === "error" ? "var(--err)" : "var(--fg-dim)" }}>{s.status || "ok"}</td>
+                          </tr>
+                        ))}
+                        {(review.objects.searches || []).length === 0 && (
+                          <tr><td colSpan={4} style={{ color: "var(--fg-faint)" }}>No search has been executed. Mode: {review.searchSummary?.mode || "not run"}</td></tr>
+                        )}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              </div>
+            </>
           )}
         </div>
 
-        {/* RIGHT COLUMN: PROFESSIONAL PROPERTY INSPECTOR */}
-        <div className="w-64 bg-[#0C121D] border-l border-slate-800 flex flex-col shrink-0 overflow-y-auto">
-          <div className="p-2.5 bg-[#090D14] border-b border-slate-800 flex items-center justify-between">
-            <span className="text-[10px] font-mono font-bold tracking-wider uppercase text-slate-400">
-              Element Inspector
-            </span>
-            <button className="text-slate-500 hover:text-slate-200 text-xs font-mono">✕</button>
-          </div>
+        {rightDock.open && (
+          <div
+            className="wb-gutter"
+            onMouseDown={() => { dragging.current = "right"; document.body.style.cursor = "col-resize"; }}
+            onDoubleClick={() => setRightDock((d) => ({ ...d, open: false }))}
+            title="Drag to resize, double-click to collapse (Cmd-2)"
+          />
+        )}
 
-          <div className="p-2.5 border-b border-slate-800 bg-[#0E1522] space-y-1 font-mono">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-none" style={{ backgroundColor: selectedStudy.color }} />
-              <div className="truncate">
-                <div className="text-xs font-bold text-white truncate">{selectedStudy.name}</div>
-                <div className="text-[9px] text-slate-500">NODE_ID: node_1_4</div>
-              </div>
+        {rightDock.open && (
+          <div className="wb-panel" style={{ width: rightDock.width, flexShrink: 0 }}>
+            <div className="wb-panel-head">
+              <span className="title">Inspector</span>
+              {selectedRow && <span className="wb-count">{selectedRow.source}</span>}
             </div>
-          </div>
 
-          <div className="flex border-b border-slate-800 bg-[#090D14] font-mono">
-            {["PROPERTIES", "STYLE", "DATA"].map((t) => (
-              <button
-                key={t}
-                onClick={() => setInspectorTab(t)}
-                className={`flex-1 py-1 text-[10px] font-bold tracking-wider text-center transition-colors ${
-                  inspectorTab === t
-                    ? "text-cyan-400 border-b-2 border-cyan-400 bg-slate-800/30"
-                    : "text-slate-400 hover:text-slate-200"
-                }`}
-              >
-                {t}
-              </button>
-            ))}
-          </div>
-
-          <div className="p-3 space-y-4 font-mono text-xs">
-            <div className="space-y-1.5">
-              <div className="text-[9px] font-bold uppercase text-slate-500 tracking-wider">IDENTITY</div>
-              <div className="space-y-1.5">
-                <div>
-                  <label className="text-[10px] text-slate-400 block mb-0.5">Label Name</label>
-                  <input
-                    type="text"
-                    value={selectedStudy.name}
-                    onChange={(e) => updateSelectedStudy("name", e.target.value)}
-                    className="w-full bg-[#131B2B] border border-slate-800 rounded-sm px-2 py-1 text-slate-200 text-xs focus:outline-none focus:border-cyan-500/60 font-mono"
-                  />
+            {!selectedRow ? (
+              <div className="wb-panel-body" style={{ padding: "6px 8px", color: "var(--fg-faint)", fontSize: 11 }}>
+                No element selected. J / K move the selection.
+              </div>
+            ) : (
+              <div className="wb-panel-body">
+                <div className="wb-insp-title">Identity</div>
+                <div className="wb-prop">
+                  <span className="k">Label</span>
+                  <input className="wb-input" value={selectedRow.label} onChange={(e) => patchRow(selectedRow.studyId, { label: e.target.value })} />
                 </div>
-                <div className="grid grid-cols-2 gap-1.5">
-                  <div>
-                    <label className="text-[10px] text-slate-400 block mb-0.5">Node Type</label>
+                <div className="wb-prop"><span className="k">Study id</span><span className="v mono">{selectedRow.studyId}</span></div>
+                <div className="wb-prop"><span className="k">PMID</span><span className="v mono">{selectedRow.pmid || "—"}</span></div>
+                <div className="wb-prop"><span className="k">DOI</span><span className="v mono">{selectedRow.doi || "—"}</span></div>
+                <div className="wb-prop"><span className="k">Year</span><span className="v mono">{selectedRow.year || "—"}</span></div>
+
+                <div className="wb-insp-title">2x2 contingency</div>
+                {[["eventsT", "Events (T)"], ["totalT", "Total (T)"], ["eventsC", "Events (C)"], ["totalC", "Total (C)"]].map(([field, label]) => (
+                  <div className="wb-prop" key={field}>
+                    <span className="k">{label}</span>
                     <input
-                      type="text"
-                      disabled
-                      value="StudyRow"
-                      className="w-full bg-[#090D14] border border-slate-800 rounded-sm px-2 py-1 text-slate-500 text-[11px] cursor-not-allowed font-mono"
+                      className="wb-input" type="number" value={selectedRow[field] ?? ""} placeholder="—"
+                      onChange={(e) => patchRow(selectedRow.studyId, { [field]: e.target.value === "" ? null : Number(e.target.value) })}
                     />
                   </div>
-                  <div>
-                    <label className="text-[10px] text-slate-400 block mb-0.5">Source</label>
-                    <span className="block text-cyan-400 underline cursor-pointer text-[11px] pt-1 truncate">
-                      PMID:{selectedStudy.pmid}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
+                ))}
 
-            {/* Live Contingency Table Input */}
-            <div className="space-y-1.5 border-t border-slate-800 pt-3">
-              <div className="text-[9px] font-bold uppercase text-slate-500 tracking-wider">CONTINGENCY DATA</div>
-              <div className="grid grid-cols-2 gap-1.5">
-                <div>
-                  <label className="text-[10px] text-slate-400 block mb-0.5">Events (T)</label>
-                  <input
-                    type="number"
-                    value={selectedStudy.eventsT}
-                    onChange={(e) => updateSelectedStudy("eventsT", parseInt(e.target.value) || 0)}
-                    className="w-full bg-[#131B2B] border border-slate-800 rounded-sm px-2 py-1 text-slate-200 text-xs focus:outline-none font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] text-slate-400 block mb-0.5">Total (T)</label>
-                  <input
-                    type="number"
-                    value={selectedStudy.totalT}
-                    onChange={(e) => updateSelectedStudy("totalT", parseInt(e.target.value) || 1)}
-                    className="w-full bg-[#131B2B] border border-slate-800 rounded-sm px-2 py-1 text-slate-200 text-xs focus:outline-none font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] text-slate-400 block mb-0.5">Events (C)</label>
-                  <input
-                    type="number"
-                    value={selectedStudy.eventsC}
-                    onChange={(e) => updateSelectedStudy("eventsC", parseInt(e.target.value) || 0)}
-                    className="w-full bg-[#131B2B] border border-slate-800 rounded-sm px-2 py-1 text-slate-200 text-xs focus:outline-none font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] text-slate-400 block mb-0.5">Total (C)</label>
-                  <input
-                    type="number"
-                    value={selectedStudy.totalC}
-                    onChange={(e) => updateSelectedStudy("totalC", parseInt(e.target.value) || 1)}
-                    className="w-full bg-[#131B2B] border border-slate-800 rounded-sm px-2 py-1 text-slate-200 text-xs focus:outline-none font-mono"
-                  />
-                </div>
-              </div>
-            </div>
+                <div className="wb-insp-title">Derived</div>
+                {selectedCalc ? (
+                  <>
+                    <div className="wb-prop"><span className="k">{outcome.measure}</span><span className="v mono">{selectedCalc.effect}</span></div>
+                    <div className="wb-prop"><span className="k">95% CI</span><span className="v mono">{selectedCalc.lower} – {selectedCalc.upper}</span></div>
+                    <div className="wb-prop"><span className="k">Weight</span><span className="v mono">{selectedCalc.weight}%</span></div>
+                  </>
+                ) : (
+                  <div className="wb-prop"><span className="k">Status</span><span className="v" style={{ color: "var(--warn)" }}>{computed.excluded.find((e) => e.label === selectedRow.label)?.reason || "not pooled"}</span></div>
+                )}
 
-            {/* Live Calculated Stats Readout */}
-            <div className="space-y-1.5 border-t border-slate-800 pt-3">
-              <div className="text-[9px] font-bold uppercase text-slate-500 tracking-wider">DERIVED METRICS</div>
-              <div className="grid grid-cols-2 gap-1.5 text-slate-400 text-[11px]">
-                <div className="flex items-center justify-between bg-[#131B2B] px-2 py-1 border border-slate-800 rounded-sm">
-                  <span className="text-[10px] text-slate-500">Effect</span>
-                  <span className="text-cyan-400 font-mono font-bold">{selectedStudy.rr}</span>
-                </div>
-                <div className="flex items-center justify-between bg-[#131B2B] px-2 py-1 border border-slate-800 rounded-sm">
-                  <span className="text-[10px] text-slate-500">Weight</span>
-                  <span className="text-slate-200 font-mono">{selectedStudy.weight}%</span>
-                </div>
-                <div className="flex items-center justify-between bg-[#131B2B] px-2 py-1 border border-slate-800 rounded-sm">
-                  <span className="text-[10px] text-slate-500">Lower CI</span>
-                  <span className="text-slate-200 font-mono">{selectedStudy.lower}</span>
-                </div>
-                <div className="flex items-center justify-between bg-[#131B2B] px-2 py-1 border border-slate-800 rounded-sm">
-                  <span className="text-[10px] text-slate-500">Upper CI</span>
-                  <span className="text-slate-200 font-mono">{selectedStudy.upper}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Rendering Controls */}
-            <div className="space-y-1.5 border-t border-slate-800 pt-3">
-              <div className="text-[9px] font-bold uppercase text-slate-500 tracking-wider">VECTOR GRAPHICS</div>
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-400 text-[10px]">Risk of Bias</span>
-                  <select
-                    value={selectedStudy.rob}
-                    onChange={(e) => updateSelectedStudy("rob", e.target.value)}
-                    className="bg-[#131B2B] border border-slate-800 rounded-sm px-2 py-0.5 text-xs text-slate-200 focus:outline-none font-mono"
-                  >
-                    <option value="Low">Low Risk</option>
-                    <option value="Some">Some Concerns</option>
-                    <option value="High">High Risk</option>
+                <div className="wb-insp-title">Risk of bias</div>
+                <div className="wb-prop">
+                  <span className="k">Judgement</span>
+                  <select className="wb-select" value={selectedRow.rob} onChange={(e) => patchRow(selectedRow.studyId, { rob: e.target.value, robOverride: true })}>
+                    {ROB_LEVELS.map((l) => <option key={l} value={l}>{l}</option>)}
                   </select>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-400 text-[10px]">Color Hex</span>
-                  <div className="flex items-center gap-1.5">
-                    <input
-                      type="color"
-                      value={selectedStudy.color}
-                      onChange={(e) => updateSelectedStudy("color", e.target.value)}
-                      className="w-5 h-5 rounded-none bg-transparent cursor-pointer border-none"
-                    />
-                    <span className="font-mono text-slate-200 text-xs">{selectedStudy.color}</span>
-                  </div>
+                <div className="wb-prop">
+                  <span className="k">Source</span>
+                  <span className="v" style={{ fontSize: 10.5, color: "var(--fg-faint)" }}>
+                    {selectedRow.robOverride ? "operator override, the RoB stage will not overwrite" : "derived from the risk-of-bias stage"}
+                  </span>
+                </div>
+
+                {selectedRow.detached && (
+                  <div className="wb-prop"><span className="k">Warning</span><span className="v" style={{ color: "var(--warn)" }}>study no longer included by the pipeline</span></div>
+                )}
+
+                <div className="wb-decide">
+                  <div className="db inc" onClick={() => patchRow(selectedRow.studyId, { include: true })}>Include<kbd>I</kbd></div>
+                  <div className="db exc" onClick={() => patchRow(selectedRow.studyId, { include: false })}>Exclude<kbd>E</kbd></div>
+                  <div className="db maybe" onClick={() => patchRow(selectedRow.studyId, { rob: "Some", robOverride: true })}>Maybe<kbd>M</kbd></div>
+                </div>
+                <div style={{ padding: "6px 8px" }}>
+                  <button className="wb-btn danger" onClick={() => removeRow(selectedRow.studyId)}>
+                    {selectedRow.source === "runtime" ? "Exclude row from analysis" : "Delete manual row"}
+                  </button>
                 </div>
               </div>
-            </div>
-
-            {/* Actions */}
-            <div className="border-t border-slate-800 pt-3 space-y-1.5">
-              <div className="grid grid-cols-2 gap-1.5">
-                <button onClick={addStudyRow} className="flex items-center justify-center gap-1 px-2 py-1 text-slate-300 bg-[#131B2B] border border-slate-700/80 rounded-sm hover:bg-slate-800 text-[10px] font-mono">
-                  <Plus className="h-3 w-3 text-cyan-400" /> Add Row
-                </button>
-                <button className="flex items-center justify-center gap-1 px-2 py-1 text-slate-300 bg-[#131B2B] border border-slate-700/80 rounded-sm hover:bg-slate-800 text-[10px] font-mono">
-                  <Lock className="h-3 w-3 text-slate-400" /> Lock
-                </button>
-              </div>
-              <button
-                onClick={() => {
-                  if (studies.length > 1) {
-                    setStudies((prev) => prev.filter((s) => s.id !== selectedStudyId));
-                    setSelectedStudyId(studies[0].id);
-                  }
-                }}
-                className="w-full flex items-center justify-center gap-1 px-2 py-1 text-rose-400 bg-rose-950/40 border border-rose-800/60 rounded-sm hover:bg-rose-900/60 text-[10px] font-mono font-bold"
-              >
-                <Trash2 className="h-3 w-3" /> Remove Study
-              </button>
-            </div>
+            )}
           </div>
-        </div>
+        )}
       </div>
 
-      {/* 3. GLOBAL STATUS BAR */}
-      <footer className="h-6 bg-[#090D14] border-t border-slate-800 px-3 flex items-center justify-between text-[10px] font-mono text-slate-400 shrink-0 z-30">
-        <div className="flex items-center gap-4">
-          <span className="text-emerald-400 font-semibold flex items-center gap-1">
-            <CheckCircle2 className="h-3 w-3" /> PIPELINE: COMPLETE
+      {/* STATUS BAR */}
+      <div className="wb-statusbar">
+        {running ? (
+          <span className="sb warn">{running.stage}: {running.msg} · {elapsed}s</span>
+        ) : (
+          <span className={`sb ${overall.pct === 100 ? "ok" : ""}`}>
+            <span className="wb-meter"><i style={{ width: `${overall.pct}%` }} /></span>
+            <b>{overall.done}</b>/{overall.total} stages
           </span>
-          <span className="text-slate-700">|</span>
-          <span>STUDIES: <strong className="text-slate-200">{calculatedStudies.length}</strong></span>
-          <span>POOLED EFFECT: <strong className="text-cyan-400">{randomModel?.effect ?? 0.40}</strong></span>
-          <span>I²: <strong className="text-slate-200">{het ? `${het.I2}%` : "37%"}</strong></span>
-        </div>
+        )}
+        <span className="sb">project <b>{project?.name || "none"}</b></span>
+        <span className="sb">records <b>{summary?.records ?? 0}</b></span>
+        <span className="sb">screened in <b>{summary?.included ?? 0}</b></span>
+        <span className="sb">extracted <b>{summary?.extracted ?? 0}</b></span>
+        <span className="wb-spacer" />
+        {computed.ok ? (
+          <span className="sb ok">
+            pooled {outcome.measure} <b>{computed.pooled.effect}</b> ({computed.pooled.ci[0]}–{computed.pooled.ci[1]}) · I2 <b>{het.I2}%</b> · k=<b>{computed.k}</b>
+          </span>
+        ) : (
+          <span className="sb warn">no pooled estimate</span>
+        )}
+        <span className="sb">{llmRoute} route</span>
+        <span className="sb" onClick={() => setShowKeys((v) => !v)}>? keys</span>
+      </div>
 
-        <div className="flex items-center gap-4">
-          <span>VERIFICATION: <strong className="text-emerald-400 font-bold">PASSED</strong></span>
-          <span className="text-slate-700">|</span>
-          <span className="text-cyan-400 font-semibold flex items-center gap-1">
-            <Activity className="h-3 w-3 animate-pulse" /> ENGINE: ACTIVE
-          </span>
+      {showKeys && (
+        <div className="wb-kbd-hint" onClick={() => setShowKeys(false)}>
+          <b>J</b> / <b>K</b> move selection &nbsp; <b>I</b> include &nbsp; <b>E</b> exclude &nbsp; <b>M</b> maybe (all auto-advance)<br />
+          <b>Cmd-1</b> left dock &nbsp; <b>Cmd-2</b> right dock &nbsp; <b>?</b> this map &nbsp; <b>Esc</b> close
         </div>
-      </footer>
+      )}
     </div>
   );
 }

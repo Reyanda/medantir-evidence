@@ -1,0 +1,247 @@
+/* workbench.css — the studio's design layer.
+   Native pro-tool chrome: permanent furniture, 1px borders, no elevation, no
+   pastel, 2px max radii, 11-12px type, 22px data rows. Colour is reserved for
+   meaning (include / exclude / maybe / selection), never for decoration.
+   Every value below is a token; components must not hardcode hexes. */
+
+.wb {
+  --bg-app:      #1e1e1e;
+  --bg-panel:    #252526;
+  --bg-panel-2:  #2d2d2e;
+  --bg-toolbar:  #333334;
+  --bg-header:   #3c3c3d;
+  --bg-input:    #1c1c1c;
+  --bg-hover:    #2a2d2e;
+  --bg-active:   #094771;
+  --bg-active-2: #37373d;
+
+  --line:        #3f3f42;
+  --line-strong: #4a4a4f;
+  --line-focus:  #007acc;
+
+  --fg:          #d4d4d4;
+  --fg-dim:      #9d9d9d;
+  --fg-faint:    #6e6e6e;
+  --fg-bright:   #f0f0f0;
+
+  --accent:      #4ea1ff;
+  --ok:          #4ec94e;
+  --warn:        #d7a11e;
+  --err:         #e05555;
+
+  --tag-inc:     #2d5a2d;
+  --tag-exc:     #5a2d2d;
+  --tag-maybe:   #5a4d1e;
+
+  --row-h: 22px;
+  --mono: "JetBrains Mono", "SF Mono", ui-monospace, Menlo, monospace;
+
+  height: 100vh;
+  display: grid;
+  grid-template-rows: 22px 30px 1fr 20px;
+  overflow: hidden;
+  background: var(--bg-app);
+  color: var(--fg);
+  font-family: "Inter", "SF Pro Text", -apple-system, "Segoe UI", system-ui, sans-serif;
+  font-size: 12px;
+  line-height: 1.35;
+  user-select: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* --- menu bar ------------------------------------------------------------ */
+.wb-menubar {
+  display: flex; align-items: center; gap: 2px;
+  background: var(--bg-app);
+  border-bottom: 1px solid var(--line);
+  padding: 0 6px; font-size: 11px; color: var(--fg-dim);
+}
+.wb-brand { font-weight: 700; color: var(--fg-bright); letter-spacing: .3px; margin-right: 12px; }
+.wb-brand b { color: var(--accent); font-weight: 700; }
+.wb-menu-item { padding: 2px 8px; border-radius: 2px; cursor: default; }
+.wb-menu-item:hover { background: var(--bg-hover); color: var(--fg-bright); }
+.wb-menu-item.on { color: var(--fg-bright); background: var(--bg-active-2); }
+.wb-spacer { flex: 1; }
+.wb-env { font-family: var(--mono); font-size: 10px; color: var(--fg-faint); padding: 0 8px; }
+
+/* --- toolbar ribbon ------------------------------------------------------ */
+.wb-toolbar {
+  display: flex; align-items: center; gap: 2px;
+  background: var(--bg-toolbar); border-bottom: 1px solid var(--line); padding: 0 4px;
+}
+.wb-tb-group { display: flex; align-items: center; gap: 1px; padding: 0 5px; height: 22px; border-right: 1px solid var(--line); }
+.wb-tb-group:last-of-type { border-right: none; }
+.wb-btn {
+  display: inline-flex; align-items: center; gap: 4px;
+  height: 22px; padding: 0 7px; font-size: 11px;
+  color: var(--fg); background: transparent;
+  border: 1px solid transparent; border-radius: 2px; cursor: default; white-space: nowrap;
+}
+.wb-btn:hover:not(:disabled) { background: var(--bg-hover); border-color: var(--line-strong); }
+.wb-btn.on { background: var(--bg-active); border-color: var(--line-focus); color: #fff; }
+.wb-btn:disabled { color: var(--fg-faint); cursor: default; }
+.wb-btn.danger { color: var(--err); }
+.wb-btn.danger:hover { background: var(--tag-exc); border-color: var(--err); }
+.wb-sep { width: 1px; height: 16px; background: var(--line); margin: 0 3px; }
+
+.wb-input, .wb-select, .wb-textarea {
+  background: var(--bg-input); border: 1px solid var(--line-strong); border-radius: 2px;
+  color: var(--fg); font-family: inherit; font-size: 11px; padding: 1px 5px; outline: none;
+}
+.wb-input:focus, .wb-select:focus, .wb-textarea:focus { border-color: var(--line-focus); }
+.wb-input::placeholder, .wb-textarea::placeholder { color: var(--fg-faint); }
+.wb-textarea { resize: none; font-family: var(--mono); line-height: 1.5; padding: 4px 6px; }
+.wb-mono { font-family: var(--mono); }
+
+/* --- workspace + docks --------------------------------------------------- */
+.wb-workspace { display: flex; overflow: hidden; min-height: 0; background: var(--bg-app); }
+.wb-panel { display: flex; flex-direction: column; background: var(--bg-panel); overflow: hidden; min-width: 0; }
+.wb-panel.center { background: var(--bg-panel-2); flex: 1; }
+.wb-gutter { width: 4px; flex-shrink: 0; cursor: col-resize; background: var(--bg-app); position: relative; }
+.wb-gutter::after { content: ""; position: absolute; inset: 0 1px; background: var(--line); }
+.wb-gutter:hover::after { background: var(--line-focus); }
+
+.wb-panel-head {
+  display: flex; align-items: center; gap: 6px; height: 24px; flex-shrink: 0;
+  background: var(--bg-header); border-bottom: 1px solid var(--line); padding: 0 6px;
+  font-size: 10.5px; font-weight: 600; letter-spacing: .5px; text-transform: uppercase; color: var(--fg-dim);
+}
+.wb-panel-head .title { color: var(--fg-bright); }
+.wb-count {
+  font-family: var(--mono); font-size: 10px; color: var(--fg-faint);
+  background: var(--bg-input); padding: 0 5px; border-radius: 2px; border: 1px solid var(--line);
+  text-transform: none; letter-spacing: 0;
+}
+.wb-panel-body { flex: 1; overflow: auto; min-height: 0; }
+
+.wb-tabs { display: flex; background: var(--bg-toolbar); border-bottom: 1px solid var(--line); flex-shrink: 0; }
+.wb-tabs .pt {
+  padding: 4px 10px; font-size: 11px; color: var(--fg-dim);
+  border-right: 1px solid var(--line); border-bottom: 2px solid transparent; cursor: default;
+}
+.wb-tabs .pt.active { color: var(--fg-bright); background: var(--bg-panel); border-bottom-color: var(--accent); }
+.wb-tabs .pt:hover:not(.active) { background: var(--bg-hover); }
+
+/* --- list rows ----------------------------------------------------------- */
+.wb-row {
+  display: flex; align-items: center; gap: 6px; height: var(--row-h);
+  padding: 0 8px; font-size: 11px; color: var(--fg); cursor: default; white-space: nowrap;
+}
+.wb-row:hover { background: var(--bg-hover); }
+.wb-row.sel { background: var(--bg-active); color: #fff; }
+.wb-row.soft { background: var(--bg-active-2); }
+.wb-row .lbl { flex: 1; overflow: hidden; text-overflow: ellipsis; }
+.wb-row .n { font-family: var(--mono); font-size: 10px; color: var(--fg-faint); }
+.wb-row.sel .n { color: #cde6ff; }
+.wb-row .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.wb-sub { padding-left: 22px; }
+
+/* --- data grid ----------------------------------------------------------- */
+.wb-grid { width: 100%; border-collapse: collapse; font-size: 12px; }
+.wb-grid thead th {
+  position: sticky; top: 0; z-index: 2; background: var(--bg-header);
+  border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line);
+  padding: 3px 8px; text-align: left; font-size: 10.5px; font-weight: 600; color: var(--fg-dim);
+  text-transform: uppercase; letter-spacing: .4px; white-space: nowrap;
+}
+.wb-grid tbody td {
+  padding: 0 8px; height: var(--row-h); border-bottom: 1px solid var(--line); border-right: 1px solid var(--line);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 0;
+}
+.wb-grid tbody tr:nth-child(even) { background: rgba(255,255,255,.012); }
+.wb-grid tbody tr:hover { background: var(--bg-hover); }
+.wb-grid tbody tr.sel { background: var(--bg-active); }
+.wb-grid tbody tr.sel td { color: #fff; border-right-color: #0d5a8a; }
+.wb-grid tbody tr.muted td { color: var(--fg-faint); }
+.wb-num { font-family: var(--mono); font-size: 11px; text-align: right; }
+.wb-cell-input {
+  width: 100%; background: transparent; border: 1px solid transparent; border-radius: 2px;
+  color: inherit; font-family: var(--mono); font-size: 11px; text-align: right; padding: 0 2px; outline: none;
+}
+.wb-cell-input:hover { border-color: var(--line); }
+.wb-cell-input:focus { border-color: var(--line-focus); background: var(--bg-input); color: var(--fg); }
+
+.wb-dec { display: inline-block; min-width: 44px; text-align: center; font-family: var(--mono);
+  font-size: 10px; font-weight: 600; border-radius: 2px; padding: 0 4px; }
+.wb-dec.inc { background: var(--tag-inc); color: #a8e6a8; }
+.wb-dec.exc { background: var(--tag-exc); color: #f0a8a8; }
+.wb-dec.maybe { background: var(--tag-maybe); color: #e8d48a; }
+.wb-dec.pend { background: #333; color: var(--fg-dim); }
+
+.wb-tag { font-size: 10px; padding: 1px 6px; border-radius: 2px; font-family: var(--mono);
+  border: 1px solid var(--line-strong); color: var(--fg-dim); cursor: default; background: transparent; }
+.wb-tag:hover { border-color: var(--accent); color: var(--fg-bright); }
+.wb-tag.on { background: var(--bg-active); border-color: var(--line-focus); color: #fff; }
+
+/* --- inspector ----------------------------------------------------------- */
+.wb-insp-title {
+  display: flex; align-items: center; gap: 5px; padding: 4px 8px;
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px;
+  color: var(--fg-dim); background: var(--bg-panel-2); border-bottom: 1px solid var(--line);
+}
+.wb-prop { display: grid; grid-template-columns: 92px 1fr; padding: 2px 8px; font-size: 11px; align-items: center; min-height: 20px; }
+.wb-prop:hover { background: var(--bg-hover); }
+.wb-prop .k { color: var(--fg-faint); }
+.wb-prop .v { color: var(--fg); user-select: text; word-break: break-word; }
+.wb-prop .v.mono { font-family: var(--mono); font-size: 10.5px; }
+.wb-decide { display: flex; gap: 4px; padding: 6px 8px; border-top: 1px solid var(--line); background: var(--bg-panel-2); }
+.wb-decide .db { flex: 1; padding: 4px 0; text-align: center; font-size: 11px; font-weight: 600;
+  border: 1px solid var(--line-strong); border-radius: 2px; background: var(--bg-toolbar); color: var(--fg); cursor: default; }
+.wb-decide .db kbd { font-family: var(--mono); font-size: 9px; color: var(--fg-faint); margin-left: 4px;
+  border: 1px solid var(--line); border-radius: 2px; padding: 0 3px; }
+.wb-decide .db.inc:hover { background: var(--tag-inc); border-color: var(--ok); }
+.wb-decide .db.exc:hover { background: var(--tag-exc); border-color: var(--err); }
+.wb-decide .db.maybe:hover { background: var(--tag-maybe); border-color: var(--warn); }
+
+/* --- status bar ---------------------------------------------------------- */
+.wb-statusbar {
+  display: flex; align-items: center; background: var(--bg-active); color: #cfe8ff;
+  font-size: 10.5px; font-family: var(--mono); padding: 0 8px;
+}
+.wb-statusbar .sb { padding: 0 8px; height: 20px; display: flex; align-items: center; gap: 4px;
+  border-right: 1px solid rgba(255,255,255,.12); cursor: default; }
+.wb-statusbar .sb:first-child { border-left: 1px solid rgba(255,255,255,.12); }
+.wb-statusbar .sb:hover { background: rgba(255,255,255,.1); }
+.wb-statusbar .sb b { color: #fff; }
+.wb-statusbar .sb.ok { color: #b6ffb6; }
+.wb-statusbar .sb.warn { color: #ffe08a; }
+.wb-statusbar .sb.err { color: #ffb3b3; }
+.wb-meter { width: 90px; height: 8px; background: rgba(0,0,0,.35); border-radius: 1px; overflow: hidden;
+  display: inline-block; border: 1px solid rgba(255,255,255,.2); }
+.wb-meter > i { display: block; height: 100%; background: #4ec94e; }
+
+/* --- the two genuinely modal surfaces ------------------------------------ */
+.wb-kbd-hint {
+  position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+  background: var(--bg-toolbar); border: 1px solid var(--line-strong); border-radius: 2px;
+  padding: 8px 14px; font-size: 11px; color: var(--fg-dim); font-family: var(--mono);
+  box-shadow: 0 4px 16px rgba(0,0,0,.5); z-index: 50; line-height: 1.9;
+}
+.wb-kbd-hint b { color: var(--accent); }
+
+/* --- log ----------------------------------------------------------------- */
+.wb-log { padding: 4px 8px; font-family: var(--mono); font-size: 11px; user-select: text; }
+.wb-log .t { color: var(--fg-faint); }
+.wb-log .ok { color: var(--ok); }
+.wb-log .warn { color: var(--warn); }
+.wb-log .err { color: var(--err); }
+
+/* --- scrollbars ---------------------------------------------------------- */
+.wb ::-webkit-scrollbar { width: 12px; height: 12px; }
+.wb ::-webkit-scrollbar-track { background: var(--bg-panel); }
+.wb ::-webkit-scrollbar-thumb { background: #4a4a4f; border: 3px solid var(--bg-panel); border-radius: 6px; }
+.wb ::-webkit-scrollbar-thumb:hover { background: #5a5a5f; }
+.wb ::-webkit-scrollbar-corner { background: var(--bg-panel); }
+
+/* --- embedded legacy views ------------------------------------------------
+   The pipeline modules predate this design layer. Rather than leave them
+   floating cards inside a docked tool, this scope strips their elevation,
+   rounds and oversized padding so they read as panel content. It is a
+   normaliser, not a rewrite — each view still owns its own markup. */
+.wb-embed { color: var(--fg); font-size: 12px; }
+.wb-embed * { box-shadow: none !important; }
+.wb-embed [class*="rounded"] { border-radius: 2px !important; }
+.wb-embed [class*="bg-white"], .wb-embed [class*="bg-slate-9"], .wb-embed [class*="bg-slate-8"] { background-color: var(--bg-panel) !important; }
+.wb-embed [class*="border-slate"], .wb-embed [class*="border-white"] { border-color: var(--line) !important; }
+.wb-embed h1, .wb-embed h2, .wb-embed h3 { font-size: 12px !important; font-weight: 600; color: var(--fg-bright); }
+.wb-embed button { border-radius: 2px !important; }
