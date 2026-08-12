@@ -4,6 +4,7 @@ import { activeToolProvider } from "../engine/providers.js";
 import { getProject } from "../engine/projectstore.js";
 import { appendProjectTranscript, getProjectTranscript } from "../engine/agentTranscript.js";
 import { createReview, saveReview, loadReview } from "../engine/reviewengine.js";
+import TracePanel from "./TracePanel.jsx";
 
 // The permanent bottom dock: where the operator states the question and where
 // they talk to the platform. Both halves write into the same review the canvas
@@ -166,7 +167,7 @@ export default function CommandDock({ projectId, review, onReviewChange, onNote,
   return (
     <div className="wb-dock" style={{ height }}>
       <div className="wb-tabs">
-        {["COMPOSER", "QUESTION"].map((t) => (
+        {["COMPOSER", "QUESTION", "TRACE"].map((t) => (
           <div key={t} className={`pt ${tab === t ? "active" : ""}`} onClick={() => setTab(t)}>{t}</div>
         ))}
         <span className="wb-spacer" />
@@ -177,7 +178,9 @@ export default function CommandDock({ projectId, review, onReviewChange, onNote,
         </div>
       </div>
 
-      {tab === "QUESTION" ? (
+      {tab === "TRACE" ? (
+        <TracePanel review={review} />
+      ) : tab === "QUESTION" ? (
         <div style={{ display: "flex", flexDirection: "column", minHeight: 0, flex: 1 }}>
           <div className="wb-qb" style={{ flex: 1 }}>
             <div className="wb-prop">

@@ -300,6 +300,41 @@ export default function ScreeningGrid({ projectId, review, onReviewChange, onNot
                 </div>
               </div>
 
+              <div className="wb-insp-title">Decision and its grounds</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr" }}>
+                <div>
+                  <div className="wb-prop">
+                    <span className="k">TIAB</span>
+                    <span className="v">{selected.tiab || "not decided"}</span>
+                  </div>
+                  <div className="wb-prop">
+                    <span className="k">Decided by</span>
+                    <span className="v mono" style={{ color: selected.tiabBy === "operator" ? "var(--accent)" : undefined }}>
+                      {selected.tiabEngine || (selected.tiabBy === "operator" ? "operator" : "—")}
+                    </span>
+                  </div>
+                </div>
+                <div>
+                  <div className="wb-prop">
+                    <span className="k">Confidence</span>
+                    <span className="v mono">{selected.tiabConfidence != null ? Number(selected.tiabConfidence).toFixed(2) : "—"}</span>
+                  </div>
+                  <div className="wb-prop">
+                    <span className="k">Full text</span>
+                    <span className="v">{selected.fulltext?.decision || "—"}</span>
+                  </div>
+                </div>
+              </div>
+              <div className="wb-prop" style={{ gridTemplateColumns: "92px 1fr", alignItems: "start" }}>
+                <span className="k">Reason</span>
+                <span className="v">
+                  {selected.tiabReason || selected.fulltext?.reason
+                    || <span style={{ color: "var(--fg-faint)" }}>
+                        {selected.tiab ? "no reason recorded — an operator decision, or an engine that returned none" : "not decided yet"}
+                       </span>}
+                </span>
+              </div>
+
               <div className="wb-insp-title">Tags</div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 4, padding: "4px 8px", alignItems: "center" }}>
                 {allTags.map((t) => (
