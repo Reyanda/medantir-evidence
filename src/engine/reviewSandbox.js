@@ -3,9 +3,9 @@
 // umbrella review's children. The shape lives in reviewSandboxModel.js so it
 // can be tested without a browser.
 
-import { putFile, getFile, listFiles, getProject } from "./projectstore.js";
+import { putFile, getFile, listFiles, getProject, createProject } from "./projectstore.js";
 import { loadReview, saveReview } from "./reviewengine.js";
-import { PATHS, slug, toYaml, buildManifest } from "./reviewSandboxModel.js";
+import { PATHS, slug, toYaml, buildManifest, parseYaml, reviewFromManifest } from "./reviewSandboxModel.js";
 
 export * from "./reviewSandboxModel.js";
 
@@ -61,6 +61,41 @@ export function materializeSandbox(projectId, { children = [] } = {}) {
   }
 
   return { ok: true, manifest, written };
+}
+
+// --- importing a sandbox ---------------------------------------------------
+
+/**
+ * Rebuilds a review in this workspace from a review.yaml a sandbox produced.
+ * The manifest is the contract, so importing it is the inverse of writing it:
+ * the same layout is materialized again on the way in, which is also the check
+ * that what was read can be written back.
+ *
+ * `records` and `eligibility` are the two things the manifest points at rather
+ * than contains. Supply them (records/records.json, protocol/eligibility.md)
+ * and the review arrives whole; omit them and it arrives without them.
+ */
+export function importSandbox(yamlText, { name = "", records = [], eligibility = "" } = {}) {
+  let manifest;
+  try {
+    manifest = parseYaml(yamlText);
+  } catch (cause) {
+    return { ok: false, reason: `could not read the manifest: ${cause?.message || cause}` };
+  }
+  if (!manifest || typeof manifest !== "object" || !manifest.review) {
+    return { ok: false, reason: "this file has no review: block — it is not a Medantir review.yaml" };
+  }
+  const { review, children, title } = reviewFromManifest(manifest, { records, eligibility });
+  const project = createProject(String(name || "").trim() || title || "Imported review", {
+    projectType: "systematic-review",
+    mode: "academic",
+  });
+  saveReview(project.id, review);
+  if (children.length) {
+    putFile(project.id, { path: CHILDREN_KEY, name: CHILDREN_KEY, type: "json", content: JSON.stringify(children, null, 2) });
+  }
+  const written = materializeSandbox(project.id, { children });
+  return { ok: true, projectId: project.id, project, review, children, manifest, written: written.written || [] };
 }
 
 /**

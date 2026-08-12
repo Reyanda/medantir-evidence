@@ -14,9 +14,9 @@ import {
   robColor,
   ROB_LEVELS
 } from "../engine/forestRuntime.js";
-import { createReview, saveReview, loadReview } from "../engine/reviewengine.js";
+import { saveReview, loadReview } from "../engine/reviewengine.js";
 import { runPipeline, runStage, stageDetails, stageProgress, reviewSummary } from "../engine/srOrchestrator.js";
-import { createProject, setActiveProject, activeProject } from "../engine/projectstore.js";
+import { setActiveProject } from "../engine/projectstore.js";
 import { runnableSources } from "../engine/academic.js";
 import { enabledProviders } from "../engine/providers.js";
 import { getTaskPreference, setTaskPreference } from "../engine/taskRouter.js";
@@ -36,6 +36,7 @@ import ConcordancePanel from "./ConcordancePanel.jsx";
 import BridgePanel from "./BridgePanel.jsx";
 import SandboxPanel from "./SandboxPanel.jsx";
 import QuestionBuilder from "./QuestionBuilder.jsx";
+import LaunchPanel from "./LaunchPanel.jsx";
 import "../styles/workbench.css";
 
 // The LLM-backed stages of the review pipeline. The studio exposes their route
@@ -48,6 +49,7 @@ const LLM_TASKS = [
 ];
 
 const MODULES = [
+  { label: "Start / templates", view: "Launch", tab: "BUILD", hint: "start fresh, start from a method template, or resume a review" },
   { label: "Question", view: "Question", tab: "QUESTION" },
   { label: "Overview", view: "Overview", tab: "BUILD" },
   { label: "Protocols", view: "Protocols", tab: "BUILD" },
@@ -74,7 +76,7 @@ const MENUS = [
   {
     label: "File",
     items: [
-      { label: "New review project…", run: (c) => { c.setActiveView("Figures"); c.setActiveTab("VISUALIZE"); c.note("Pick a project in the toolbar, or use the empty-state form to create one."); } },
+      { label: "New review…", run: (c) => { c.setActiveView("Launch"); c.setActiveTab("BUILD"); } },
       { label: "Attach working folder…", run: (c) => { c.setActiveView("Bridge"); c.setActiveTab("BUILD"); } },
       { label: "Open reader", run: (c) => { c.setActiveView("Reader"); c.setActiveTab("ANALYZE"); } },
       { sep: true },
@@ -127,7 +129,7 @@ const MENUS = [
 ];
 
 // Modules that already speak the workbench language and own their whole pane.
-const NATIVE_VIEWS = ["Question", "Screening", "Concordance", "Reader", "Tracer", "Browser", "Bridge", "Settings", "Databases", "Sandbox"];
+const NATIVE_VIEWS = ["Launch", "Question", "Screening", "Concordance", "Reader", "Tracer", "Browser", "Bridge", "Settings", "Databases", "Sandbox"];
 
 // The question comes before the build: it is what everything downstream compiles
 // from, so it leads the mode bar.
@@ -135,6 +137,15 @@ const MODES = [
   ["QUESTION", "Question"], ["BUILD", "Protocols"], ["ANALYZE", "Search"],
   ["SYNTHESIZE", "Synthesis"], ["VISUALIZE", "Figures"], ["PUBLISH", "Reports"],
 ];
+
+// Which review a cold start opens: the one worked on last. When there is none,
+// the caller lands on Launch instead — a canvas for a review that does not
+// exist is not a starting point.
+function mostRecentReview() {
+  return listReviewProjects()
+    .slice()
+    .sort((a, b) => (b.updated || b.created || 0) - (a.updated || a.created || 0))[0] || null;
+}
 
 export default function ForestPlotStudio({
   activeView = "Figures",
@@ -144,18 +155,12 @@ export default function ForestPlotStudio({
 }) {
   // --- runtime binding ------------------------------------------------------
   const [projects, setProjects] = useState(() => listReviewProjects());
-  const [pid, setPid] = useState(() => {
-    const activeId = activeProject();
-    const reviews = listReviewProjects();
-    return reviews.find((p) => p.id === activeId)?.id || reviews[0]?.id || "";
-  });
+  const [pid, setPid] = useState(() => mostRecentReview()?.id || "");
   const [review, setReview] = useState(null);
   const [dataset, setDataset] = useState(() => readDataset(null));
   const [log, setLog] = useState([]);
   const [running, setRunning] = useState(null); // { stage, pct, msg, startedAt } | null
   const [elapsed, setElapsed] = useState(0);
-  const [newProjectName, setNewProjectName] = useState("");
-  const [newQuestion, setNewQuestion] = useState("");
   const [llmRoute, setLlmRoute] = useState(() => getTaskPreference("extract-pico") || "auto");
   // A detached run keeps executing (the stage saves itself into review.json when
   // it finishes); the token stops THIS view from applying a stale result.
@@ -183,6 +188,19 @@ export default function ForestPlotStudio({
   const note = useCallback((msg, kind = "info") => {
     setLog((prev) => [...prev.slice(-199), { at: Date.now(), msg, kind }]);
   }, []);
+
+  // First contact is Launch when this workspace holds no review, and the last
+  // review's Question tab when it holds one. The canvas is an artifact surface;
+  // it is never the thing an operator is shown first.
+  const landed = useRef(false);
+  useEffect(() => {
+    if (landed.current) return;
+    landed.current = true;
+    const recent = mostRecentReview();
+    if (!recent) { setActiveView("Launch"); setActiveTab("BUILD"); return; }
+    setActiveView("Question");
+    setActiveTab("QUESTION");
+  }, [setActiveView, setActiveTab]);
 
   // Load project → review → dataset, and reconcile rows with what the pipeline
   // has actually included. The sync is written back so the canvas and review.json
@@ -284,21 +302,8 @@ export default function ForestPlotStudio({
   }, [outcome, selectedRowId, patchRow]);
 
   // --- project / review lifecycle -------------------------------------------
-  const createReviewProject = () => {
-    const name = newProjectName.trim();
-    const question = newQuestion.trim();
-    if (!name || !question) { note("A project name and a review question are both required.", "warn"); return; }
-    const project = createProject(name, { projectType: "systematic-review", mode: "academic" });
-    const r = createReview(question);
-    r.createdAt = Date.now();
-    r.selectedSources = allSources.slice(0, 2).map((s) => s.id);
-    saveReview(project.id, r);
-    setProjects(listReviewProjects());
-    setPid(project.id);
-    setNewProjectName("");
-    setNewQuestion("");
-    note(`Review project "${project.name}" created — run the pipeline from the protocol stage.`);
-  };
+  // Reviews are created on the Launch surface only. Two create paths drift:
+  // one of them ends up writing a review the other's gates never see.
 
   const reloadReview = useCallback(() => {
     const r = loadReview(pid);
@@ -481,6 +486,10 @@ export default function ForestPlotStudio({
               key={mode}
               className={`wb-btn ${activeTab === mode ? "on" : ""}`}
               onClick={() => { setActiveTab(mode); setActiveView(view); }}
+              // The flow is a review's flow. With no review in the workspace it
+              // leads nowhere, so it says so instead of opening empty surfaces.
+              disabled={!projects.length}
+              title={projects.length ? mode : "Create or import a review on Launch first"}
             >
               {mode.charAt(0) + mode.slice(1).toLowerCase()}
             </button>
@@ -678,6 +687,17 @@ export default function ForestPlotStudio({
                 )}
               </div>
               <div className={`wb-panel-body ${activeView === "Browser" ? "wb-embed" : ""}`}>
+                {activeView === "Launch" && (
+                  <LaunchPanel
+                    onNote={note}
+                    onOpenProject={(projectId) => {
+                      setProjects(listReviewProjects());
+                      setPid(projectId);
+                      setActiveView("Question");
+                      setActiveTab("QUESTION");
+                    }}
+                  />
+                )}
                 {activeView === "Question" && (
                   <QuestionBuilder
                     projectId={pid}
@@ -735,21 +755,18 @@ export default function ForestPlotStudio({
               <div className="wb-panel-body" style={{ padding: 16 }}>
                 <div style={{ maxWidth: 420 }}>
                   <p style={{ fontSize: 11.5, color: "var(--fg-dim)", lineHeight: 1.6, marginBottom: 10 }}>
-                    The forest plot renders the studies a review pipeline has included. Create a
-                    review project and run the pipeline, or pick an existing project in the toolbar.
+                    The forest plot renders the studies a review pipeline has included, so it has
+                    nothing to draw until a review exists. Reviews are created in one place —
+                    Launch — so that the method a review starts with and the method it reports
+                    cannot drift apart.
                   </p>
-                  <div className="wb-prop" style={{ gridTemplateColumns: "92px 1fr", padding: "3px 0" }}>
-                    <span className="k">Project</span>
-                    <input className="wb-input" value={newProjectName} onChange={(e) => setNewProjectName(e.target.value)} placeholder="Project name" />
-                  </div>
-                  <div className="wb-prop" style={{ gridTemplateColumns: "92px 1fr", padding: "3px 0", alignItems: "start" }}>
-                    <span className="k">Question</span>
-                    <textarea className="wb-textarea" rows={3} value={newQuestion} onChange={(e) => setNewQuestion(e.target.value)} placeholder="PICO is extracted from this at the protocol stage" style={{ width: "100%" }} />
-                  </div>
-                  <button className="wb-btn on" style={{ marginTop: 8 }} onClick={createReviewProject}>Create review project</button>
+                  <button className="wb-btn on" onClick={() => { setActiveView("Launch"); setActiveTab("BUILD"); }}>
+                    Open Launch
+                  </button>
                   <div style={{ marginTop: 8, fontSize: 11, color: "var(--fg-faint)" }}>
-                    Then open the Question tab: the PRISM decomposition written there is what the
-                    search strategy and the pipeline compile from.
+                    Start fresh, start from a method template, or resume a review already here.
+                    Either way the next surface is the Question tab: the PRISM decomposition
+                    written there is what the search strategy and the pipeline compile from.
                   </div>
                 </div>
               </div>

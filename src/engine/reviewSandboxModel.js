@@ -7,6 +7,8 @@
 // each with their own primaries — flattening them would destroy exactly the
 // structure an overlap check needs.
 
+import { REVIEW_TYPES, FRAMEWORKS, SYNTHESIS } from "./reviewtypes.js";
+
 export const REVIEW_KINDS = [
   { id: "systematic", label: "Systematic review", children: false, note: "primary studies only" },
   { id: "umbrella", label: "Umbrella review", children: true, note: "reviews as units, each with its own primaries" },
@@ -72,6 +74,87 @@ export function toYaml(value, indent = 0) {
     }).join("\n");
   }
   return `${pad}${yamlScalar(value)}`;
+}
+
+// --- reading that YAML back ------------------------------------------------
+// The reader is the exact inverse of the writer above: maps, lists, lists of
+// maps, and the four scalar types the writer emits. It is deliberately not a
+// general YAML parser — anchors, multi-line scalars and flow collections are
+// not written by toYaml, so accepting them would be accepting a file this
+// program did not produce and cannot vouch for.
+
+function parseScalar(token) {
+  const s = token.trim();
+  if (s === "" || s === "null" || s === "~") return null;
+  if (s === "[]") return [];
+  if (s === "{}") return {};
+  if (s.startsWith('"')) {
+    const body = s.slice(1, s.endsWith('"') ? -1 : undefined);
+    return body.replace(/\\n/g, "\n").replace(/\\"/g, '"').replace(/\\\\/g, "\\");
+  }
+  if (s === "true") return true;
+  if (s === "false") return false;
+  if (/^-?\d+(\.\d+)?$/.test(s)) return Number(s);
+  return s;
+}
+
+const indentOf = (line) => line.length - line.replace(/^ +/, "").length;
+
+function parseNode(lines, start, indent) {
+  const first = lines[start];
+  // An empty collection is written on its own line under its key.
+  if (first && first.trim() === "[]") return [[], start + 1];
+  if (first && first.trim() === "{}") return [{}, start + 1];
+  if (first && indentOf(first) === indent && /^-(\s|$)/.test(first.trim())) return parseList(lines, start, indent);
+  return parseMap(lines, start, indent);
+}
+
+function parseList(lines, start, indent) {
+  const out = [];
+  let i = start;
+  while (i < lines.length && indentOf(lines[i]) === indent && /^-(\s|$)/.test(lines[i].trim())) {
+    const rest = lines[i].trim().slice(1).trim();
+    i += 1;
+    if (rest) { out.push(parseScalar(rest)); continue; }
+    // A bare "-" introduces a block item indented two further spaces.
+    if (i < lines.length && indentOf(lines[i]) > indent) {
+      const [value, next] = parseNode(lines, i, indentOf(lines[i]));
+      out.push(value);
+      i = next;
+    } else {
+      out.push(null);
+    }
+  }
+  return [out, i];
+}
+
+function parseMap(lines, start, indent) {
+  const out = {};
+  let i = start;
+  while (i < lines.length && indentOf(lines[i]) === indent) {
+    const match = lines[i].trim().match(/^([^:]+):\s*(.*)$/);
+    if (!match) break;
+    const key = match[1].trim();
+    const rest = match[2];
+    i += 1;
+    if (rest !== "") { out[key] = parseScalar(rest); continue; }
+    if (i < lines.length && indentOf(lines[i]) > indent) {
+      const [value, next] = parseNode(lines, i, indentOf(lines[i]));
+      out[key] = value;
+      i = next;
+    } else {
+      out[key] = null;
+    }
+  }
+  return [out, i];
+}
+
+/** Reads back what toYaml wrote. Comments and blank lines are ignored. */
+export function parseYaml(text) {
+  const lines = String(text || "").split("\n").filter((line) => line.trim() && !/^\s*#/.test(line));
+  if (!lines.length) return {};
+  const [value] = parseNode(lines, 0, indentOf(lines[0]));
+  return value;
 }
 
 // --- the manifest ----------------------------------------------------------
@@ -174,6 +257,85 @@ export function buildManifest(review, { project, children = [] } = {}) {
   };
 }
 
+
+/**
+ * Rebuilds a review from a manifest, so a sandbox someone else produced can be
+ * opened here. Everything the manifest states is restored: the question, the
+ * methodology, the stage states, the databases and their counts, the concept
+ * blocks and the studies.
+ *
+ * What the manifest does NOT carry is not invented. The record library lives in
+ * records/records.json and the eligibility criteria in protocol/eligibility.md;
+ * pass them in and the review is complete, omit them and the review is honestly
+ * empty of them rather than filled with a guess.
+ */
+export function reviewFromManifest(manifest, { records = [], eligibility = "", strategies = {} } = {}) {
+  const head = manifest?.review || {};
+  const kind = head.kind || "systematic";
+  const named = REVIEW_TYPES.find((t) => t.name.toLowerCase() === String(head.methodology || "").toLowerCase());
+  const typeId = named?.id || (isUmbrella(kind) ? "umbrella" : null);
+  const framework = manifest?.protocol?.framework || null;
+
+  const review = {
+    version: 1,
+    question: head.question || null,
+    createdAt: head.created ? Date.parse(head.created) || null : null,
+    sandboxKind: kind,
+    methodology: {
+      typeId,
+      typeName: head.methodology || null,
+      robTool: head.rob_tool || null,
+      // The reporting standard and synthesis method are not written into the
+      // manifest; they are what the named review type declares, so they are
+      // restored from the registry rather than left blank or guessed.
+      ...(named ? { framework: FRAMEWORKS[named.framework], synthesis: SYNTHESIS[named.synthesis] } : {}),
+    },
+    protocol: {
+      picoSource: manifest?.protocol?.pico_source || null,
+      concepts: (manifest?.protocol?.search_blocks || []).map((block) => ({
+        label: block.label,
+        op: block.op,
+        terms: block.terms || [],
+        vocab: block.headings || {},
+      })),
+      ...(framework === "PRISM" ? { prism: { facets: {}, imported: true } } : {}),
+      ...(framework === "PICO" ? { pico: {} } : {}),
+    },
+    objects: {
+      eligibility: eligibility || "",
+      searches: (manifest?.search?.databases || []).map((db) => ({
+        name: db.name,
+        date: db.executed || null,
+        count: db.records ?? 0,
+        status: db.status || "ok",
+        ...(strategies[db.name] ? { query: strategies[db.name] } : {}),
+      })),
+      records: [...records],
+      studies: (manifest?.studies || []).map((study) => ({
+        id: study.id,
+        title: study.label,
+        extracted: !!study.extracted,
+        ...(study.rob ? { rob: { overallJudgement: study.rob } } : {}),
+      })),
+      dedup: null, synthesis: null, grade: null, etd: null, report: null,
+    },
+    ...(manifest?.search?.mode ? { searchSummary: { mode: manifest.search.mode } } : {}),
+    stages: Object.fromEntries((manifest?.stages || []).map((stage) => [
+      stage.id,
+      { status: stage.status || "pending", completedAt: stage.completed ? Date.parse(stage.completed) || null : null, provenance: [] },
+    ])),
+    log: [],
+  };
+
+  const children = (manifest?.included_reviews || []).map((child) => ({
+    id: child.id,
+    title: child.title,
+    primaries: child.primaries ?? 0,
+    overlapChecked: !!child.overlap_checked,
+  }));
+
+  return { review, children, title: head.title || null };
+}
 
 /**
  * Corrected covered area — the standard overlap statistic for umbrella reviews.
