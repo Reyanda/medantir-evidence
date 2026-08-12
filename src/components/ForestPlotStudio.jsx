@@ -34,6 +34,7 @@ import CommandDock from "./CommandDock.jsx";
 import ScreeningGrid from "./ScreeningGrid.jsx";
 import ConcordancePanel from "./ConcordancePanel.jsx";
 import BridgePanel from "./BridgePanel.jsx";
+import SandboxPanel from "./SandboxPanel.jsx";
 import QuestionBuilder from "./QuestionBuilder.jsx";
 import "../styles/workbench.css";
 
@@ -60,9 +61,11 @@ const MODULES = [
   { label: "Reader", view: "Reader", tab: "ANALYZE" },
   { label: "Browser", view: "Browser", tab: "ANALYZE" },
   { label: "Tracer", view: "Tracer", tab: "VISUALIZE" },
-  { label: "Concordance", view: "Concordance", tab: "ANALYZE" },
-  { label: "Bridge", view: "Bridge", tab: "BUILD" },
-  { label: "Settings", view: "Settings", tab: "BUILD" },
+  { label: "Sandbox & files", view: "Sandbox", tab: "BUILD", hint: "the review's own file layout, YAML manifest and document links" },
+  { label: "Model concordance", view: "Concordance", tab: "BUILD", setup: true, hint: "run several models in parallel sandboxes and compare them" },
+  { label: "AI model setup", view: "Settings", tab: "BUILD", setup: true, hint: "providers, keys, models, engine mode" },
+  { label: "Database setup", view: "Databases", tab: "BUILD", setup: true, hint: "which databases are searchable, their keys and logins" },
+  { label: "Compute & folder bridge", view: "Bridge", tab: "BUILD", setup: true, hint: "attach a local folder or your own compute" },
 ];
 
 // The menu bar carries app chrome only — every item does something real, and an
@@ -98,6 +101,7 @@ const MENUS = [
       { label: "Command dock", key: "Cmd-3", run: (c) => c.setBottomDock((d) => ({ ...d, open: !d.open })) },
       { sep: true },
       { label: "Screening grid", run: (c) => { c.setActiveView("Screening"); c.setActiveTab("ANALYZE"); } },
+      { label: "Sandbox and files", run: (c) => { c.setActiveView("Sandbox"); c.setActiveTab("BUILD"); } },
       { label: "Figures canvas", run: (c) => { c.setActiveView("Figures"); c.setActiveTab("VISUALIZE"); } },
       { label: "Evidence map", run: (c) => { c.setActiveView("Evidence Map"); c.setActiveTab("VISUALIZE"); } },
     ],
@@ -108,8 +112,9 @@ const MENUS = [
       { label: "Run pipeline", run: (c) => c.executePipeline(), disabled: ({ review }) => !review },
       { label: "Tracer — raster to vector", run: (c) => { c.setActiveView("Tracer"); c.setActiveTab("VISUALIZE"); } },
       { sep: true },
+      { label: "AI model setup", run: (c) => { c.setActiveView("Settings"); c.setActiveTab("BUILD"); } },
+      { label: "Database setup", run: (c) => { c.setActiveView("Databases"); c.setActiveTab("BUILD"); } },
       { label: "Compute and folder bridge", run: (c) => { c.setActiveView("Bridge"); c.setActiveTab("BUILD"); } },
-      { label: "Providers and logins", run: (c) => { c.setActiveView("Settings"); c.setActiveTab("BUILD"); } },
     ],
   },
   {
@@ -122,7 +127,7 @@ const MENUS = [
 ];
 
 // Modules that already speak the workbench language and own their whole pane.
-const NATIVE_VIEWS = ["Question", "Screening", "Concordance", "Reader", "Tracer", "Browser", "Bridge", "Settings"];
+const NATIVE_VIEWS = ["Question", "Screening", "Concordance", "Reader", "Tracer", "Browser", "Bridge", "Settings", "Databases", "Sandbox"];
 
 // The question comes before the build: it is what everything downstream compiles
 // from, so it leads the mode bar.
@@ -160,7 +165,7 @@ export default function ForestPlotStudio({
   const [selectedRowId, setSelectedRowId] = useState(null);
   const [tableTab, setTableTab] = useState("DATA");
   const [showKeys, setShowKeys] = useState(false);
-  const [settingsTab, setSettingsTab] = useState("Providers");
+  const [settingsTab, setSettingsTab] = useState("AI models");
   const [openMenu, setOpenMenu] = useState(null);
   // Handed to the Search Strategy builder when the question tab builds a strategy,
   // so the strategy surface opens already carrying it.
@@ -615,18 +620,23 @@ export default function ForestPlotStudio({
                     ))}
                   </div>
 
-                  <div className="wb-insp-title">Modules</div>
-                  {MODULES.map((m) => (
-                    <div
-                      key={m.view}
-                      className={`wb-row ${activeView === m.view ? "sel" : ""}`}
-                      onClick={() => { setActiveView(m.view); setActiveTab(m.tab); }}
-                    >
-                      <span className="lbl">{m.label}</span>
-                    </div>
-                  ))}
                 </>
               )}
+
+              {/* Navigation is never gated on a loaded review: the setup surfaces
+                  are how an operator gets to a working review in the first place. */}
+              <div className="wb-insp-title">Modules</div>
+              {MODULES.map((m) => (
+                <div
+                  key={m.view}
+                  className={`wb-row ${activeView === m.view ? "sel" : ""}`}
+                  onClick={() => { setActiveView(m.view); setActiveTab(m.tab); }}
+                  title={m.hint || m.label}
+                >
+                  <span className="lbl">{m.label}</span>
+                  {m.setup && <span className="n">setup</span>}
+                </div>
+              ))}
             </div>
           </div>
         )}
@@ -651,7 +661,7 @@ export default function ForestPlotStudio({
                 {activeView === "Settings" && (
                   <>
                     <span className="wb-spacer" />
-                    {["Providers", "Logins", "Services"].map((t) => (
+                    {["AI models", "Logins", "Services"].map((t) => (
                       <button key={t} className={`wb-btn ${settingsTab === t ? "on" : ""}`} onClick={() => setSettingsTab(t)}>{t}</button>
                     ))}
                   </>
@@ -682,11 +692,19 @@ export default function ForestPlotStudio({
                     onNote={note}
                   />
                 )}
+                {activeView === "Sandbox" && (
+                  <SandboxPanel
+                    projectId={pid} review={review}
+                    onReviewChange={(r) => { setReview(r); setDataset(readDataset(r)); }}
+                    onNote={note}
+                  />
+                )}
                 {activeView === "Bridge" && <BridgePanel projectId={pid} onNote={note} />}
                 {activeView === "Reader" && <ReaderPanel projectId={pid} />}
                 {activeView === "Tracer" && <TracerPanel projectId={pid} />}
                 {activeView === "Browser" && <BrowserTab />}
-                {activeView === "Settings" && <SettingsPanel tab={settingsTab} />}
+                {activeView === "Settings" && <SettingsPanel tab={settingsTab} onNote={note} />}
+                {activeView === "Databases" && <SettingsPanel tab="Databases" onNote={note} />}
               </div>
             </>
           ) : activeView !== "Figures" ? (
