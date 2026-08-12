@@ -611,7 +611,17 @@ export default function ForestPlotStudio({
                     ))}
                   </div>
 
-                  <div className="wb-insp-title">Search sources</div>
+                  <div className="wb-insp-title">
+                    Databases this review searches
+                    <span className="wb-spacer" />
+                    <button
+                      className="wb-btn" style={{ height: 16, padding: "0 5px", fontSize: 10, textTransform: "none", letterSpacing: 0 }}
+                      onClick={() => { setActiveView("Databases"); setActiveTab("BUILD"); }}
+                      title="Add databases, store their keys, and enable platforms"
+                    >
+                      setup
+                    </button>
+                  </div>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 4, padding: "4px 8px" }}>
                     {allSources.map((s) => (
                       <button key={s.id} className={`wb-tag ${(review.selectedSources || []).includes(s.id) ? "on" : ""}`} onClick={() => toggleSource(s.id)}>
@@ -712,7 +722,7 @@ export default function ForestPlotStudio({
               <div className="wb-panel-head"><span className="title">{activeView}</span></div>
               <div className="wb-panel-body wb-embed" style={{ padding: 8 }}>
                 {activeView === "Protocols" && <SearchStrategyBuilder initialQuestion={strategyQuestion || review?.question || ""} />}
-                {activeView === "Search" && <SearchView />}
+                {activeView === "Search" && <SearchView goToSources={() => { setActiveView("Databases"); setActiveTab("BUILD"); }} />}
                 {(activeView === "Extraction" || activeView === "Synthesis") && <ReviewTab embedded />}
                 {activeView === "Evidence Map" && <ResearchLoopView />}
                 {activeView === "Overview" && <ScientificRuntimeView />}

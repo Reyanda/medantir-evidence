@@ -143,10 +143,15 @@ function Databases({ refresh, onNote }) {
   return (
     <div style={{ height: "100%", overflow: "auto" }}>
       <div style={{ padding: "6px 8px", fontSize: 11, color: "var(--fg-dim)", lineHeight: 1.6 }}>
-        A database is only part of a systematic search if it can be searched and the search can be
-        reported. Keyless sources run from the browser now; key sources run once their key is in the
-        vault; subscription platforms cannot be queried from a browser at all, so the workbench
-        compiles their native syntax for you to run and records that route in the search log.
+        This page is the catalogue: which databases exist, how each authenticates, and whether it
+        can be executed at all. <strong style={{ color: "var(--fg)" }}>Which databases a given
+        review searches is a protocol decision</strong>, made per review in the Search module and
+        recorded in the PRISMA-S log — so it lives with the review, not here.
+      </div>
+      <div style={{ padding: "0 8px 6px", fontSize: 11, color: "var(--fg-dim)", lineHeight: 1.6 }}>
+        Keyless sources run from the browser now; key sources run once their key is in the vault;
+        subscription platforms cannot be queried from a browser at all, so the workbench compiles
+        their native syntax for you to run and records that route in the search log.
       </div>
 
       <Section title="Keyless — searchable now" kind="keyless" />
