@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { createReview, saveReview, loadReview } from "../engine/reviewengine.js";
 import { putFile, getFile } from "../engine/projectstore.js";
 import { buildStrategy, STRATEGY_DBS, databaseName } from "../engine/searchStrategy.js";
+import TokenField, { toTokens } from "./TokenField.jsx";
 
 // The question is the first surface, not a field on a later one. It is built in
 // the PRISM structure — eight facets, of which only some belong in the Boolean —
@@ -11,19 +12,19 @@ import { buildStrategy, STRATEGY_DBS, databaseName } from "../engine/searchStrat
 
 export const PRISM_FACETS = [
   { key: "population", code: "P", label: "Population / phenomenon", block: true,
-    hint: "adults hospitalised with COVID-19, inpatients, hospitalised patients" },
+    hint: "children, adults, inpatients" },
   { key: "realm", code: "R", label: "Realm / domain", block: false,
-    hint: "clinical medicine, public health, health economics" },
+    hint: "clinical medicine, public health" },
   { key: "intervention", code: "I", label: "Intervention / input", block: true,
-    hint: "baricitinib, JAK inhibitor, janus kinase inhibitor" },
+    hint: "baricitinib, JAK inhibitor" },
   { key: "standard", code: "S", label: "Standard / comparator", block: true,
-    hint: "standard care, placebo, usual care" },
+    hint: "standard care, placebo" },
   { key: "measure", code: "M", label: "Measure / outcome", block: "optional",
-    hint: "mortality, death, case fatality" },
+    hint: "mortality, death" },
   { key: "time", code: "T", label: "Time / temporal", block: false,
     hint: "2020-2026, 28-day follow-up" },
   { key: "geography", code: "G", label: "Geography / setting", block: "optional",
-    hint: "sub-Saharan Africa, low-income settings" },
+    hint: "sub-Saharan Africa, LMIC" },
   { key: "design", code: "D", label: "Design / methodology", block: "optional",
     hint: "randomised controlled trial, RCT" },
 ];
@@ -43,7 +44,9 @@ export function routeDatabases(realm) {
   return (route?.dbs || []).filter((id) => STRATEGY_DBS.includes(id));
 }
 
-const splitTerms = (value) => String(value || "").split(/[,;]/).map((t) => t.trim()).filter(Boolean);
+// A facet holds tokens. Strings are still accepted, so reviews saved before the
+// tokenised builder — and any caller passing a comma list — still decompose.
+const splitTerms = toTokens;
 
 export function composeQuestion(facets) {
   const first = (k) => splitTerms(facets[k])[0] || "";
@@ -102,7 +105,7 @@ export default function QuestionBuilder({ projectId, review, onReviewChange, onN
   const [facets, setFacets] = useState({});
   const [includeMeasure, setIncludeMeasure] = useState(false);
   const [includeDesign, setIncludeDesign] = useState(false);
-  const [noise, setNoise] = useState("");
+  const [noise, setNoise] = useState([]);
   const [saved, setSaved] = useState(null);
 
   // Seed from whatever the review already holds, so the tab reflects the
@@ -110,15 +113,24 @@ export default function QuestionBuilder({ projectId, review, onReviewChange, onN
   useEffect(() => {
     const prism = review?.protocol?.prism;
     const pico = review?.protocol?.pico;
-    if (prism) { setFacets(prism.facets || {}); setIncludeMeasure(!!prism.includeMeasure); setIncludeDesign(!!prism.includeDesign); setNoise(prism.noise || ""); return; }
+    const normalise = (source) => Object.fromEntries(Object.entries(source || {}).map(([k, v]) => [k, toTokens(v)]));
+    if (prism) {
+      setFacets(normalise(prism.facets));
+      setIncludeMeasure(!!prism.includeMeasure);
+      setIncludeDesign(!!prism.includeDesign);
+      setNoise(toTokens(prism.noise));
+      return;
+    }
     if (pico) {
-      setFacets({
-        population: pico.population || "",
-        intervention: pico.intervention || "",
-        standard: pico.comparator || "",
-        measure: (pico.outcomes || []).join(", "),
-        design: pico.studyDesign || "",
-      });
+      setFacets(normalise({
+        population: pico.population,
+        intervention: pico.intervention,
+        standard: pico.comparator,
+        measure: pico.outcomes,
+        design: pico.studyDesign,
+        geography: pico.setting,
+        time: pico.timeframe,
+      }));
     }
   }, [review?.protocol?.prism, review?.protocol?.pico]);
 
@@ -165,7 +177,7 @@ export default function QuestionBuilder({ projectId, review, onReviewChange, onN
         ...current.protocol,
         pico,
         picoSource: "PRISM question builder",
-        prism: { facets, includeMeasure, includeDesign, noise, routedDatabases: databases },
+        prism: { facets, includeMeasure, includeDesign, noise, routedDatabases: databases, tokenised: true },
         concepts,
         strategyNotes: notes,
         strategySource: "search/isr.json",
@@ -192,12 +204,12 @@ export default function QuestionBuilder({ projectId, review, onReviewChange, onN
       {/* facets */}
       <div style={{ borderRight: "1px solid var(--line)", overflow: "auto" }}>
         <div className="wb-insp-title">PRISM decomposition</div>
-        <table className="wb-grid">
+        <table className="wb-grid wb-grid-soft">
           <thead>
             <tr>
               <th style={{ width: 30 }} />
               <th style={{ width: 170 }}>Facet</th>
-              <th>Terms, comma separated</th>
+              <th>Terms — Enter or comma makes a term</th>
               <th style={{ width: 74 }}>In Boolean</th>
             </tr>
           </thead>
@@ -212,11 +224,11 @@ export default function QuestionBuilder({ projectId, review, onReviewChange, onN
                 <tr key={f.key}>
                   <td style={{ fontFamily: "var(--mono)", color: "var(--accent)", textAlign: "center" }}>{f.code}</td>
                   <td title={f.label}>{f.label}</td>
-                  <td>
-                    <input
-                      className="wb-cell-input" style={{ textAlign: "left" }}
-                      value={facets[f.key] || ""} placeholder={f.hint}
-                      onChange={(e) => set(f.key, e.target.value)}
+                  <td style={{ padding: "1px 4px", whiteSpace: "normal" }}>
+                    <TokenField
+                      value={facets[f.key] || []}
+                      placeholder={f.hint}
+                      onChange={(tokens) => set(f.key, tokens)}
                     />
                   </td>
                   <td>
@@ -239,14 +251,16 @@ export default function QuestionBuilder({ projectId, review, onReviewChange, onN
             <tr>
               <td style={{ fontFamily: "var(--mono)", color: "var(--err)", textAlign: "center" }}>!</td>
               <td>Excluded noise (NOT)</td>
-              <td>
-                <input
-                  className="wb-cell-input" style={{ textAlign: "left" }}
-                  value={noise} placeholder="empty until a screening pass shows recurring noise"
-                  onChange={(e) => setNoise(e.target.value)}
+              <td style={{ padding: "1px 4px", whiteSpace: "normal" }}>
+                <TokenField
+                  value={noise} tone="not"
+                  placeholder="empty until a screening pass shows recurring noise"
+                  onChange={setNoise}
                 />
               </td>
-              <td style={{ color: noise ? "var(--err)" : "var(--fg-faint)", fontFamily: "var(--mono)", fontSize: 10.5 }}>{noise ? "NOT" : "empty"}</td>
+              <td style={{ color: noise.length ? "var(--err)" : "var(--fg-faint)", fontFamily: "var(--mono)", fontSize: 10.5 }}>
+                {noise.length ? `NOT ${noise.length}` : "empty"}
+              </td>
             </tr>
           </tbody>
         </table>

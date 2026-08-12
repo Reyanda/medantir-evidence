@@ -337,3 +337,39 @@
 .wb-prompt textarea:focus { border-color: var(--line-focus); }
 .wb-qb { display: grid; grid-template-columns: 1fr 1fr; gap: 0 10px; padding: 4px 8px; overflow: auto; }
 .wb-qb .full { grid-column: 1 / -1; }
+
+/* --- token fields ---------------------------------------------------------
+   Terms are objects, not text. A pill is a term; the row of pills is the OR
+   group that will be compiled. Colour marks the NOT group only, because that
+   group changes what a strategy excludes. */
+.wb-tokens {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 3px;
+  min-height: var(--row-h); width: 100%; padding: 2px 3px;
+  background: var(--bg-input); border: 1px solid transparent; border-radius: 2px;
+  cursor: text;
+}
+.wb-tokens:hover { border-color: var(--line); }
+.wb-tokens:focus-within { border-color: var(--line-focus); }
+.wb-tokens.disabled { opacity: .5; cursor: default; }
+.wb-tokens input {
+  flex: 1; min-width: 90px; background: transparent; border: none; outline: none;
+  color: var(--fg); font-family: inherit; font-size: 11px; padding: 1px 2px;
+}
+.wb-tokens input::placeholder { color: var(--fg-faint); }
+.wb-token {
+  display: inline-flex; align-items: center; gap: 3px; max-width: 100%;
+  height: 16px; padding: 0 3px 0 6px;
+  background: var(--bg-active-2); border: 1px solid var(--line-strong); border-radius: 2px;
+  color: var(--fg-bright); font-size: 10.5px; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.wb-token .x {
+  background: none; border: none; padding: 0 1px; cursor: default;
+  color: var(--fg-faint); font-size: 12px; line-height: 1;
+}
+.wb-token .x:hover { color: var(--err); }
+.wb-tokens.not .wb-token { border-color: var(--err); color: #f0a8a8; background: var(--tag-exc); }
+
+/* A grid whose cells hold token fields cannot clip or fix its row height. */
+.wb-grid-soft tbody td { height: auto; white-space: normal; overflow: visible; padding-top: 2px; padding-bottom: 2px; }
+.wb-token.head { border-left: 2px solid var(--accent); }
