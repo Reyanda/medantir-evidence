@@ -31,6 +31,8 @@ import BrowserTab from "./BrowserTab.jsx";
 import ReaderPanel from "./ReaderPanel.jsx";
 import TracerPanel from "./TracerPanel.jsx";
 import CommandDock from "./CommandDock.jsx";
+import ScreeningGrid from "./ScreeningGrid.jsx";
+import BridgePanel from "./BridgePanel.jsx";
 import QuestionBuilder from "./QuestionBuilder.jsx";
 import "../styles/workbench.css";
 
@@ -57,11 +59,68 @@ const MODULES = [
   { label: "Reader", view: "Reader", tab: "ANALYZE" },
   { label: "Browser", view: "Browser", tab: "ANALYZE" },
   { label: "Tracer", view: "Tracer", tab: "VISUALIZE" },
+  { label: "Bridge", view: "Bridge", tab: "BUILD" },
   { label: "Settings", view: "Settings", tab: "BUILD" },
 ];
 
+// The menu bar carries app chrome only — every item does something real, and an
+// item that cannot act right now is disabled rather than silently inert.
+const MENUS = [
+  {
+    label: "File",
+    items: [
+      { label: "New review project…", run: (c) => { c.setActiveView("Figures"); c.setActiveTab("VISUALIZE"); c.note("Pick a project in the toolbar, or use the empty-state form to create one."); } },
+      { label: "Attach working folder…", run: (c) => { c.setActiveView("Bridge"); c.setActiveTab("BUILD"); } },
+      { label: "Open reader", run: (c) => { c.setActiveView("Reader"); c.setActiveTab("ANALYZE"); } },
+      { sep: true },
+      { label: "Re-read review.json", key: "Sync", run: (c) => c.reloadReview(), disabled: ({ review }) => !review },
+      { label: "Export outcome CSV", run: (c) => c.exportCSV(), disabled: ({ review }) => !review },
+      { label: "Project files", run: (c) => { c.setActiveView("Reports"); c.setActiveTab("PUBLISH"); } },
+    ],
+  },
+  {
+    label: "Edit",
+    items: [
+      { label: "Add manual plot row", run: (c) => c.addManual(), disabled: ({ review }) => !review },
+      { label: "Add outcome", run: (c) => c.addOutcome(), disabled: ({ review }) => !review },
+      { sep: true },
+      { label: "Question and PRISM blocks", run: (c) => { c.setActiveView("Question"); c.setActiveTab("QUESTION"); } },
+      { label: "Search strategy", run: (c) => { c.setActiveView("Protocols"); c.setActiveTab("BUILD"); } },
+    ],
+  },
+  {
+    label: "View",
+    items: [
+      { label: "Left dock", key: "Cmd-1", run: (c) => c.setLeftDock((d) => ({ ...d, open: !d.open })) },
+      { label: "Inspector", key: "Cmd-2", run: (c) => c.setRightDock((d) => ({ ...d, open: !d.open })) },
+      { label: "Command dock", key: "Cmd-3", run: (c) => c.setBottomDock((d) => ({ ...d, open: !d.open })) },
+      { sep: true },
+      { label: "Screening grid", run: (c) => { c.setActiveView("Screening"); c.setActiveTab("ANALYZE"); } },
+      { label: "Figures canvas", run: (c) => { c.setActiveView("Figures"); c.setActiveTab("VISUALIZE"); } },
+      { label: "Evidence map", run: (c) => { c.setActiveView("Evidence Map"); c.setActiveTab("VISUALIZE"); } },
+    ],
+  },
+  {
+    label: "Run",
+    items: [
+      { label: "Run pipeline", run: (c) => c.executePipeline(), disabled: ({ review }) => !review },
+      { label: "Tracer — raster to vector", run: (c) => { c.setActiveView("Tracer"); c.setActiveTab("VISUALIZE"); } },
+      { sep: true },
+      { label: "Compute and folder bridge", run: (c) => { c.setActiveView("Bridge"); c.setActiveTab("BUILD"); } },
+      { label: "Providers and logins", run: (c) => { c.setActiveView("Settings"); c.setActiveTab("BUILD"); } },
+    ],
+  },
+  {
+    label: "Help",
+    items: [
+      { label: "Keyboard map", key: "?", run: (c) => c.setShowKeys((v) => !v) },
+      { label: "What runs where", run: (c) => { c.setActiveView("Bridge"); c.setActiveTab("BUILD"); } },
+    ],
+  },
+];
+
 // Modules that already speak the workbench language and own their whole pane.
-const NATIVE_VIEWS = ["Question", "Reader", "Tracer", "Browser", "Settings"];
+const NATIVE_VIEWS = ["Question", "Screening", "Reader", "Tracer", "Browser", "Bridge", "Settings"];
 
 // The question comes before the build: it is what everything downstream compiles
 // from, so it leads the mode bar.
@@ -100,6 +159,7 @@ export default function ForestPlotStudio({
   const [tableTab, setTableTab] = useState("DATA");
   const [showKeys, setShowKeys] = useState(false);
   const [settingsTab, setSettingsTab] = useState("Providers");
+  const [openMenu, setOpenMenu] = useState(null);
   // Handed to the Search Strategy builder when the question tab builds a strategy,
   // so the strategy surface opens already carrying it.
   const [strategyQuestion, setStrategyQuestion] = useState("");
@@ -361,16 +421,40 @@ export default function ForestPlotStudio({
 
   return (
     <div className="wb">
-      {/* MENU BAR — permanent, never conjured */}
-      <div className="wb-menubar">
+      {/* MENU BAR — app chrome only; the review flow lives on its own strip */}
+      <div className="wb-menubar" onMouseLeave={() => setOpenMenu(null)}>
         <span className="wb-brand">MED<b>ANTIR</b> Workbench</span>
-        {MODES.map(([mode, view]) => (
+        {MENUS.map((menu) => (
           <span
-            key={mode}
-            className={`wb-menu-item ${activeTab === mode ? "on" : ""}`}
-            onClick={() => { setActiveTab(mode); setActiveView(view); }}
+            key={menu.label}
+            className={`wb-menu-item ${openMenu === menu.label ? "on" : ""}`}
+            onClick={() => setOpenMenu(openMenu === menu.label ? null : menu.label)}
+            onMouseEnter={() => openMenu && setOpenMenu(menu.label)}
           >
-            {mode.charAt(0) + mode.slice(1).toLowerCase()}
+            {menu.label}
+            {openMenu === menu.label && (
+              <div className="wb-menu" onClick={(e) => e.stopPropagation()}>
+                {menu.items.map((item, i) => (
+                  item.sep ? <div key={i} className="sep" /> : (
+                    <div
+                      key={i}
+                      className={`mi ${item.disabled?.({ review, pid }) ? "disabled" : ""}`}
+                      onClick={() => {
+                        if (item.disabled?.({ review, pid })) return;
+                        item.run({
+                          setActiveView, setActiveTab, setLeftDock, setRightDock, setBottomDock, setShowKeys,
+                          executePipeline, reloadReview, exportCSV, note, review, pid, addManual, addOutcome,
+                        });
+                        setOpenMenu(null);
+                      }}
+                    >
+                      <span>{item.label}</span>
+                      {item.key && <kbd>{item.key}</kbd>}
+                    </div>
+                  )
+                ))}
+              </div>
+            )}
           </span>
         ))}
         <span className="wb-spacer" />
@@ -381,8 +465,20 @@ export default function ForestPlotStudio({
         </span>
       </div>
 
-      {/* TOOLBAR RIBBON */}
+      {/* TOOLBAR RIBBON — the review flow leads it, then the tools */}
       <div className="wb-toolbar">
+        <div className="wb-tb-group">
+          <span style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".5px", color: "var(--fg-faint)", paddingRight: 4 }}>Flow</span>
+          {MODES.map(([mode, view]) => (
+            <button
+              key={mode}
+              className={`wb-btn ${activeTab === mode ? "on" : ""}`}
+              onClick={() => { setActiveTab(mode); setActiveView(view); }}
+            >
+              {mode.charAt(0) + mode.slice(1).toLowerCase()}
+            </button>
+          ))}
+        </div>
         <div className="wb-tb-group">
           <select className="wb-select" value={pid} onChange={(e) => setPid(e.target.value)} style={{ width: 190, height: 22 }}>
             {projects.length === 0 && <option value="">No review project</option>}
@@ -569,6 +665,15 @@ export default function ForestPlotStudio({
                     onOpenStrategy={(q) => { setStrategyQuestion(q); setActiveView("Protocols"); setActiveTab("BUILD"); }}
                   />
                 )}
+                {activeView === "Screening" && (
+                  <ScreeningGrid
+                    projectId={pid}
+                    review={review}
+                    onReviewChange={(r) => { setReview(r); setDataset(readDataset(r)); }}
+                    onNote={note}
+                  />
+                )}
+                {activeView === "Bridge" && <BridgePanel projectId={pid} onNote={note} />}
                 {activeView === "Reader" && <ReaderPanel projectId={pid} />}
                 {activeView === "Tracer" && <TracerPanel projectId={pid} />}
                 {activeView === "Browser" && <BrowserTab />}
@@ -581,7 +686,7 @@ export default function ForestPlotStudio({
               <div className="wb-panel-body wb-embed" style={{ padding: 8 }}>
                 {activeView === "Protocols" && <SearchStrategyBuilder initialQuestion={strategyQuestion || review?.question || ""} />}
                 {activeView === "Search" && <SearchView />}
-                {(activeView === "Screening" || activeView === "Extraction" || activeView === "Synthesis") && <ReviewTab embedded />}
+                {(activeView === "Extraction" || activeView === "Synthesis") && <ReviewTab embedded />}
                 {activeView === "Evidence Map" && <ResearchLoopView />}
                 {activeView === "Overview" && <ScientificRuntimeView />}
                 {activeView === "Reports" && <ProjectFiles />}

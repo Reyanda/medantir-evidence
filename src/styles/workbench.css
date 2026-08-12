@@ -373,3 +373,56 @@
 /* A grid whose cells hold token fields cannot clip or fix its row height. */
 .wb-grid-soft tbody td { height: auto; white-space: normal; overflow: visible; padding-top: 2px; padding-bottom: 2px; }
 .wb-token.head { border-left: 2px solid var(--accent); }
+
+/* --- match highlighting ---------------------------------------------------
+   A highlight says "this is why the record hit". The NOT variant says the
+   opposite, so the two must never look alike. */
+.wb-mark { background: var(--tag-maybe); color: #f0e0a0; padding: 0 1px; border-radius: 1px; }
+.wb-mark.not { background: var(--tag-exc); color: #f0a8a8; }
+
+/* --- chips, context menu, toast ------------------------------------------
+   Borrowed from the desktop prototypes: a tag is a mono chip, the context menu
+   and the toast are the only two surfaces allowed to float and cast a shadow. */
+.wb-chip {
+  display: inline-block; margin-right: 3px; padding: 0 4px;
+  background: var(--bg-active-2); border: 1px solid var(--line-strong); border-radius: 2px;
+  font-family: var(--mono); font-size: 9.5px; color: var(--fg-dim);
+}
+.wb-grid tbody tr.sel .wb-chip { color: #cde6ff; border-color: #0d5a8a; }
+
+.wb-ctx {
+  position: fixed; z-index: 100; min-width: 180px;
+  background: var(--bg-toolbar); border: 1px solid var(--line-strong); border-radius: 2px;
+  padding: 3px 0; box-shadow: 0 6px 20px rgba(0,0,0,.6);
+}
+.wb-ctx .ci {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 3px 12px; font-size: 11px; color: var(--fg); cursor: default;
+}
+.wb-ctx .ci:hover { background: var(--bg-active); color: #fff; }
+.wb-ctx .ci kbd { font-family: var(--mono); font-size: 9px; color: var(--fg-faint); }
+.wb-ctx .sep { height: 1px; background: var(--line); margin: 3px 0; }
+
+.wb-toast {
+  position: fixed; bottom: 46px; left: 50%; transform: translateX(-50%); z-index: 60;
+  background: var(--bg-toolbar); border: 1px solid var(--line-strong); border-radius: 2px;
+  padding: 5px 12px; font-family: var(--mono); font-size: 11px; color: var(--fg);
+  box-shadow: 0 4px 16px rgba(0,0,0,.5);
+}
+
+/* --- menu bar dropdowns ---------------------------------------------------- */
+.wb-menubar .wb-menu-item { position: relative; }
+.wb-menu {
+  position: absolute; top: 100%; left: 0; z-index: 120; min-width: 210px;
+  background: var(--bg-toolbar); border: 1px solid var(--line-strong); border-radius: 2px;
+  padding: 3px 0; box-shadow: 0 6px 20px rgba(0,0,0,.6); cursor: default;
+}
+.wb-menu .mi {
+  display: flex; align-items: center; justify-content: space-between; gap: 18px;
+  padding: 3px 10px; font-size: 11px; color: var(--fg); white-space: nowrap;
+}
+.wb-menu .mi:hover { background: var(--bg-active); color: #fff; }
+.wb-menu .mi.disabled { color: var(--fg-faint); }
+.wb-menu .mi.disabled:hover { background: transparent; color: var(--fg-faint); }
+.wb-menu .mi kbd { font-family: var(--mono); font-size: 9px; color: var(--fg-faint); }
+.wb-menu .sep { height: 1px; background: var(--line); margin: 3px 0; }
