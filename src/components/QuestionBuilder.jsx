@@ -5,6 +5,7 @@ import { buildStrategy, STRATEGY_DBS, databaseName } from "../engine/searchStrat
 import TokenField, { toTokens } from "./TokenField.jsx";
 import { compileMatcher, screenCorpus, synonymCandidates, noiseCandidates, buildTermIndex, topTerms, highlightSpans, recordText } from "../engine/termIndex.js";
 import { expandConcept, NATIVE_VOCABULARIES } from "../engine/medvocab.js";
+import { assessPress, PRESS_CITATION } from "../engine/pressReview.js";
 
 // The question is the first surface, not a field on a later one. It is built in
 // the PRISM structure — eight facets, of which only some belong in the Boolean —
@@ -225,6 +226,25 @@ export default function QuestionBuilder({ projectId, review, onReviewChange, onN
   const corpusTerms = useMemo(() => (records.length ? topTerms(buildTermIndex(records), { limit: 24 }) : []), [records]);
   const sample = corpus?.matched?.[0] || records[0] || null;
 
+  // PRESS 2015 is the standard for peer review of an electronic search
+  // strategy. Running it here — against the compiled strategies, not against a
+  // description of them — is what separates a strategy that looks finished from
+  // one that is defensible.
+  const press = useMemo(() => {
+    if (!concepts.length) return null;
+    const sentinelEvidence = corpus?.ok
+      ? [{ id: "corpus-recall", status: corpus.lostIncluded === 0 ? "pass" : "fail",
+           note: corpus.lostIncluded === 0
+             ? `every record screened in is retrieved by this strategy (${corpus.matchedCount}/${corpus.total} matched)`
+             : `${corpus.lostIncluded} record(s) screened in are NOT retrieved by this strategy` }]
+      : [];
+    try {
+      return assessPress({ question, concepts, strategies: preview, sentinelEvidence });
+    } catch {
+      return null;
+    }
+  }, [question, concepts, preview, corpus]);
+
   const addTerm = (key, term) => setFacets((f) => {
     const current = toTokens(f[key]);
     return current.some((t) => t.toLowerCase() === String(term).toLowerCase()) ? f : { ...f, [key]: [...current, term] };
@@ -425,6 +445,34 @@ export default function QuestionBuilder({ projectId, review, onReviewChange, onN
             )}
           </div>
         ))}
+
+        <div className="wb-insp-title">
+          PRESS 2015 peer review
+          {press && <span className="wb-count" style={{ color: press.rows.some((r) => r.status === "fail") ? "var(--err)" : "var(--ok)" }}>
+            {press.rows.filter((r) => r.status === "pass").length}/{press.rows.length} pass
+          </span>}
+        </div>
+        {!press ? (
+          <div style={{ padding: "4px 8px", fontSize: 11, color: "var(--fg-faint)" }}>Build at least one block to assess the strategy.</div>
+        ) : (
+          <>
+            <table className="wb-grid">
+              <thead><tr><th style={{ width: 150 }}>PRESS item</th><th style={{ width: 56 }}>State</th><th>Evidence</th></tr></thead>
+              <tbody>
+                {press.rows.map((row) => (
+                  <tr key={row.id}>
+                    <td title={row.label}>{row.label}</td>
+                    <td style={{ color: row.status === "pass" ? "var(--ok)" : row.status === "fail" ? "var(--err)" : "var(--warn)" }}>{row.status}</td>
+                    <td title={row.evidence}>{row.evidence}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div style={{ padding: "4px 8px", fontSize: 10.5, color: "var(--fg-faint)", lineHeight: 1.6 }}>
+              {PRESS_CITATION?.text || "PRESS 2015 (McGowan et al., J Clin Epidemiol)"}
+            </div>
+          </>
+        )}
 
         <div className="wb-insp-title">Method notes</div>
         <div style={{ padding: "4px 8px", fontSize: 11, color: "var(--fg-dim)", lineHeight: 1.6 }}>

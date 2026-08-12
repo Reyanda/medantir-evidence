@@ -414,11 +414,14 @@ export function activeToolProvider() {
 
 // Raw OpenAI-compatible chat call returning the full response (so the agent can
 // read tool_calls). Supports the `tools` param for function calling.
-export async function callOpenAIRaw(id, { messages, tools, toolChoice, temperature = 0.2 }) {
+// `model` overrides the configured model for this call only. The roster runs the
+// same provider under several models side by side, so the choice cannot come
+// from shared config without the runs contending over it.
+export async function callOpenAIRaw(id, { messages, tools, toolChoice, temperature = 0.2, model }) {
   const p = PROVIDER_BY_ID[id];
   const cfg = { ...(loadVault()[id] || {}), key: await providerKey(id) };
   if (!p) throw new Error(`Unknown provider ${id}`);
-  const body = { model: cfg.model || p.defaultModel, messages, ...(p.omitTemperature ? {} : { temperature }) };
+  const body = { model: model || cfg.model || p.defaultModel, messages, ...(p.omitTemperature ? {} : { temperature }) };
   if (tools) body.tools = tools;
   if (toolChoice) body.tool_choice = toolChoice;
   if (viaBroker(p, cfg)) {

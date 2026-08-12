@@ -32,6 +32,7 @@ import ReaderPanel from "./ReaderPanel.jsx";
 import TracerPanel from "./TracerPanel.jsx";
 import CommandDock from "./CommandDock.jsx";
 import ScreeningGrid from "./ScreeningGrid.jsx";
+import ConcordancePanel from "./ConcordancePanel.jsx";
 import BridgePanel from "./BridgePanel.jsx";
 import QuestionBuilder from "./QuestionBuilder.jsx";
 import "../styles/workbench.css";
@@ -59,6 +60,7 @@ const MODULES = [
   { label: "Reader", view: "Reader", tab: "ANALYZE" },
   { label: "Browser", view: "Browser", tab: "ANALYZE" },
   { label: "Tracer", view: "Tracer", tab: "VISUALIZE" },
+  { label: "Concordance", view: "Concordance", tab: "ANALYZE" },
   { label: "Bridge", view: "Bridge", tab: "BUILD" },
   { label: "Settings", view: "Settings", tab: "BUILD" },
 ];
@@ -120,7 +122,7 @@ const MENUS = [
 ];
 
 // Modules that already speak the workbench language and own their whole pane.
-const NATIVE_VIEWS = ["Question", "Screening", "Reader", "Tracer", "Browser", "Bridge", "Settings"];
+const NATIVE_VIEWS = ["Question", "Screening", "Concordance", "Reader", "Tracer", "Browser", "Bridge", "Settings"];
 
 // The question comes before the build: it is what everything downstream compiles
 // from, so it leads the mode bar.
@@ -669,6 +671,13 @@ export default function ForestPlotStudio({
                   <ScreeningGrid
                     projectId={pid}
                     review={review}
+                    onReviewChange={(r) => { setReview(r); setDataset(readDataset(r)); }}
+                    onNote={note}
+                  />
+                )}
+                {activeView === "Concordance" && (
+                  <ConcordancePanel
+                    projectId={pid} review={review}
                     onReviewChange={(r) => { setReview(r); setDataset(readDataset(r)); }}
                     onNote={note}
                   />
