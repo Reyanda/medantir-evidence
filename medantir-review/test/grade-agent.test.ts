@@ -50,7 +50,10 @@ const analysis: InterventionOutcomeRandomEffectsAnalysis = {
   sensitivity: {
     primary: {
       model: 'random-effects-inverse-variance', tauEstimator: 'REML', confidenceMethod: 'wald', confidenceLevel: 0.95, k: 2,
-      pooledEffect: -0.30, pooledStandardError: 0.10, confidenceInterval: [-0.50, -0.10],
+      // The upper limit is deliberately inside, not exactly on, the frozen
+      // benefit threshold (-0.10). Boundary inclusivity is a protocol decision;
+      // this fixture is intended to represent an unambiguous no-concern case.
+      pooledEffect: -0.30, pooledStandardError: 0.10, confidenceInterval: [-0.50, -0.11],
       tauSquared: 0.01, tau: 0.1, cochranQ: 1.5, qDegreesOfFreedom: 1, qBasedI2: 33,
       typicalWithinStudyVariance: 0.02, tauBasedI2: 33,
       contributions: [
