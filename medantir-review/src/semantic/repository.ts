@@ -1,4 +1,4 @@
-import { mkdir, open, readFile, rename, writeFile, chmod } from 'node:fs/promises';
+import { chmod, mkdir, open, readFile, rename, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { scientificContentHash } from '../core/canonical-hash.js';
 import { verifySemanticIndexSnapshot } from './index-builder.js';
@@ -19,7 +19,11 @@ async function atomicPrivateWrite(path: string, content: string): Promise<void> 
   const temporary = `${path}.${process.pid}.${Date.now()}.tmp`;
   await writeFile(temporary, content, { encoding: 'utf8', mode: 0o600, flag: 'wx' });
   const handle = await open(temporary, 'r');
-  try { await handle.sync(); } finally { await handle.close(); }
+  try {
+    await handle.sync();
+  } finally {
+    await handle.close();
+  }
   await rename(temporary, path);
   await chmod(path, 0o600);
 }
@@ -47,6 +51,7 @@ export class FileSemanticIndexRepository implements SemanticIndexRepository {
     await mkdir(snapshots, { recursive: true, mode: 0o700 });
     const snapshotPath = join(snapshots, `${snapshot.indexHash}.json`);
     let persisted = snapshot;
+
     try {
       await createPrivateFile(snapshotPath, `${JSON.stringify(snapshot)}\n`);
     } catch (error) {
@@ -56,6 +61,7 @@ export class FileSemanticIndexRepository implements SemanticIndexRepository {
       if (existing.indexHash !== snapshot.indexHash) throw new Error('Semantic index snapshot collision.');
       persisted = existing;
     }
+
     const pointer = {
       schemaVersion: 'medantir-semantic-index-pointer/1',
       runId: persisted.runId,
@@ -70,22 +76,39 @@ export class FileSemanticIndexRepository implements SemanticIndexRepository {
   async getLatest(runId: string): Promise<SemanticIndexSnapshot | null> {
     const directory = this.runDirectory(runId);
     let pointer: { runId?: unknown; indexHash?: unknown; manifestHash?: unknown };
+
     try {
       pointer = JSON.parse(await readFile(join(directory, 'latest.json'), 'utf8')) as typeof pointer;
     } catch (error) {
       if (notFound(error)) return null;
       throw error;
     }
-    if (pointer.runId !== runId || typeof pointer.indexHash !== 'string' || !/^[a-f0-9]{64}$/.test(pointer.indexHash)) throw new Error('Semantic index latest pointer is malformed.');
+
+    if (
+      pointer.runId !== runId
+      || typeof pointer.indexHash !== 'string'
+      || !/^[a-f0-9]{64}$/.test(pointer.indexHash)
+    ) {
+      throw new Error('Semantic index latest pointer is malformed.');
+    }
+
     let snapshot: SemanticIndexSnapshot;
     try {
-      snapshot = JSON.parse(await readFile(join(directory, 'snapshots', `${pointer.indexHash}.json`), 'utf8')) as SemanticIndexSnapshot;
+      const snapshotPath = join(directory, 'snapshots', `${pointer.indexHash}.json`);
+      snapshot = JSON.parse(await readFile(snapshotPath, 'utf8')) as SemanticIndexSnapshot;
     } catch (error) {
       if (notFound(error)) throw new Error('Semantic index latest pointer references a missing snapshot.');
       throw error;
     }
+
     verifySemanticIndexSnapshot(snapshot);
-    if (snapshot.runId !== runId || snapshot.indexHash !== pointer.indexHash || snapshot.manifest.manifestHash !== pointer.manifestHash) throw new Error('Semantic index latest pointer does not reconcile to its snapshot.');
+    if (
+      snapshot.runId !== runId
+      || snapshot.indexHash !== pointer.indexHash
+      || snapshot.manifest.manifestHash !== pointer.manifestHash
+    ) {
+      throw new Error('Semantic index latest pointer does not reconcile to its snapshot.');
+    }
     return snapshot;
   }
 }
@@ -103,7 +126,7 @@ export class MemorySemanticIndexRepository implements SemanticIndexRepository {
   async getLatest(runId: string): Promise<SemanticIndexSnapshot | null> {
     const snapshot = this.snapshots.get(runId);
     if (!snapshot) return null;
-    const copy = structuredClone(snapshot));
+    const copy = structuredClone(snapshot);
     verifySemanticIndexSnapshot(copy);
     return copy;
   }
