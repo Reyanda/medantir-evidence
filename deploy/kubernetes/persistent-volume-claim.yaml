@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: medantir-evidence-data
+  namespace: medantir-evidence
+  labels:
+    app.kubernetes.io/name: medantir-evidence
+    app.kubernetes.io/part-of: medantir-evidence-os
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Gi

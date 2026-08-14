@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: medantir-evidence
+  namespace: medantir-evidence
+  labels:
+    app.kubernetes.io/name: medantir-evidence
+    app.kubernetes.io/part-of: medantir-evidence-os
+    app.kubernetes.io/component: review-service
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: medantir-evidence
+    app.kubernetes.io/component: review-service
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP
