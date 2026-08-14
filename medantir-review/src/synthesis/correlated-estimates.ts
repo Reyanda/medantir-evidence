@@ -12,6 +12,7 @@ export interface CorrelatedStudyBlock {
 }
 
 export interface CollapsedStudyEstimate extends AnalysisEstimate {
+  provenanceIds: string[];
   sourceContrastIds: string[];
   covarianceAware: true;
   withinStudyInformation: number;
@@ -107,7 +108,7 @@ export function collapseCorrelatedStudyBlock(block: CorrelatedStudyBlock): Colla
     standardError: Math.sqrt(variance),
     provenanceIds: [
       block.estimandCompatibilityReceipt,
-      ...new Set(block.estimates.flatMap((estimate) => estimate.provenanceIds)),
+      ...new Set(block.estimates.flatMap((estimate) => estimate.provenanceIds ?? [])),
     ],
     sourceContrastIds: contrastIds,
     covarianceAware: true,

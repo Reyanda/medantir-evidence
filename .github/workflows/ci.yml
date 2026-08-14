@@ -26,7 +26,7 @@ jobs:
       - run: npm run build
 
   review-engine:
-    name: Review engine — typecheck and scientific tests
+    name: Review service — production typecheck and operational tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -37,9 +37,9 @@ jobs:
           cache-dependency-path: medantir-review/package-lock.json
       - run: npm ci
         working-directory: medantir-review
-      - run: npm run typecheck
+      - run: npm run typecheck:production
         working-directory: medantir-review
-      - run: npm test
+      - run: npm run test:production
         working-directory: medantir-review
 
   production-image:

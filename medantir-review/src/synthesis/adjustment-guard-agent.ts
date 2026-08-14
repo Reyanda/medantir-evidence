@@ -7,9 +7,9 @@ import {
   type AdjustmentIdentity,
 } from './adjustment-compatibility.js';
 
-interface AdjustmentAwareOutcome extends ExtractedStudy['outcomes'][number] {
+type AdjustmentAwareOutcome = ExtractedStudy['outcomes'][number] & {
   adjustmentIdentity?: AdjustmentIdentity;
-}
+};
 
 function numericOutcomeGroups(studies: ExtractedStudy[]) {
   const groups = new Map<string, Array<{ studyId: string; adjustment?: AdjustmentIdentity }>>();

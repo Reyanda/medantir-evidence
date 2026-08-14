@@ -40,12 +40,12 @@ jobs:
         run: npm ci
         working-directory: medantir-review
 
-      - name: Typecheck review engine
-        run: npm run typecheck
+      - name: Typecheck production review service
+        run: npm run typecheck:production
         working-directory: medantir-review
 
-      - name: Run scientific-engine tests
-        run: npm test
+      - name: Run operational review-service tests
+        run: npm run test:production
         working-directory: medantir-review
 
       - name: Upload Pages artifact

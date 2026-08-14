@@ -1,12 +1,10 @@
 FROM node:22-slim AS build
 
 WORKDIR /app
-COPY package.json package-lock.json tsconfig.json ./
+COPY package.json package-lock.json tsconfig.json tsconfig.production.json ./
 RUN npm ci
 COPY src ./src
-COPY test ./test
-COPY examples ./examples
-RUN npm run build && npm prune --omit=dev
+RUN npm run build:production && npm prune --omit=dev
 
 FROM node:22-slim AS runtime
 

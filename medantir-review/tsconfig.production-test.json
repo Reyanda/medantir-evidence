@@ -1,0 +1,36 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "dist-production-test",
+    "rootDir": ".",
+    "declaration": false,
+    "sourceMap": true
+  },
+  "include": [
+    "src/server.ts",
+    "src/production.ts",
+    "test/server*.test.ts",
+    "test/encrypted-file-credential-vault.test.ts",
+    "test/file-checkpoint-store.test.ts",
+    "test/external-action-coordinator.test.ts",
+    "test/durable-search-agent.test.ts",
+    "test/protocol-registration.test.ts",
+    "test/clarification-*.test.ts",
+    "test/clinicaltrials-*.test.ts",
+    "test/document-intelligence.test.ts",
+    "test/format-aware-document-intelligence.test.ts",
+    "test/adjustment-*.test.ts",
+    "test/correlated-estimates.test.ts",
+    "test/intervention-random-effects-agent.test.ts",
+    "test/random-effects.test.ts",
+    "test/rob2*.test.ts",
+    "test/grade*.test.ts",
+    "test/publication-bias-*.test.ts",
+    "test/registry-universe-controller.test.ts"
+  ],
+  "exclude": [
+    "src/benchmark/**",
+    "src/historical/**",
+    "examples/**"
+  ]
+}
