@@ -11,6 +11,10 @@ import {
 import { handleEvidenceOsApi } from './evidence-os/api.js';
 import { FileEvidenceGraphRepository } from './evidence-os/file-repository.js';
 import type { SingleReplicaWorkflowRuntime } from './evidence-os/runtime.js';
+import { createSemanticEmbeddingPortFromEnvironment } from './semantic/embedding.js';
+import { FileSemanticIndexRepository } from './semantic/repository.js';
+import { SemanticIndexService } from './semantic/service.js';
+import type { SemanticIndexServicePort } from './semantic/types.js';
 
 interface OwnedRun {
   ownerSub: string;
@@ -21,6 +25,7 @@ interface OwnedRun {
 export interface EvidenceOsServerOptions extends ApiServerOptions {
   evidenceOsRuntime?: SingleReplicaWorkflowRuntime;
   evidenceGraphRepository?: FileEvidenceGraphRepository;
+  semanticIndexService?: SemanticIndexServicePort;
 }
 
 function response(res: ServerResponse, status: number, payload: unknown): void {
@@ -29,15 +34,38 @@ function response(res: ServerResponse, status: number, payload: unknown): void {
     'content-type': 'application/json; charset=utf-8',
     'content-length': Buffer.byteLength(body),
     'access-control-allow-origin': process.env.CORS_ORIGINS ?? '*',
+    'access-control-allow-methods': 'GET,POST,OPTIONS',
+    'access-control-allow-headers': 'authorization,content-type,x-actiora-project',
   });
   res.end(body);
 }
 
 function evidenceOsPath(pathname: string): boolean {
-  return pathname === '/evidence-os/architecture'
-    || pathname === '/evidence-os/openapi'
-    || /^\/runs\/[^/]+\/(evidence-os|evidence-graph|workflow-plan|cost-ledger|reproducibility-bundle)$/.test(pathname)
-    || /^\/runs\/[^/]+\/evidence-objects\/[^/]+$/.test(pathname);
+  return /^\/evidence-os\/(architecture|openapi|extraction-field-contracts|semantic-capabilities)$/.test(pathname)
+    || /^\/runs\/[^/]+\/(evidence-os|evidence-graph|workflow-plan|cost-ledger|tokenisation-manifest|extraction-validation|reproducibility-bundle|semantic-index-manifest|semantic-units|semantic-clusters|semantic-search)$/.test(pathname)
+    || /^\/runs\/[^/]+\/(evidence-objects|artifact-tokens|semantic-units|semantic-clusters)\/[^/]+$/.test(pathname)
+    || /^\/runs\/[^/]+\/semantic-index\/rebuild$/.test(pathname);
+}
+
+function publicEvidenceOsPath(pathname: string): boolean {
+  return /^\/evidence-os\/(architecture|openapi|extraction-field-contracts|semantic-capabilities)$/.test(pathname);
+}
+
+async function readJsonBody(req: IncomingMessage, maximumBytes = 1_048_576): Promise<unknown> {
+  const chunks: Buffer[] = [];
+  let bytes = 0;
+  for await (const chunk of req) {
+    const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+    bytes += buffer.length;
+    if (bytes > maximumBytes) throw Object.assign(new Error('JSON request body exceeds 1 MiB.'), { status: 413 });
+    chunks.push(buffer);
+  }
+  if (chunks.length === 0) return {};
+  try {
+    return JSON.parse(Buffer.concat(chunks).toString('utf8'));
+  } catch {
+    throw Object.assign(new Error('Request body must contain valid JSON.'), { status: 400 });
+  }
 }
 
 async function loadOwnedRun(
@@ -57,14 +85,8 @@ async function loadOwnedRun(
   }
 }
 
-/**
- * Wraps the existing review API without duplicating its write paths. Evidence OS
- * routes read checkpoint-bound graph snapshots when they reconcile to the same
- * published run state and otherwise project from that state. All write requests
- * remain delegated to the original authenticated server.
- */
 export function createEvidenceOsApiServer(options: EvidenceOsServerOptions = {}) {
-  const { evidenceOsRuntime, evidenceGraphRepository, ...apiOptions } = options;
+  const { evidenceOsRuntime, evidenceGraphRepository, semanticIndexService, ...apiOptions } = options;
   const server = createApiServer(apiOptions);
   const delegate = server.listeners('request')[0] as RequestListener | undefined;
   if (!delegate) throw new Error('Review API server did not register a request handler.');
@@ -77,6 +99,10 @@ export function createEvidenceOsApiServer(options: EvidenceOsServerOptions = {})
   const graphRepository = evidenceGraphRepository
     ?? apiOptions.durabilityRuntime?.evidenceGraphs
     ?? new FileEvidenceGraphRepository({ rootDir: durabilityRoot });
+  const semanticService = semanticIndexService ?? new SemanticIndexService({
+    repository: new FileSemanticIndexRepository({ rootDir: durabilityRoot }),
+    embeddingPort: createSemanticEmbeddingPortFromEnvironment(),
+  });
 
   server.on('request', (req: IncomingMessage, res: ServerResponse) => {
     void (async () => {
@@ -87,8 +113,7 @@ export function createEvidenceOsApiServer(options: EvidenceOsServerOptions = {})
       }
 
       let identity: RequestIdentity | undefined;
-      const publicRoute = url.pathname === '/evidence-os/architecture' || url.pathname === '/evidence-os/openapi';
-      if (!publicRoute) {
+      if (!publicEvidenceOsPath(url.pathname)) {
         if (!apiOptions.identityProvider) {
           response(res, 503, { error: 'Authentication is not configured' });
           return;
@@ -103,14 +128,29 @@ export function createEvidenceOsApiServer(options: EvidenceOsServerOptions = {})
         }
       }
 
+      let body: unknown;
+      if (req.method === 'POST') {
+        try {
+          body = await readJsonBody(req);
+        } catch (error) {
+          response(res, Number((error as { status?: number }).status) || 400, {
+            error: error instanceof Error ? error.message : 'Invalid request body',
+          });
+          return;
+        }
+      }
+
       const handled = await handleEvidenceOsApi({
         ...(req.method ? { method: req.method } : {}),
         pathname: url.pathname,
+        query: Object.fromEntries(url.searchParams.entries()),
+        ...(body !== undefined ? { body } : {}),
         stateFor: async (runId) => identity ? loadOwnedRun(runsFile, identity, runId) : undefined,
         graphFor: async (runId, state) => {
           const graph = await graphRepository.getGraph(runId);
           return graph?.metadata.updatedAt === state.updatedAt ? graph : null;
         },
+        semanticIndexService: semanticService,
         ...(evidenceOsRuntime ? { runtimeSnapshot: () => evidenceOsRuntime.snapshot() } : {}),
       });
       if (!handled) {

@@ -35,7 +35,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: review-service
-          image: ghcr.io/reyanda/medantir-evidence-review:0.6.0
+          image: ghcr.io/reyanda/medantir-evidence-review:0.8.0
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -88,6 +88,36 @@ spec:
                 secretKeyRef:
                   name: medantir-evidence-secrets
                   key: OMNIROUTE_API_KEY
+                  optional: true
+            - name: SEMANTIC_EMBEDDING_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: medantir-evidence-secrets
+                  key: SEMANTIC_EMBEDDING_API_KEY
+                  optional: true
+            - name: SEMANTIC_EMBEDDING_BASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: medantir-evidence-secrets
+                  key: SEMANTIC_EMBEDDING_BASE_URL
+                  optional: true
+            - name: SEMANTIC_EMBEDDING_MODEL
+              valueFrom:
+                secretKeyRef:
+                  name: medantir-evidence-secrets
+                  key: SEMANTIC_EMBEDDING_MODEL
+                  optional: true
+            - name: SEMANTIC_EMBEDDING_PROVIDER
+              valueFrom:
+                secretKeyRef:
+                  name: medantir-evidence-secrets
+                  key: SEMANTIC_EMBEDDING_PROVIDER
+                  optional: true
+            - name: SEMANTIC_EMBEDDING_MODEL_VERSION
+              valueFrom:
+                secretKeyRef:
+                  name: medantir-evidence-secrets
+                  key: SEMANTIC_EMBEDDING_MODEL_VERSION
                   optional: true
           volumeMounts:
             - name: data

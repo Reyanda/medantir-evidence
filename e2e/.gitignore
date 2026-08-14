@@ -1,0 +1,5 @@
+node_modules/
+.semantic-run.json
+.semantic-state/
+playwright-report/
+test-results/
