@@ -377,7 +377,8 @@ export class PipelineOrchestrator {
     try {
       await port.checkpoint({ state: structuredClone(state), stage, event, attempt, recordedAt });
     } catch (cause) {
-      throw new PipelineCheckpointError(`Durable checkpoint failed for ${stage}/${event}`, { cause });
+      const detail = cause instanceof Error ? cause.message : String(cause);
+      throw new PipelineCheckpointError(`Durable checkpoint failed for ${stage}/${event}: ${detail}`, { cause });
     }
   }
 
