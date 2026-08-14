@@ -1,0 +1,8 @@
+{
+  "name": "medantir-evidence-browser-e2e",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@playwright/test": "1.55.0"
+  }
+}
