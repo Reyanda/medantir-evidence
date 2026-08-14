@@ -6,10 +6,10 @@ import {
   type RandomEffectsSensitivitySet,
 } from './random-effects.js';
 
-interface TypedOutcome extends ExtractedStudy['outcomes'][number] {
+type TypedOutcome = ExtractedStudy['outcomes'][number] & {
   effectMeasure?: QuantitativeEffectMeasure;
   analysisScale?: QuantitativeAnalysisScale;
-}
+};
 
 export interface InterventionOutcomeRandomEffectsAnalysis {
   outcome: string;

@@ -14,10 +14,10 @@ export interface OutcomeAdjustmentMetadata {
   rationale?: string;
 }
 
-interface AdjustmentAwareOutcome extends ExtractedStudy['outcomes'][number] {
+type AdjustmentAwareOutcome = ExtractedStudy['outcomes'][number] & {
   adjustmentMetadata?: OutcomeAdjustmentMetadata;
   adjustmentIdentity?: AdjustmentIdentity;
-}
+};
 
 export interface AdjustmentIdentityLedgerRow {
   studyId: string;

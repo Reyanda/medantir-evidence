@@ -244,8 +244,15 @@ export function createApiServer(options: ApiServerOptions = {}) {
         durability?.externalActions,
       );
 
+  // The run index is the API's published owner view, not the worker's mutable
+  // execution object. Copy-on-write prevents clients from observing a stage
+  // transition before the orchestrator has completed its durability checkpoint.
   const persistOwned = (state: PipelineState, identity: RequestIdentity): void => {
-    runs.set(state.runId, { ownerSub: identity.sub, projectId: identity.projectId, state });
+    runs.set(state.runId, {
+      ownerSub: identity.sub,
+      projectId: identity.projectId,
+      state: structuredClone(state),
+    });
     saveRuns(runsFile, runs);
   };
 
@@ -255,14 +262,15 @@ export function createApiServer(options: ApiServerOptions = {}) {
     humanVerificationPort: HumanVerificationPort | null = null,
   ): boolean => {
     if (backgroundRuns.has(state.runId)) return false;
-    backgroundRuns.add(state.runId);
-    executePipeline(state, identity, humanVerificationPort)
+    const executionState = structuredClone(state);
+    backgroundRuns.add(executionState.runId);
+    executePipeline(executionState, identity, humanVerificationPort)
       .then((resumed) => persistOwned(resumed, identity))
       .catch((error) => {
-        failRun(state, error);
-        persistOwned(state, identity);
+        failRun(executionState, error);
+        persistOwned(executionState, identity);
       })
-      .finally(() => backgroundRuns.delete(state.runId));
+      .finally(() => backgroundRuns.delete(executionState.runId));
     return true;
   };
 
@@ -270,9 +278,12 @@ export function createApiServer(options: ApiServerOptions = {}) {
     if (USE_MOCK || !durability || backgroundRuns.has(state.runId)) return;
     const recovery = state.artifacts.recoveryControl as { version?: number; resumedAutomatically?: boolean } | undefined;
     if (!recovery || recovery.version !== 1 || recovery.resumedAutomatically === true) return;
-    markRecoveryResumed(state);
-    persistOwned(state, identity);
-    scheduleExecution(state, identity);
+    const resumed = structuredClone(state);
+    markRecoveryResumed(resumed);
+    // The orchestrator's mandatory `started` checkpoint durably records the
+    // recovery-resume audit event before the scientific agent executes. Do not
+    // publish this intermediate control mutation ahead of that checkpoint.
+    scheduleExecution(resumed, identity);
   };
 
   const handler = async (req: IncomingMessage, res: ServerResponse): Promise<void> => {
@@ -303,7 +314,9 @@ export function createApiServer(options: ApiServerOptions = {}) {
 
       const owned = (runId: string): PipelineState | undefined => {
         const entry = runs.get(runId);
-        return entry?.ownerSub === identity.sub && entry.projectId === identity.projectId ? entry.state : undefined;
+        return entry?.ownerSub === identity.sub && entry.projectId === identity.projectId
+          ? structuredClone(entry.state)
+          : undefined;
       };
 
       const publicationBiasResponse = await handlePublicationBiasApi({

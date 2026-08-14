@@ -8,7 +8,6 @@ import type {
   RegistrationPlan,
   RegistrationReceipt,
   ResearcherIdentity,
-  ReviewCommissionDecision,
   ReviewPlan,
   SearchStrategy,
   SearchStrategyTestReport,
@@ -50,8 +49,7 @@ export class ProtocolDraftAgent implements Agent {
   async execute(context: AgentContext): Promise<AgentResult> {
     const plan = artifact<ReviewPlan>(context, 'reviewPlan');
     const identity = artifact<ResearcherIdentity>(context, 'researcherIdentity');
-    const commission = artifact<ReviewCommissionDecision>(context, 'reviewCommissionDecision');
-    const draft = createProtocolDraft(context.state.request, plan, identity, commission, context.now());
+    const draft = createProtocolDraft(context.state.request, plan, identity, context.now());
     return { artifacts: { protocolDraft: draft }, warnings: draft.checklist.filter((item) => item.status !== 'complete').map((item) => `${item.item}: ${item.evidence}`) };
   }
 }
@@ -77,12 +75,6 @@ export class SearchStrategyTestAgent implements Agent {
     if (errors.length) throw new Error(`Search strategy validation failed: ${errors.join('; ')}`);
     return { artifacts: { searchTestReport: report }, warnings };
   }
-}
-
-function renderProtocolMarkdown(draft: ProtocolDraft, strategies: SearchStrategy[], report: SearchStrategyTestReport): string {
-  const body = draft.sections.map((section) => `## ${section.heading}\n\n${section.content}\n`).join('\n');
-  const searches = strategies.map((strategy) => `### ${strategy.database}\n\n\`\`\`\n${strategy.query}\n\`\`\``).join('\n\n');
-  return `# ${draft.title}\n\nProtocol version ${draft.version}\n\n${body}\n## Search strategies\n\n${searches}\n\n## Search validation\n\nStatus: ${report.status}; peer review: ${report.peerReviewStatus}.\n`;
 }
 
 function citationCff(draft: ProtocolDraft, checksum: string): string {

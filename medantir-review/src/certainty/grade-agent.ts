@@ -15,7 +15,7 @@ import {
   type GradePublicationBiasEvidence,
 } from './grade.js';
 
-export interface GradeOutcomeEvidenceInput {
+export interface GradeOutcomeEvidenceInput extends Record<string, unknown> {
   outcome: string;
   totalParticipants?: number;
   totalParticipantsEvidenceIds?: string[];

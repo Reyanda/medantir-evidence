@@ -67,6 +67,14 @@ test('live server recovers a crash-interrupted durable run and resumes without c
     runsFile,
     durabilityRuntime: durability,
   });
+  let firstServerClosed = false;
+  const closeFirstServer = async () => {
+    if (firstServerClosed) return;
+    firstServerClosed = true;
+    await firstServer.close();
+  };
+  t.after(closeFirstServer);
+
   const firstBase = `http://127.0.0.1:${firstServer.port}`;
   const recovered = await poll(firstBase, interrupted.runId);
 
@@ -83,11 +91,14 @@ test('live server recovers a crash-interrupted durable run and resumes without c
   assert.ok(recovered.audit.some((event) => event.event === 'process-interruption-recovered'));
   assert.ok(recovered.audit.some((event) => event.event === 'recovered-run-resumed'));
 
+  // Seeing an authoritative awaiting-human state through the API must imply that
+  // its checkpoint has already committed. The owner view is copy-on-write and is
+  // published only after the background orchestrator reaches its durable rest point.
   const eventsAfterRecovery = await durability.checkpoints.listEvents(interrupted.runId);
   assert.ok(eventsAfterRecovery.length >= 3);
   assert.equal(eventsAfterRecovery[0]?.event, 'started');
   assert.equal(eventsAfterRecovery.at(-1)?.event, 'awaiting-human-evidence-review');
-  await firstServer.close();
+  await closeFirstServer();
 
   // A second restart must recover the already-stable awaiting-human state and must
   // not auto-run the question stage again.

@@ -39,9 +39,24 @@ test('two correlated shared-control log-RR contrasts collapse by GLS rather than
     covariance: matrix,
     estimandCompatibilityReceipt: 'estimand-compatibility-verified-001',
   });
-  close(collapsed.effect, -0.30332052571556994, 2e-12);
-  close(collapsed.standardError, 0.2622955582101984, 2e-12);
-  close(collapsed.withinStudyInformation, 14.533990750888864, 2e-10);
+
+  // Independent closed-form 2x2 GLS reference. For V=[[a,c],[c,b]],
+  // mu=((b-c)y1+(a-c)y2)/(a+b-2c) and Var(mu)=(ab-c²)/(a+b-2c).
+  const determinant = firstVariance * secondVariance - covariance ** 2;
+  const denominator = firstVariance + secondVariance - 2 * covariance;
+  const closedFormEffect = (
+    (secondVariance - covariance) * firstEffect
+    + (firstVariance - covariance) * secondEffect
+  ) / denominator;
+  const closedFormVariance = determinant / denominator;
+  const closedFormInformation = 1 / closedFormVariance;
+
+  close(collapsed.effect, closedFormEffect, 2e-12);
+  close(collapsed.standardError, Math.sqrt(closedFormVariance), 2e-12);
+  close(collapsed.withinStudyInformation, closedFormInformation, 2e-10);
+  close(collapsed.effect, -0.29404274997911234, 2e-12);
+  close(collapsed.standardError, 0.27199371780295195, 2e-12);
+  close(collapsed.withinStudyInformation, 13.517060367454068, 2e-10);
   assert.deepEqual(collapsed.sourceContrastIds, ['arm-a-v-control', 'arm-b-v-control']);
   assert.ok(collapsed.provenanceIds.includes('estimand-compatibility-verified-001'));
 
