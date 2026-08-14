@@ -25,8 +25,13 @@ function state(): PipelineState {
 
 test('architecture manifest reports truthfully bounded capabilities and cost ledger aggregates receipts', () => {
   const manifest = buildEvidenceOsArchitectureManifest('2026-08-14T08:00:00Z');
+  assert.equal(manifest.version, '0.7.0');
   assert.equal(manifest.runtime.horizontalScaleReady, false);
   assert.ok(manifest.modules.some((module) => module.id === 'causal-evidence-engine'));
+  const tokenisation = manifest.modules.find((module) => module.id === 'artifact-tokenisation');
+  assert.ok(tokenisation);
+  assert.ok(tokenisation.capabilities.some((item) => item.id === 'tokenisation.universal-artifacts' && item.status === 'operational'));
+  assert.ok(tokenisation.capabilities.some((item) => item.id === 'tokenisation.model-subwords' && item.status === 'partial'));
   assert.ok(manifest.coverage.operational > 0);
   assert.ok(manifest.coverage.planned > 0);
   assert.ok(manifest.coverage['research-only'] > 0);

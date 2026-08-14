@@ -89,6 +89,17 @@ const modules: EvidenceOsModule[] = [
     ],
   },
   {
+    id: 'artifact-tokenisation',
+    label: 'Artifact Tokenisation',
+    purpose: 'Represent every review artifact as stable structural and lexical tokens, preserve field and IMRAD boundaries, and separate scientific identity from model-specific context accounting.',
+    capabilities: [
+      capability('tokenisation.universal-artifacts', 'Universal scientific artifact tokenisation', 'operational', ['Deterministic structural and Unicode-aware lexical tokens for request, stage, audit, and every run artifact'], ['medantir-review/src/tokenisation/tokeniser.ts', 'medantir-review/src/tokenisation/manifest.ts'], [], ['/runs/{runId}/tokenisation-manifest', '/runs/{runId}/artifact-tokens/{artifactKey}']),
+      capability('tokenisation.imrad-contracts', 'IMRAD-bound extraction field contracts', 'operational', ['Versioned field registry, exact evidence-section checks, strict validator, and extraction-stage gate'], ['medantir-review/src/tokenisation/extraction-registry.ts', 'medantir-review/src/tokenisation/extraction-validator.ts', 'medantir-review/src/protocols/review-protocol.ts'], ['The initial registry is centred on the current ExtractedStudy model; specialist review families require their own certified field extensions.'], ['/evidence-os/extraction-field-contracts', '/runs/{runId}/extraction-validation']),
+      capability('tokenisation.context-planning', 'Boundary-preserving context planning', 'operational', ['Context chunks cannot cross artifact, IMRAD-role, or top-level field boundaries'], ['medantir-review/src/tokenisation/context-planner.ts'], ['Oversized indivisible source tokens remain visible operational debt rather than being silently reinterpreted.']),
+      capability('tokenisation.model-subwords', 'Model-specific subword token counts', 'partial', ['Exact ModelTokenCounterPort seam plus an explicitly labelled UTF-8 estimate'], ['medantir-review/src/tokenisation/types.ts', 'medantir-review/src/tokenisation/tokeniser.ts'], ['No provider vocabulary is claimed unless its exact counter adapter is supplied and certified.']),
+    ],
+  },
+  {
     id: 'critical-appraisal',
     label: 'Critical Appraisal',
     purpose: 'Route each design to the correct appraisal tool, compute only supported judgements, and expose unsupported evidence as explicit debt.',
@@ -141,7 +152,7 @@ const modules: EvidenceOsModule[] = [
       capability('report.prisma-p', 'PRISMA-P', 'operational', ['Typed protocol library and registration package'], ['medantir-review/src/protocols/protocol-template-library.ts'], []),
       capability('report.journal-targets', 'Nature Medicine, Lancet, and BMJ targets', 'partial', ['Target report field and journal compiler research module'], ['medantir-review/src/core/types.ts', 'heos/journal_compiler.py'], ['Journal-specific production renderers and validation rules remain incomplete.']),
       capability('report.supplement', 'Supplementary material', 'partial', ['Protocol files, search artifacts, verification appendices'], ['medantir-review/src/agents/protocol-registration-agents.ts'], ['Single-click complete supplement compiler is not yet certified.']),
-      capability('report.reproducibility', 'Reproducibility report', 'operational', ['Evidence graph, workflow plan, cost ledger, scientific manifest and seal'], ['medantir-review/src/evidence-os/api.ts'], [], ['/runs/{runId}/reproducibility-bundle']),
+      capability('report.reproducibility', 'Reproducibility report', 'operational', ['Evidence graph, workflow plan, tokenisation manifest, cost ledger, scientific manifest and seal'], ['medantir-review/src/evidence-os/api.ts'], [], ['/runs/{runId}/reproducibility-bundle']),
     ],
   },
   {
@@ -153,8 +164,8 @@ const modules: EvidenceOsModule[] = [
       capability('verification.human-review', 'Human review', 'operational-human-gated', ['Clarification, PRESS, RoB 2, GRADE, registry universe, final verification'], ['medantir-review/src/server.ts'], []),
       capability('verification.versioning', 'Version control', 'operational', ['Content-addressed immutable evidence objects and supersession edges'], ['medantir-review/src/evidence-os/object-store.ts'], []),
       capability('verification.provenance', 'Evidence provenance', 'operational', ['Exact excerpts, source classes, object and edge hashes'], ['medantir-review/src/evidence-os/projector.ts'], []),
-      capability('verification.replay', 'Full reproducibility', 'operational', ['Workflow DAG, graph snapshot, scientific manifest, seal and cost ledger'], ['medantir-review/src/evidence-os/api.ts'], ['External licensed sources remain reproducible only when lawful source exports are archived.']),
-      capability('api.rest', 'REST API', 'operational', ['Authenticated review API plus Evidence OS graph routes'], ['medantir-review/src/server.ts', 'medantir-review/src/evidence-os-server.ts'], [], ['/evidence-os/architecture', '/runs/{runId}/evidence-graph']),
+      capability('verification.replay', 'Full reproducibility', 'operational', ['Workflow DAG, graph snapshot, tokenisation manifest, scientific manifest, seal and cost ledger'], ['medantir-review/src/evidence-os/api.ts'], ['External licensed sources remain reproducible only when lawful source exports are archived.']),
+      capability('api.rest', 'REST API', 'operational', ['Authenticated review API plus Evidence OS graph and tokenisation routes'], ['medantir-review/src/server.ts', 'medantir-review/src/evidence-os-server.ts'], [], ['/evidence-os/architecture', '/evidence-os/extraction-field-contracts', '/runs/{runId}/evidence-graph', '/runs/{runId}/tokenisation-manifest']),
       capability('api.graphql', 'GraphQL API', 'planned', [], ['MEDANTIR capability registry'], ['REST is the current supported API.']),
       capability('api.auth-permissions', 'Authentication and permissions', 'operational', ['Cognito access tokens and owner/project scoping'], ['medantir-review/src/production.ts', 'medantir-review/src/server.ts'], []),
       capability('api.collaboration', 'Multi-user collaboration', 'partial', ['Attributable reviewers and project scoping'], ['medantir-review/src/core/types.ts'], ['Concurrent edit resolution and role matrices remain incomplete.']),
@@ -184,7 +195,7 @@ export function buildEvidenceOsArchitectureManifest(
   const content = {
     schemaVersion: EVIDENCE_OS_SCHEMA_VERSION,
     product: 'MEDANTIR Evidence OS' as const,
-    version: '0.6.0',
+    version: '0.7.0',
     generatedAt,
     modules,
     runtime: {
@@ -205,6 +216,7 @@ export function buildEvidenceOsArchitectureManifest(
       'The included runtime is production-safe for one service replica only.',
       'Research-only causal and SRBench modules cannot authorize production conclusions.',
       'Model output may propose evidence classifications; deterministic software and attributable human gates retain authority.',
+      'Deterministic scientific tokens are model-independent; exact provider subword counts require a certified ModelTokenCounterPort adapter.',
     ],
   };
   return {
