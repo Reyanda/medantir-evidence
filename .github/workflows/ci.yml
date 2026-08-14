@@ -58,3 +58,29 @@ jobs:
           tags: medantir-review:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  kubernetes:
+    name: Evidence OS — Kubernetes deployment invariants
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-kubectl@v4
+      - name: Render kustomization
+        run: kubectl kustomize deploy/kubernetes > /tmp/medantir-evidence-kubernetes.yaml
+      - name: Verify single-replica security boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          rendered=/tmp/medantir-evidence-kubernetes.yaml
+          grep -q '^kind: Deployment$' "$rendered"
+          grep -q '^kind: PersistentVolumeClaim$' "$rendered"
+          grep -q '^kind: Service$' "$rendered"
+          grep -q 'replicas: 1' "$rendered"
+          grep -q 'type: Recreate' "$rendered"
+          grep -q 'runAsNonRoot: true' "$rendered"
+          grep -q 'readOnlyRootFilesystem: true' "$rendered"
+          grep -q 'automountServiceAccountToken: false' "$rendered"
+          if grep -q '^kind: HorizontalPodAutoscaler$' "$rendered"; then
+            echo 'Evidence OS baseline must not include horizontal autoscaling.' >&2
+            exit 1
+          fi

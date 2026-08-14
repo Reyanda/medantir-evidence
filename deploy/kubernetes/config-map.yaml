@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: medantir-evidence-config
+  namespace: medantir-evidence
+  labels:
+    app.kubernetes.io/name: medantir-evidence
+    app.kubernetes.io/part-of: medantir-evidence-os
+data:
+  REVIEW_LIVE: "1"
+  HOST: "0.0.0.0"
+  PORT: "8788"
+  REVIEW_DATA_ROOT: "/data"
+  RUNS_FILE: "/data/control/runs.json"
+  REVIEW_DURABILITY_ROOT: "/data/durability"
+  REVIEW_CREDENTIAL_ROOT: "/data/credentials"
+  REVIEW_CREDENTIAL_KEY_FILE: "/data/secrets/credential-master.key"
+  REVIEW_ALLOW_BOOTSTRAP_KEY: "0"
+  REVIEW_MAX_SEARCH_RECORDS: "10000"
+  DOCUMENT_PARSE_MIN_QUALITY: "0.55"
+  LITEPARSE_TIMEOUT_MS: "45000"
+  PARSE_URL: "https://api.actiora.com/parse"

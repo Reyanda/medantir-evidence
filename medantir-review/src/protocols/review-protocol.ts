@@ -1,4 +1,5 @@
 import type { ReviewType, StageName, ValidationResult, PipelineState } from '../core/types.js';
+import { findExtractedStudies, validateExtractedStudyImrad } from '../tokenisation/index.js';
 import { getReviewTypeProfile } from './methodology.js';
 
 export interface StageProtocol {
@@ -107,6 +108,31 @@ function validateSearchExecution(state: PipelineState): ValidationResult {
   return { ok: !issues.some((issue) => issue.severity === 'error'), issues };
 }
 
+const HARD_EXTRACTION_CONTRACT_CODES = new Set([
+  'EVIDENCE_SECTION_OUTSIDE_CONTRACT',
+  'EVIDENCE_SECTION_MISMATCH',
+  'VALUE_TYPE_MISMATCH',
+]);
+
+function validateExtraction(state: PipelineState): ValidationResult {
+  const base = validateArtifacts(state, stageIO.extract.produced);
+  if (!base.ok) return base;
+  const issues = [...base.issues];
+  const studies = findExtractedStudies(state.artifacts.extractedStudies);
+  for (const study of studies) {
+    const validation = validateExtractedStudyImrad(study);
+    for (const contractIssue of validation.issues) {
+      const severity = HARD_EXTRACTION_CONTRACT_CODES.has(contractIssue.code) ? 'error' as const : 'warning' as const;
+      issues.push({
+        code: `EXTRACTION_${contractIssue.code}`,
+        message: `${contractIssue.studyId} ${contractIssue.field}: ${contractIssue.message}`,
+        severity,
+      });
+    }
+  }
+  return { ok: !issues.some((issue) => issue.severity === 'error'), issues };
+}
+
 export function createReviewProtocol(reviewType: ReviewType): ReviewProtocol {
   const profile = getReviewTypeProfile(reviewType);
   const omitted = new Set<StageName>();
@@ -134,7 +160,9 @@ export function createReviewProtocol(reviewType: ReviewType): ReviewProtocol {
               : 'never',
         validate: (state) => stage === 'search-execute'
           ? validateSearchExecution(state)
-          : validateArtifacts(state, io.produced),
+          : stage === 'extract'
+            ? validateExtraction(state)
+            : validateArtifacts(state, io.produced),
       };
     });
 

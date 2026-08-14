@@ -50,6 +50,19 @@ function hash(value: unknown): string {
   return createHash('sha256').update(canonicalize(value)).digest('hex');
 }
 
+/**
+ * Checkpoint hashes must describe the representation that is actually written.
+ * JSON omits undefined object fields, converts undefined array members and
+ * non-finite numbers to null, and cannot encode bigint. Normalising first avoids
+ * a journal that verifies in memory but fails immediately after deserialisation.
+ */
+function persistedClone<T>(value: T): T {
+  const serialized = JSON.stringify(value, (_key, item: unknown) =>
+    typeof item === 'bigint' ? `${item.toString()}n` : item);
+  if (serialized === undefined) throw new Error('Checkpoint state is not JSON-serialisable.');
+  return JSON.parse(serialized) as T;
+}
+
 function eventIdentity(event: Omit<DurableCheckpointEvent, 'eventHash'>): string { return hash(event); }
 function snapshotIdentity(snapshot: Omit<DurableCheckpointSnapshot, 'snapshotHash'>): string { return hash(snapshot); }
 
@@ -190,15 +203,15 @@ export class FileCheckpointStore implements PipelineCheckpointPort {
     try {
       const events = await this.listEvents(input.state.runId);
       const latest = events.at(-1);
-      const state = structuredClone(input.state);
+      const state = persistedClone(input.state);
       const stateHash = hash(state);
-      const identity = { runId: input.state.runId, stage: input.stage, event: input.event, attempt: input.attempt, stateHash };
+      const identity = { runId: state.runId, stage: input.stage, event: input.event, attempt: input.attempt, stateHash };
       if (latest && hash(identity) === hash({ runId: latest.runId, stage: latest.stage, event: latest.event, attempt: latest.attempt, stateHash: latest.stateHash })) return;
 
       const sequence = (latest?.sequence ?? 0) + 1;
       const unsignedEvent: Omit<DurableCheckpointEvent, 'eventHash'> = {
         version: 1,
-        runId: input.state.runId,
+        runId: state.runId,
         sequence,
         stage: input.stage,
         event: input.event,
@@ -209,12 +222,12 @@ export class FileCheckpointStore implements PipelineCheckpointPort {
         state,
       };
       const event: DurableCheckpointEvent = { ...unsignedEvent, eventHash: eventIdentity(unsignedEvent) };
-      await atomicWrite(this.eventPath(input.state.runId, sequence), `${JSON.stringify(event)}\n`);
+      await atomicWrite(this.eventPath(state.runId, sequence), `${JSON.stringify(event)}\n`);
 
       const unsignedSnapshot: Omit<DurableCheckpointSnapshot, 'snapshotHash'> = {
-        version: 1, runId: input.state.runId, sequence, stateHash, latestEventHash: event.eventHash, recordedAt: input.recordedAt, state,
+        version: 1, runId: state.runId, sequence, stateHash, latestEventHash: event.eventHash, recordedAt: input.recordedAt, state,
       };
-      await atomicWrite(this.snapshotPath(input.state.runId), `${JSON.stringify({ ...unsignedSnapshot, snapshotHash: snapshotIdentity(unsignedSnapshot) })}\n`);
+      await atomicWrite(this.snapshotPath(state.runId), `${JSON.stringify({ ...unsignedSnapshot, snapshotHash: snapshotIdentity(unsignedSnapshot) })}\n`);
     } finally {
       await release();
     }

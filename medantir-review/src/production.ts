@@ -4,7 +4,8 @@ import { constants } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import type { IncomingMessage } from 'node:http';
 import { CognitoJwtVerifier } from 'aws-jwt-verify';
-import { startServer, type ApiServerOptions, type IdentityProvider, type RequestIdentity } from './server.js';
+import { type ApiServerOptions, type IdentityProvider, type RequestIdentity } from './server.js';
+import { startEvidenceOsServer } from './evidence-os-server.js';
 import { OrcidOAuthSessionManager } from './registration/orcid-session.js';
 import { EncryptedFileCredentialVault } from './security/encrypted-file-credential-vault.js';
 
@@ -166,7 +167,7 @@ export async function startProductionServer(): Promise<{ port: number; close(): 
         }
       : {}),
   };
-  return startServer(config.port, options);
+  return startEvidenceOsServer(config.port, options);
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
@@ -177,6 +178,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     mode: 'live',
     persistence: 'enabled',
     credentialStorage: 'aes-256-gcm',
+    evidenceOs: 'enabled',
   }));
 
   let closing = false;

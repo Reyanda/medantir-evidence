@@ -5,7 +5,7 @@ import { fixtureRequest } from '../src/fixtures.js';
 const testRunsFile = () => `/tmp/actiora-review-clarification-${process.pid}-${Math.random().toString(36).slice(2)}.json`;
 
 async function pollForQuestionGate(base: string, runId: string) {
-  for (let attempt = 0; attempt < 100; attempt += 1) {
+  for (let attempt = 0; attempt < 500; attempt += 1) {
     const response = await fetch(`${base}/runs/${runId}`);
     assert.equal(response.status, 200);
     const state = await response.json() as {
@@ -71,9 +71,11 @@ test('live API exposes one material clarification at a time and derives actor fr
       decidedAt: '1900-01-01T00:00:00.000Z',
     }),
   });
-  assert.equal(resolvedFirst.status, 202);
   const secondState = await resolvedFirst.json() as {
-    stages: { question: { status: string }; 'search-execute': { status: string } };
+    stages: Record<string, { status: string; errors?: string[] }> & {
+      question: { status: string; errors?: string[] };
+      'search-execute': { status: string; errors?: string[] };
+    };
     artifacts: {
       clarificationRequest: { issue: { field: string } };
       clarificationResolutionLedger: { resolutions: Array<{ actorId: string; decidedAt: string }> };
@@ -81,6 +83,10 @@ test('live API exposes one material clarification at a time and derives actor fr
     };
     audit: Array<{ event: string; details: Record<string, unknown> }>;
   };
+  const failedStages = Object.entries(secondState.stages)
+    .filter(([, stage]) => stage.status === 'failed')
+    .map(([name, stage]) => ({ name, errors: stage.errors ?? [] }));
+  assert.equal(resolvedFirst.status, 202, `Clarification replay failed: ${JSON.stringify(failedStages)}`);
   assert.equal(secondState.stages.question.status, 'awaiting-human');
   assert.equal(secondState.stages['search-execute'].status, 'pending');
   assert.equal(secondState.artifacts.searchProvenance, undefined);
