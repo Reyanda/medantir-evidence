@@ -8,7 +8,14 @@
     "build": "vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "test": "npm --prefix medantir-review test"
+    "typecheck:engine": "npm --prefix medantir-review run typecheck",
+    "build:engine": "npm --prefix medantir-review run build",
+    "test:engine": "npm --prefix medantir-review test",
+    "test": "npm run test:engine",
+    "ci": "npm run lint && npm run build && npm run typecheck:engine && npm run test:engine",
+    "review:start": "npm --prefix medantir-review run start",
+    "review:start:production": "npm --prefix medantir-review run start:production",
+    "review:container": "docker build -t medantir-review:local ./medantir-review"
   },
   "dependencies": {
     "@huggingface/transformers": "^4.2.0",

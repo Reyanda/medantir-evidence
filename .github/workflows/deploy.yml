@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
+  validate-and-build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -25,14 +25,30 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
 
-      - name: Install dependencies
-        run: npm install
+      - name: Install frontend dependencies
+        run: npm ci
 
-      - name: Build
+      - name: Lint frontend
+        run: npm run lint
+
+      - name: Build frontend
         run: npm run build
 
-      - name: Upload artifact
+      - name: Install review-engine dependencies
+        run: npm ci
+        working-directory: medantir-review
+
+      - name: Typecheck review engine
+        run: npm run typecheck
+        working-directory: medantir-review
+
+      - name: Run scientific-engine tests
+        run: npm test
+        working-directory: medantir-review
+
+      - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: dist
@@ -42,7 +58,7 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
-    needs: build
+    needs: validate-and-build
     steps:
       - name: Deploy to GitHub Pages
         id: deployment

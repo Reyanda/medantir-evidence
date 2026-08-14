@@ -1,0 +1,57 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: medantir-evidence-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  frontend:
+    name: Frontend — lint and production build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+
+  review-engine:
+    name: Review engine — typecheck and scientific tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: medantir-review/package-lock.json
+      - run: npm ci
+        working-directory: medantir-review
+      - run: npm run typecheck
+        working-directory: medantir-review
+      - run: npm test
+        working-directory: medantir-review
+
+  production-image:
+    name: Review service — production container
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: ./medantir-review
+          push: false
+          tags: medantir-review:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
