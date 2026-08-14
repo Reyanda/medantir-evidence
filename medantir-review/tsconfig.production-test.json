@@ -10,6 +10,7 @@
     "src/server.ts",
     "src/production.ts",
     "test/server*.test.ts",
+    "test/evidence-os-*.test.ts",
     "test/encrypted-file-credential-vault.test.ts",
     "test/file-checkpoint-store.test.ts",
     "test/external-action-coordinator.test.ts",
