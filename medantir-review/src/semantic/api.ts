@@ -16,7 +16,6 @@ export interface SemanticApiInput {
   service?: SemanticIndexServicePort;
 }
 
-
 function publicCluster(cluster: import('./types.js').SemanticCluster) {
   const { centroid: _centroid, ...publicValue } = cluster;
   return publicValue;
@@ -25,7 +24,22 @@ function publicCluster(cluster: import('./types.js').SemanticCluster) {
 function capabilities() {
   const content = {
     schemaVersion: 'medantir-semantic-capabilities/1' as const,
-    semanticUnits: ['artifact', 'section', 'passage', 'claim', 'extraction-field', 'outcome', 'estimand', 'effect-estimate', 'mechanism', 'study', 'table-row'],
+    product: 'MEDANTIR Semantic Evidence Index' as const,
+    version: '0.8.0',
+    capabilities: {
+      sourceBoundUnits: true,
+      deterministicScientificIdentity: true,
+      deterministicLocalEmbeddings: true,
+      providerSemanticEmbeddings: true,
+      hybridRetrieval: true,
+      metadataFiltering: true,
+      clustering: true,
+      immutablePersistence: true,
+      incrementalRebuild: true,
+      rawVectorsPublic: false,
+      rawCentroidsPublic: false,
+    },
+    semanticUnits: ['artifact', 'section', 'passage', 'sentence', 'claim', 'extraction-field', 'outcome', 'estimand', 'effect-estimate', 'mechanism', 'study', 'table-row'],
     retrieval: ['dense-cosine', 'BM25', 'exact-phrase', 'metadata-filtering', 'hybrid-weighted-ranking'],
     clustering: ['deterministic-spherical-kmeans', 'farthest-first-initialisation', 'machine-proposed-labels'],
     embeddingModes: [
