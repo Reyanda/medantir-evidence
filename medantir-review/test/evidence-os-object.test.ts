@@ -18,12 +18,27 @@ test('evidence objects are content-addressed, secret-safe, and versioned through
   });
   assert.equal((safe.payload as { accessToken: string }).accessToken, '[REDACTED]');
 
-  const builder = new ImmutableEvidenceGraphBuilder('systematic', '2026-08-14T08:00:00Z');
-  const v1 = builder.add({ kind: 'question', logicalId: 'q', payload: { objective: 'A' }, root: true });
-  const v2 = builder.add({ kind: 'question', logicalId: 'q', payload: { objective: 'B' }, root: true });
+  const firstBuilder = new ImmutableEvidenceGraphBuilder('systematic', '2026-08-14T08:00:00Z');
+  const v1 = firstBuilder.add({ kind: 'question', logicalId: 'q', payload: { objective: 'A' }, root: true });
+  const firstGraph = firstBuilder.snapshot();
+
+  const unchangedBuilder = new ImmutableEvidenceGraphBuilder('systematic', '2026-08-15T08:00:00Z', firstGraph);
+  const unchanged = unchangedBuilder.add({ kind: 'question', logicalId: 'q', payload: { objective: 'A' }, root: true });
+  const unchangedGraph = unchangedBuilder.snapshot();
+  assert.equal(unchanged.objectId, v1.objectId);
+  assert.equal(unchanged.version, 1);
+  assert.equal(unchangedGraph.graphHash, firstGraph.graphHash);
+
+  const secondBuilder = new ImmutableEvidenceGraphBuilder('systematic', '2026-08-16T08:00:00Z', firstGraph);
+  const v2 = secondBuilder.add({ kind: 'question', logicalId: 'q', payload: { objective: 'B' }, root: true });
+  const secondGraph = secondBuilder.snapshot();
   assert.equal(v2.version, 2);
   assert.deepEqual(v2.supersedes, [v1.objectId]);
-  const graph = builder.snapshot();
-  assert.equal(graph.edges.some((edge) => edge.relation === 'supersedes'), true);
-  assert.match(graph.graphHash, /^[a-f0-9]{64}$/);
+  assert.equal(secondGraph.objects.some((object) => object.objectId === v1.objectId), true);
+  assert.equal(secondGraph.objects.some((object) => object.objectId === v2.objectId), true);
+  assert.deepEqual(secondGraph.rootObjectIds, [v2.objectId]);
+  assert.equal(secondGraph.edges.some((edge) => edge.relation === 'supersedes'
+    && edge.fromObjectId === v2.objectId
+    && edge.toObjectId === v1.objectId), true);
+  assert.match(secondGraph.graphHash, /^[a-f0-9]{64}$/);
 });
