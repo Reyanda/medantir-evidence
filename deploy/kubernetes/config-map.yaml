@@ -20,3 +20,9 @@ data:
   DOCUMENT_PARSE_MIN_QUALITY: "0.55"
   LITEPARSE_TIMEOUT_MS: "45000"
   PARSE_URL: "https://api.actiora.com/parse"
+  # The autonomous, network-free baseline. Production deployments may switch
+  # to openai-compatible only after supplying the optional secret-backed fields
+  # in deployment.yaml and validating retrieval on a held-out evidence corpus.
+  SEMANTIC_EMBEDDING_MODE: "local"
+  SEMANTIC_EMBEDDING_DIMENSIONS: "384"
+  SEMANTIC_EMBEDDING_MODEL_VERSION: "1"
