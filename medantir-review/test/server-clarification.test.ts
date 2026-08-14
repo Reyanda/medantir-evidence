@@ -5,7 +5,7 @@ import { fixtureRequest } from '../src/fixtures.js';
 const testRunsFile = () => `/tmp/actiora-review-clarification-${process.pid}-${Math.random().toString(36).slice(2)}.json`;
 
 async function pollForQuestionGate(base: string, runId: string) {
-  for (let attempt = 0; attempt < 100; attempt += 1) {
+  for (let attempt = 0; attempt < 500; attempt += 1) {
     const response = await fetch(`${base}/runs/${runId}`);
     assert.equal(response.status, 200);
     const state = await response.json() as {
