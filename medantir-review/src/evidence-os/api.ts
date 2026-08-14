@@ -4,7 +4,11 @@ import { buildEvidenceOsArchitectureManifest } from './architecture.js';
 import { buildEvidenceCostLedger } from './cost-ledger.js';
 import { projectPipelineToEvidenceGraph } from './projector.js';
 import { buildEvidenceWorkflowPlan } from './workflow.js';
-import type { ReproducibilityBundle, WorkflowRuntimeSnapshot } from './types.js';
+import type {
+  EvidenceGraphSnapshot,
+  ReproducibilityBundle,
+  WorkflowRuntimeSnapshot,
+} from './types.js';
 
 export interface EvidenceOsApiResponse {
   status: number;
@@ -15,6 +19,7 @@ export interface EvidenceOsApiInput {
   method?: string;
   pathname: string;
   stateFor(runId: string): Promise<PipelineState | undefined>;
+  graphFor?(runId: string, state: PipelineState): Promise<EvidenceGraphSnapshot | null>;
   runtimeSnapshot?: () => WorkflowRuntimeSnapshot;
   now?: () => string;
 }
@@ -31,7 +36,7 @@ function openApiDocument() {
       '/evidence-os/architecture': { get: { summary: 'Capability and production-boundary manifest' } },
       '/evidence-os/openapi': { get: { summary: 'This OpenAPI document' } },
       '/runs/{runId}/evidence-os': { get: { summary: 'Evidence OS run summary' } },
-      '/runs/{runId}/evidence-graph': { get: { summary: 'Immutable versioned evidence graph' } },
+      '/runs/{runId}/evidence-graph': { get: { summary: 'Latest checkpoint-bound immutable evidence graph' } },
       '/runs/{runId}/evidence-objects/{objectId}': { get: { summary: 'One content-addressed evidence object' } },
       '/runs/{runId}/workflow-plan': { get: { summary: 'Deterministic review workflow DAG' } },
       '/runs/{runId}/cost-ledger': { get: { summary: 'Model routing and cost ledger' } },
@@ -43,9 +48,10 @@ function openApiDocument() {
 export function buildReproducibilityBundle(
   state: PipelineState,
   generatedAt = new Date().toISOString(),
+  persistedGraph?: EvidenceGraphSnapshot,
 ): ReproducibilityBundle {
   const workflow = buildEvidenceWorkflowPlan(state.request.reviewType, state, generatedAt);
-  const graph = projectPipelineToEvidenceGraph(state, generatedAt);
+  const graph = persistedGraph ?? projectPipelineToEvidenceGraph(state, generatedAt);
   const costLedger = buildEvidenceCostLedger(state, generatedAt);
   const protocolPackage = state.artifacts.protocolPackage as { checksum?: unknown } | undefined;
   const finalReport = state.artifacts.finalReport;
@@ -71,6 +77,16 @@ async function runState(input: EvidenceOsApiInput, runId: string): Promise<Pipel
   return state ?? { status: 404, payload: { error: 'Run not found' } };
 }
 
+async function graphFor(
+  input: EvidenceOsApiInput,
+  runId: string,
+  state: PipelineState,
+  generatedAt: string,
+): Promise<EvidenceGraphSnapshot> {
+  const persisted = input.graphFor ? await input.graphFor(runId, state) : null;
+  return persisted ?? projectPipelineToEvidenceGraph(state, generatedAt);
+}
+
 export async function handleEvidenceOsApi(input: EvidenceOsApiInput): Promise<EvidenceOsApiResponse | null> {
   if (input.method !== 'GET') return null;
   const now = input.now?.() ?? new Date().toISOString();
@@ -83,10 +99,11 @@ export async function handleEvidenceOsApi(input: EvidenceOsApiInput): Promise<Ev
 
   const summaryMatch = input.pathname.match(/^\/runs\/([^/]+)\/evidence-os$/);
   if (summaryMatch?.[1]) {
-    const selected = await runState(input, decodeURIComponent(summaryMatch[1]));
+    const runId = decodeURIComponent(summaryMatch[1]);
+    const selected = await runState(input, runId);
     if ('status' in selected) return selected;
     const workflow = buildEvidenceWorkflowPlan(selected.request.reviewType, selected, now);
-    const graph = projectPipelineToEvidenceGraph(selected, now);
+    const graph = await graphFor(input, runId, selected, now);
     const costLedger = buildEvidenceCostLedger(selected, now);
     return {
       status: 200,
@@ -111,16 +128,18 @@ export async function handleEvidenceOsApi(input: EvidenceOsApiInput): Promise<Ev
 
   const graphMatch = input.pathname.match(/^\/runs\/([^/]+)\/evidence-graph$/);
   if (graphMatch?.[1]) {
-    const selected = await runState(input, decodeURIComponent(graphMatch[1]));
+    const runId = decodeURIComponent(graphMatch[1]);
+    const selected = await runState(input, runId);
     if ('status' in selected) return selected;
-    return { status: 200, payload: projectPipelineToEvidenceGraph(selected, now) };
+    return { status: 200, payload: await graphFor(input, runId, selected, now) };
   }
 
   const objectMatch = input.pathname.match(/^\/runs\/([^/]+)\/evidence-objects\/([^/]+)$/);
   if (objectMatch?.[1] && objectMatch[2]) {
-    const selected = await runState(input, decodeURIComponent(objectMatch[1]));
+    const runId = decodeURIComponent(objectMatch[1]);
+    const selected = await runState(input, runId);
     if ('status' in selected) return selected;
-    const graph = projectPipelineToEvidenceGraph(selected, now);
+    const graph = await graphFor(input, runId, selected, now);
     const objectId = decodeURIComponent(objectMatch[2]);
     const object = graph.objects.find((candidate) => candidate.objectId === objectId);
     return object ? { status: 200, payload: object } : { status: 404, payload: { error: 'Evidence object not found' } };
@@ -142,9 +161,11 @@ export async function handleEvidenceOsApi(input: EvidenceOsApiInput): Promise<Ev
 
   const bundleMatch = input.pathname.match(/^\/runs\/([^/]+)\/reproducibility-bundle$/);
   if (bundleMatch?.[1]) {
-    const selected = await runState(input, decodeURIComponent(bundleMatch[1]));
+    const runId = decodeURIComponent(bundleMatch[1]);
+    const selected = await runState(input, runId);
     if ('status' in selected) return selected;
-    return { status: 200, payload: buildReproducibilityBundle(selected, now) };
+    const graph = await graphFor(input, runId, selected, now);
+    return { status: 200, payload: buildReproducibilityBundle(selected, now, graph) };
   }
 
   return null;
