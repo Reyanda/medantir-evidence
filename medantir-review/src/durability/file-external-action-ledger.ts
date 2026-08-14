@@ -58,6 +58,10 @@ async function sleep(ms: number): Promise<void> {
 }
 
 async function acquireLock(lockDir: string, timeoutMs: number, retryMs: number, staleMs: number): Promise<() => Promise<void>> {
+  // mkdir without recursive creation cannot create an action lock when the
+  // shared .locks namespace does not yet exist. Initialising only the parent
+  // preserves the atomic EEXIST semantics of the action-specific lock itself.
+  await mkdir(dirname(lockDir), { recursive: true, mode: 0o700 });
   const started = Date.now();
   while (true) {
     try {
