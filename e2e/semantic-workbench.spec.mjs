@@ -58,9 +58,9 @@ test('browser workbench attaches, searches, filters, proves provenance, clusters
   await expect(runInput).toHaveValue('');
   await runInput.fill(ready.runId);
   await page.getByRole('button', { name: 'Attach' }).click();
-  await expect(page.getByText('Semantic units', { exact: true })).toBeVisible();
-  await expect(page.getByText('Embeddings', { exact: true })).toBeVisible();
-  await expect(page.getByText('Clusters', { exact: true })).toBeVisible();
+  await expect(page.locator('.sei-metric-label', { hasText: 'Semantic units' })).toBeVisible();
+  await expect(page.locator('.sei-metric-label', { hasText: 'Embeddings' })).toBeVisible();
+  await expect(page.locator('.sei-metric-label', { hasText: 'Clusters' })).toBeVisible();
   await expect(page.getByText('Deterministic lexical-dense baseline active', { exact: true })).toBeVisible();
   await expect(page.locator('.sei-result').first()).toBeVisible();
 
