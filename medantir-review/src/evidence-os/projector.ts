@@ -263,8 +263,9 @@ function addAuditObjects(builder: ImmutableEvidenceGraphBuilder, audit: AuditEve
 export function projectPipelineToEvidenceGraph(
   state: PipelineState,
   generatedAt = new Date().toISOString(),
+  previous?: EvidenceGraphSnapshot,
 ): EvidenceGraphSnapshot {
-  const builder = new ImmutableEvidenceGraphBuilder(state.request.reviewType, generatedAt);
+  const builder = new ImmutableEvidenceGraphBuilder(state.request.reviewType, generatedAt, previous);
   const question = builder.add({
     kind: 'question',
     logicalId: `question:${scientificContentHash(state.request.question).slice(0, 32)}`,
