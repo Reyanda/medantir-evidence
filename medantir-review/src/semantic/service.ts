@@ -33,16 +33,18 @@ export class SemanticIndexService implements SemanticIndexServicePort {
     if (current) return current;
     const build = (async () => {
       const existing = await this.repository.getLatest(runId);
+      const profileMatches = Boolean(existing)
+        && requestedSemanticEmbeddingProfileMatches(this.embeddingPort.profile, existing!.manifest.embedding);
       if (!force && existing
         && existing.sourceStateHash === semanticSourceStateHash(state)
-        && requestedSemanticEmbeddingProfileMatches(this.embeddingPort.profile, existing.manifest.embedding)) {
+        && profileMatches) {
         verifySemanticIndexSnapshot(existing);
         return existing;
       }
-      const previous = !force && existing
-        && requestedSemanticEmbeddingProfileMatches(this.embeddingPort.profile, existing.manifest.embedding)
-        ? existing
-        : undefined;
+      // A forced rebuild must re-project units, clusters, and the manifest, but it
+      // should not discard scientifically identical vectors. Re-embedding the whole
+      // corpus is required only when the frozen embedding space changes.
+      const previous = existing && profileMatches ? existing : undefined;
       const snapshot = await buildSemanticIndex(state, this.embeddingPort, this.now(), previous);
       await this.repository.put(snapshot);
       const persisted = await this.repository.getLatest(runId);
