@@ -4,6 +4,7 @@ import { writeFile, rm } from 'node:fs/promises';
 import type { EvidenceExcerpt, ExtractedStudy } from '../src/core/types.js';
 import { createPipelineState } from '../src/core/state.js';
 import { fixtureRequest } from '../src/fixtures.js';
+import { buildMethodologyPlan } from '../src/protocols/methodology.js';
 import { Rob2AppraisalAgent, rob2ResultId } from '../src/appraisal/rob2-agent.js';
 
 const identityProvider = { authenticate: async () => ({ sub: 'rob2-api-user', projectId: 'rob2-api-project' }) };
@@ -78,6 +79,7 @@ test('RoB 2 API resolves one result at a time with authenticated attribution and
     question: { ...fixtureRequest.question, studyDesigns: ['randomised controlled trial'] },
   });
   state.artifacts.extractedStudies = [study];
+  state.artifacts.reviewPlan = buildMethodologyPlan(state.request);
   state.artifacts.reviewSpec = {
     version: 1,
     reviewType: 'systematic',
