@@ -28,6 +28,7 @@ jobs:
   review-engine:
     name: Review service — production typecheck and operational tests
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -41,6 +42,8 @@ jobs:
         working-directory: medantir-review
       - run: npm run test:production
         working-directory: medantir-review
+        env:
+          TEST_FILE_TIMEOUT_MS: "60000"
 
   production-image:
     name: Review service — production container
