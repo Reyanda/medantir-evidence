@@ -1,6 +1,7 @@
 import type { IncomingMessage, RequestListener, ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { readFile } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
 import type { PipelineState } from './core/types.js';
 import {
   createApiServer,
@@ -8,6 +9,7 @@ import {
   type RequestIdentity,
 } from './server.js';
 import { handleEvidenceOsApi } from './evidence-os/api.js';
+import { FileEvidenceGraphRepository } from './evidence-os/file-repository.js';
 import type { SingleReplicaWorkflowRuntime } from './evidence-os/runtime.js';
 
 interface OwnedRun {
@@ -18,6 +20,7 @@ interface OwnedRun {
 
 export interface EvidenceOsServerOptions extends ApiServerOptions {
   evidenceOsRuntime?: SingleReplicaWorkflowRuntime;
+  evidenceGraphRepository?: FileEvidenceGraphRepository;
 }
 
 function response(res: ServerResponse, status: number, payload: unknown): void {
@@ -56,16 +59,24 @@ async function loadOwnedRun(
 
 /**
  * Wraps the existing review API without duplicating its write paths. Evidence OS
- * routes are read-only projections over the same atomically persisted run state;
- * all other requests are delegated to the original authenticated server.
+ * routes read checkpoint-bound graph snapshots when available and otherwise
+ * project from the same atomically persisted run state. All write requests remain
+ * delegated to the original authenticated server.
  */
 export function createEvidenceOsApiServer(options: EvidenceOsServerOptions = {}) {
-  const { evidenceOsRuntime, ...apiOptions } = options;
+  const { evidenceOsRuntime, evidenceGraphRepository, ...apiOptions } = options;
   const server = createApiServer(apiOptions);
   const delegate = server.listeners('request')[0] as RequestListener | undefined;
   if (!delegate) throw new Error('Review API server did not register a request handler.');
   server.removeAllListeners('request');
   const runsFile = apiOptions.runsFile ?? process.env.RUNS_FILE ?? '/data/runs.json';
+  const durabilityRoot = apiOptions.durabilityRuntime?.rootDir
+    ?? apiOptions.durabilityRoot
+    ?? process.env.REVIEW_DURABILITY_ROOT
+    ?? join(dirname(runsFile), 'review-durability');
+  const graphRepository = evidenceGraphRepository
+    ?? apiOptions.durabilityRuntime?.evidenceGraphs
+    ?? new FileEvidenceGraphRepository({ rootDir: durabilityRoot });
 
   server.on('request', (req: IncomingMessage, res: ServerResponse) => {
     void (async () => {
@@ -96,6 +107,7 @@ export function createEvidenceOsApiServer(options: EvidenceOsServerOptions = {})
         ...(req.method ? { method: req.method } : {}),
         pathname: url.pathname,
         stateFor: async (runId) => identity ? loadOwnedRun(runsFile, identity, runId) : undefined,
+        graphFor: async (runId) => graphRepository.getGraph(runId),
         ...(evidenceOsRuntime ? { runtimeSnapshot: () => evidenceOsRuntime.snapshot() } : {}),
       });
       if (!handled) {
