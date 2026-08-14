@@ -39,6 +39,8 @@ export interface FileEvidenceGraphRepositoryOptions {
   rootDir: string;
 }
 
+type ExistingContentVerifier = (existing: string) => boolean;
+
 function assertSafeRunId(runId: string): void {
   if (!/^[A-Za-z0-9._:-]{1,200}$/.test(runId)) throw new Error(`Unsafe evidence graph run id: ${runId}`);
 }
@@ -89,10 +91,19 @@ async function atomicReplace(path: string, content: string): Promise<void> {
   await fsyncDirectory(directory);
 }
 
-async function immutableWrite(path: string, content: string): Promise<boolean> {
+function equivalentContent(existing: string, content: string, verifier?: ExistingContentVerifier): boolean {
+  if (existing === content) return true;
+  return verifier?.(existing) === true;
+}
+
+async function immutableWrite(
+  path: string,
+  content: string,
+  verifyExisting?: ExistingContentVerifier,
+): Promise<boolean> {
   try {
     const existing = await readFile(path, 'utf8');
-    if (existing !== content) throw new Error(`Immutable evidence object conflict at ${path}.`);
+    if (!equivalentContent(existing, content, verifyExisting)) throw new Error(`Immutable evidence object conflict at ${path}.`);
     return false;
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
@@ -110,7 +121,7 @@ async function immutableWrite(path: string, content: string): Promise<boolean> {
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error;
     const existing = await readFile(path, 'utf8');
-    if (existing !== content) throw new Error(`Immutable evidence object conflict at ${path}.`);
+    if (!equivalentContent(existing, content, verifyExisting)) throw new Error(`Immutable evidence object conflict at ${path}.`);
     return false;
   } finally {
     await unlink(temporary).catch((error: unknown) => {
@@ -189,7 +200,15 @@ export class FileEvidenceGraphRepository implements EvidenceObjectRepositoryPort
 
   async putObject(object: EvidenceObject): Promise<{ stored: boolean; objectId: string }> {
     verifyEvidenceObject(object);
-    const stored = await immutableWrite(this.objectPath(object.objectId), `${JSON.stringify(object)}\n`);
+    const stored = await immutableWrite(
+      this.objectPath(object.objectId),
+      `${JSON.stringify(object)}\n`,
+      (existing) => {
+        const prior = JSON.parse(existing) as EvidenceObject;
+        verifyEvidenceObject(prior);
+        return prior.objectId === object.objectId && prior.contentHash === object.contentHash;
+      },
+    );
     return { stored, objectId: object.objectId };
   }
 
@@ -212,7 +231,15 @@ export class FileEvidenceGraphRepository implements EvidenceObjectRepositoryPort
       throw new Error(`Evidence graph ${graph.graphHash} belongs to a different run.`);
     }
     for (const object of graph.objects) await this.putObject(object);
-    const stored = await immutableWrite(this.graphPath(runId, graph.graphHash), `${JSON.stringify(graph)}\n`);
+    const stored = await immutableWrite(
+      this.graphPath(runId, graph.graphHash),
+      `${JSON.stringify(graph)}\n`,
+      (existing) => {
+        const prior = JSON.parse(existing) as EvidenceGraphSnapshot;
+        verifyEvidenceGraphSnapshot(prior);
+        return prior.graphHash === graph.graphHash;
+      },
+    );
     return { stored, graphHash: graph.graphHash };
   }
 
