@@ -1,6 +1,7 @@
 export * from './types.js';
 export * from './ports.js';
 export * from './object-store.js';
+export * from './file-repository.js';
 export * from './architecture.js';
 export * from './workflow.js';
 export * from './runtime.js';
