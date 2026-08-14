@@ -127,6 +127,11 @@ function pointerIdentity(pointer: Omit<EvidenceGraphLatestPointer, 'pointerHash'
   return scientificHash(pointer);
 }
 
+function unsignedReceipt(receipt: EvidenceGraphCheckpointReceipt): Omit<EvidenceGraphCheckpointReceipt, 'receiptHash'> {
+  const { receiptHash: _receiptHash, ...unsigned } = receipt;
+  return unsigned;
+}
+
 function verifyReceipt(receipt: EvidenceGraphCheckpointReceipt): void {
   if (receipt.schemaVersion !== 'medantir-evidence-graph-checkpoint/1') throw new Error('Unsupported evidence graph checkpoint receipt schema.');
   assertSafeRunId(receipt.runId);
@@ -136,14 +141,9 @@ function verifyReceipt(receipt: EvidenceGraphCheckpointReceipt): void {
   assertHash(receipt.graphHash, 'Evidence graph graphHash');
   if (receipt.previousGraphHash !== null) assertHash(receipt.previousGraphHash, 'Evidence graph previousGraphHash');
   validIso(receipt.recordedAt, 'Evidence graph checkpoint recordedAt');
-  if (receipt.receiptHash !== receiptIdentity(({ receiptHash: _receiptHash, ...receipt } = receipt))) {
+  if (receipt.receiptHash !== receiptIdentity(unsignedReceipt(receipt))) {
     throw new Error(`Evidence graph checkpoint receipt hash mismatch at sequence ${receipt.sequence}.`);
   }
-}
-
-function unsignedReceipt(receipt: EvidenceGraphCheckpointReceipt): Omit<EvidenceGraphCheckpointReceipt, 'receiptHash'> {
-  const { receiptHash: _receiptHash, ...unsigned } = receipt;
-  return unsigned;
 }
 
 function verifyPointer(pointer: EvidenceGraphLatestPointer): void {
@@ -280,7 +280,7 @@ export class FileEvidenceGraphRepository implements EvidenceObjectRepositoryPort
       return receipt;
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
-        // Fall through to the immutable checkpoint ledger if the convenience pointer is damaged.
+        // The immutable checkpoint ledger below remains authoritative if the convenience pointer is damaged.
       }
     }
     const receipts = await this.listCheckpointReceipts(runId);
@@ -309,7 +309,7 @@ export class FileEvidenceGraphRepository implements EvidenceObjectRepositoryPort
     const previous = receipts.at(-1);
     const existing = receipts.find((receipt) => receipt.sequence === input.sequence);
     if (existing) {
-      const proposed = {
+      const proposed: Omit<EvidenceGraphCheckpointReceipt, 'receiptHash'> = {
         ...unsignedReceipt(existing),
         stage: input.stage,
         event: input.event,
@@ -320,7 +320,7 @@ export class FileEvidenceGraphRepository implements EvidenceObjectRepositoryPort
         graphHash: input.graph.graphHash,
       };
       if (receiptIdentity(proposed) !== existing.receiptHash) throw new Error(`Conflicting evidence graph checkpoint at sequence ${input.sequence}.`);
-      await this.writeLatest(existing);
+      if (previous?.sequence === existing.sequence) await this.writeLatest(existing);
       return existing;
     }
     if (input.sequence !== (previous?.sequence ?? 0) + 1) throw new Error(`Evidence graph checkpoint sequence gap at ${input.sequence}.`);
