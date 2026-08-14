@@ -61,6 +61,43 @@ test('same latest checkpoint is idempotent and a new store instance continues se
   assert.deepEqual((await restartedStore.listEvents(state.runId)).map((entry) => entry.sequence), [1, 2]);
 });
 
+test('checkpoint hashes describe the exact JSON-persisted representation when state contains undefined fields', async (t) => {
+  const { store } = await temporaryStore(t);
+  const state = createPipelineState(fixtureRequest);
+  state.artifacts.protocolAmendments = [{
+    field: 'comparator',
+    oldValue: undefined,
+    newValue: 'standard care',
+    rationale: 'The earlier request did not define a comparator.',
+  }];
+  state.audit.push({
+    id: 'undefined-amendment',
+    runId: state.runId,
+    stage: 'question',
+    event: 'awaiting-human-evidence-review',
+    timestamp: '2026-08-11T00:00:00.000Z',
+    attempt: 1,
+    details: { previousValue: undefined },
+  });
+
+  await store.checkpoint({
+    state,
+    stage: 'question',
+    event: 'awaiting-human-evidence-review',
+    attempt: 1,
+    recordedAt: '2026-08-11T00:00:00.000Z',
+  });
+
+  const events = await store.listEvents(state.runId);
+  assert.equal(events.length, 1);
+  const recovered = await store.recover(state.runId);
+  assert.ok(recovered);
+  const amendments = recovered.artifacts.protocolAmendments as Array<Record<string, unknown>>;
+  assert.equal(amendments[0]?.newValue, 'standard care');
+  assert.equal(Object.hasOwn(amendments[0] ?? {}, 'oldValue'), false);
+  assert.equal(Object.hasOwn(recovered.audit[0]?.details ?? {}, 'previousValue'), false);
+});
+
 test('detects tampered journal state before recovery', async (t) => {
   const { root, store } = await temporaryStore(t);
   const state = createPipelineState(fixtureRequest);
