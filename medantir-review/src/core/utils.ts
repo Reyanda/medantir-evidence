@@ -4,7 +4,10 @@ export const nowIso = (): string => new Date().toISOString();
 export const id = (): string => randomUUID();
 
 export function stableHash(value: unknown): string {
-  return createHash('sha256').update(JSON.stringify(value)).digest('hex');
+  const serialized = JSON.stringify(value);
+  return createHash('sha256')
+    .update(serialized === undefined ? '"__MEDANTIR_UNDEFINED__"' : serialized)
+    .digest('hex');
 }
 
 export function normaliseText(value: unknown): string {
