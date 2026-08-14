@@ -59,9 +59,9 @@ async function loadOwnedRun(
 
 /**
  * Wraps the existing review API without duplicating its write paths. Evidence OS
- * routes read checkpoint-bound graph snapshots when available and otherwise
- * project from the same atomically persisted run state. All write requests remain
- * delegated to the original authenticated server.
+ * routes read checkpoint-bound graph snapshots when they reconcile to the same
+ * published run state and otherwise project from that state. All write requests
+ * remain delegated to the original authenticated server.
  */
 export function createEvidenceOsApiServer(options: EvidenceOsServerOptions = {}) {
   const { evidenceOsRuntime, evidenceGraphRepository, ...apiOptions } = options;
@@ -107,7 +107,10 @@ export function createEvidenceOsApiServer(options: EvidenceOsServerOptions = {})
         ...(req.method ? { method: req.method } : {}),
         pathname: url.pathname,
         stateFor: async (runId) => identity ? loadOwnedRun(runsFile, identity, runId) : undefined,
-        graphFor: async (runId) => graphRepository.getGraph(runId),
+        graphFor: async (runId, state) => {
+          const graph = await graphRepository.getGraph(runId);
+          return graph?.metadata.updatedAt === state.updatedAt ? graph : null;
+        },
         ...(evidenceOsRuntime ? { runtimeSnapshot: () => evidenceOsRuntime.snapshot() } : {}),
       });
       if (!handled) {
