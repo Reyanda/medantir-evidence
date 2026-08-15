@@ -27,11 +27,64 @@ export function seedSampleReview() {
 
   review.methodology = {
     typeId: "intervention",
-    typeName: "Intervention review",
+    typeName: "Intervention systematic review",
+    framework: "PRISMA 2020",
     robTool: "RoB 2 (Cochrane Risk of Bias 2)",
     synthesisMethod: "Random-effects meta-analysis (DerSimonian-Laird)",
-    certaintyFramework: "GRADE",
+    embeddedTriangulation: true,
+    desc: "Systematic review and meta-analysis of randomized controlled trials evaluating therapeutic interventions against standard of care.",
   };
+
+  review.questions = [
+    {
+      id: "q1",
+      name: "Q1: 28-Day Mortality (Primary)",
+      text: "In hospitalized adults with COVID-19, do Janus kinase (JAK) inhibitors compared to standard of care reduce 28-day mortality in randomized controlled trials?",
+      primary: true,
+      facets: {
+        population: ["hospitalized adults with COVID-19", "severe COVID-19"],
+        realm: ["clinical medicine", "critical care"],
+        intervention: ["JAK inhibitors", "baricitinib", "tofacitinib", "ruxolitinib"],
+        standard: ["standard of care", "placebo", "dexamethasone"],
+        measure: ["28-day mortality", "all-cause death"],
+        time: ["28-day follow-up"],
+        geography: [],
+        design: ["randomised controlled trial", "RCT"]
+      }
+    },
+    {
+      id: "q2",
+      name: "Q2: Mechanical Ventilation Progression",
+      text: "In hospitalized adults with COVID-19, do JAK inhibitors prevent progression to invasive mechanical ventilation?",
+      primary: false,
+      facets: {
+        population: ["hospitalized adults with COVID-19"],
+        realm: ["clinical medicine"],
+        intervention: ["JAK inhibitors", "baricitinib"],
+        standard: ["standard of care", "placebo"],
+        measure: ["invasive mechanical ventilation", "ECMO", "intubation"],
+        time: ["28 days"],
+        geography: [],
+        design: ["RCT"]
+      }
+    },
+    {
+      id: "q3",
+      name: "Q3: Serious Adverse Events & Infections",
+      text: "In COVID-19 patients treated with JAK inhibitors, what is the incidence of secondary bacterial/fungal infections and thromboembolism?",
+      primary: false,
+      facets: {
+        population: ["COVID-19 patients"],
+        realm: ["clinical medicine", "pharmacovigilance"],
+        intervention: ["JAK inhibitors"],
+        standard: ["control", "placebo"],
+        measure: ["secondary infection", "thromboembolism", "serious adverse event"],
+        time: ["60 days"],
+        geography: [],
+        design: ["RCT", "prospective cohort"]
+      }
+    }
+  ];
 
   review.objects.eligibility = "P: Adults hospitalized with confirmed COVID-19\nI: Janus kinase inhibitors (baricitinib, tofacitinib, ruxolitinib)\nC: Placebo or standard care\nO: 28-day all-cause mortality, progression to mechanical ventilation\nS: Randomized controlled trials only";
 
