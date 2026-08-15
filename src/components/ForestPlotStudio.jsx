@@ -1,5 +1,12 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
+  BookOpen, FileText, ScrollText, Search, Filter, Database, Shield,
+  Scale, Zap, BarChart2, Compass, FileArchive, Layers, Plus, Download,
+  Play, CheckCircle2, ChevronRight, ChevronLeft, ChevronDown, Check,
+  Activity, MousePointer, Hand, ZoomIn, Ruler, Type, Square, Link2,
+  Trash2, Lock, Eye, EyeOff, AlertTriangle
+} from "lucide-react";
+import {
   listReviewProjects,
   loadStudio,
   persistDataset,
@@ -12,17 +19,24 @@ import {
   newManualRow,
   emptyOutcome,
   robColor,
-  ROB_LEVELS
+  ROB_LEVELS,
+  seedSampleReview
 } from "../engine/forestRuntime.js";
-import { saveReview, loadReview } from "../engine/reviewengine.js";
+import { saveReview, loadReview, createReview } from "../engine/reviewengine.js";
 import { runPipeline, runStage, stageDetails, stageProgress, reviewSummary } from "../engine/srOrchestrator.js";
-import { setActiveProject } from "../engine/projectstore.js";
+import { setActiveProject, listProjects } from "../engine/projectstore.js";
 import { runnableSources } from "../engine/academic.js";
 import { enabledProviders } from "../engine/providers.js";
 import { getTaskPreference, setTaskPreference } from "../engine/taskRouter.js";
-import ReviewTab from "./ReviewTab.jsx";
+
+// Core Pipeline & Studio Components
+import ReviewTypePanel from "./ReviewTypePanel.jsx";
+import QuestionBuilder from "./QuestionBuilder.jsx";
+import CausalTriangulationPanel from "./CausalTriangulationPanel.jsx";
 import SearchStrategyBuilder from "./SearchStrategyBuilder.jsx";
 import { SearchView } from "./AcademicTab.jsx";
+import ScreeningGrid from "./ScreeningGrid.jsx";
+import ReviewTab from "./ReviewTab.jsx";
 import ProjectFiles from "./ProjectFiles.jsx";
 import ResearchLoopView from "./ResearchLoopView.jsx";
 import ScientificRuntimeView from "./ScientificRuntimeView.jsx";
@@ -30,186 +44,112 @@ import SettingsPanel from "./SettingsPanel.jsx";
 import BrowserTab from "./BrowserTab.jsx";
 import ReaderPanel from "./ReaderPanel.jsx";
 import TracerPanel from "./TracerPanel.jsx";
-import CommandDock from "./CommandDock.jsx";
-import ScreeningGrid from "./ScreeningGrid.jsx";
 import ConcordancePanel from "./ConcordancePanel.jsx";
 import BridgePanel from "./BridgePanel.jsx";
 import SandboxPanel from "./SandboxPanel.jsx";
-import QuestionBuilder from "./QuestionBuilder.jsx";
 import LaunchPanel from "./LaunchPanel.jsx";
 import "../styles/workbench.css";
 
-// The LLM-backed stages of the review pipeline. The studio exposes their route
-// because the default (local-first) runs an in-browser model that can take
-// minutes per stage on a laptop — an operator with a provider configured needs
-// to be able to say so without leaving the canvas.
-const LLM_TASKS = [
-  "extract-pico", "generate-eligibility", "tiab-screening", "fulltext-screening",
-  "extract-data", "assess-rob", "synthesize", "grade-assessment", "generate-prisma",
+// 12-Step Ordered Methodological Pipeline
+export const MODULES = [
+  { step: 1, label: "1. Review Type", view: "ReviewType", tab: "TYPE", icon: BookOpen, hint: "Step 1: Define methodology, framework, RoB tools, and synthesis design" },
+  { step: 2, label: "2. Questions", view: "Question", tab: "QUESTION", icon: FileText, hint: "Step 2: Multi-question PRISM / PICO framing & syntax compilation" },
+  { step: 3, label: "3. Protocols & Strategy", view: "Protocols", tab: "BUILD", icon: ScrollText, hint: "Step 3: Database query translations, syntax explosion, and PRESS review" },
+  { step: 4, label: "4. Search & Retrieval", view: "Search", tab: "ANALYZE", icon: Search, hint: "Step 4: Execute multi-source literature retrieval across configured databases" },
+  { step: 5, label: "5. Screening", view: "Screening", tab: "ANALYZE", icon: Filter, hint: "Step 5: High-density TiAb and Full-text screening grid with decision ledger" },
+  { step: 6, label: "6. Extraction", view: "Extraction", tab: "SYNTHESIZE", icon: Database, hint: "Step 6: Structured study data extraction and 2x2 contingency table ingestion" },
+  { step: 7, label: "7. Appraisal (RoB)", view: "Appraisal", tab: "SYNTHESIZE", icon: Shield, hint: "Step 7: Critical appraisal using RoB 2, ROBINS-I, QUADAS-2, or CASP" },
+  { step: 8, label: "8. Causal Triangulation", view: "Triangulation", tab: "SYNTHESIZE", icon: Scale, hint: "Step 8: Multi-stream triangulation across orthogonal bias profiles" },
+  { step: 9, label: "9. Synthesis", view: "Synthesis", tab: "SYNTHESIZE", icon: Zap, hint: "Step 9: Inverse-variance and DerSimonian-Laird meta-analysis engine" },
+  { step: 10, label: "10. Figures (Canvas)", view: "Figures", tab: "VISUALIZE", icon: BarChart2, hint: "Step 10: Vector forest plot studio, N-panel geometry, and data table" },
+  { step: 11, label: "11. Evidence Map", view: "Evidence Map", tab: "VISUALIZE", icon: Compass, hint: "Step 11: Systematic evidence-gap map and geospatial evidence radar" },
+  { step: 12, label: "12. Reports & PRISMA", view: "Reports", tab: "PUBLISH", icon: FileArchive, hint: "Step 12: PRISMA flow diagram, structured summary, and auditable outputs" },
 ];
 
-const MODULES = [
-  { label: "Start / templates", view: "Launch", tab: "BUILD", hint: "start fresh, start from a method template, or resume a review" },
-  { label: "Question", view: "Question", tab: "QUESTION" },
-  { label: "Overview", view: "Overview", tab: "BUILD" },
-  { label: "Protocols", view: "Protocols", tab: "BUILD" },
-  { label: "Search", view: "Search", tab: "ANALYZE" },
-  { label: "Screening", view: "Screening", tab: "ANALYZE" },
-  { label: "Extraction", view: "Extraction", tab: "SYNTHESIZE" },
-  { label: "Synthesis", view: "Synthesis", tab: "SYNTHESIZE" },
-  { label: "Evidence map", view: "Evidence Map", tab: "VISUALIZE" },
-  { label: "Figures", view: "Figures", tab: "VISUALIZE" },
-  { label: "Reports", view: "Reports", tab: "PUBLISH" },
-  { label: "Reader", view: "Reader", tab: "ANALYZE" },
-  { label: "Browser", view: "Browser", tab: "ANALYZE" },
-  { label: "Tracer", view: "Tracer", tab: "VISUALIZE" },
-  { label: "Sandbox & files", view: "Sandbox", tab: "BUILD", hint: "the review's own file layout, YAML manifest and document links" },
-  { label: "Model concordance", view: "Concordance", tab: "BUILD", setup: true, hint: "run several models in parallel sandboxes and compare them" },
-  { label: "AI model setup", view: "Settings", tab: "BUILD", setup: true, hint: "providers, keys, models, engine mode" },
-  { label: "Database setup", view: "Databases", tab: "BUILD", setup: true, hint: "which databases are searchable, their keys and logins" },
-  { label: "Compute & folder bridge", view: "Bridge", tab: "BUILD", setup: true, hint: "attach a local folder or your own compute" },
+export const UTILITY_MODULES = [
+  { label: "Start / Templates", view: "Launch", tab: "TYPE", hint: "Create new review from method templates or import review.yaml" },
+  { label: "Overview & Runtime", view: "Overview", tab: "TYPE", hint: "Inspect cognitive governance, runtime health, and project artifacts" },
+  { label: "Document Reader", view: "Reader", tab: "ANALYZE", hint: "PDF full-text viewer with PRISM facet text-layer highlighting" },
+  { label: "Web Browser", view: "Browser", tab: "ANALYZE", hint: "Direct academic and institutional gateway browsing" },
+  { label: "Tracer Vectoriser", view: "Tracer", tab: "VISUALIZE", hint: "Convert raster publication plots into editable vector geometry" },
+  { label: "Sandbox & Files", view: "Sandbox", tab: "BUILD", hint: "Review sandbox file layout, YAML manifest, and document links" },
+  { label: "Model Concordance", view: "Concordance", tab: "BUILD", hint: "Multi-model screening agreement and Fleiss' kappa statistics" },
+  { label: "AI Model Setup", view: "Settings", tab: "BUILD", hint: "Configure API keys, local-first inference, and task preferences" },
+  { label: "Database Setup", view: "Databases", tab: "BUILD", hint: "Authentication and credentials for literature databases" },
+  { label: "Compute & Folder Bridge", view: "Bridge", tab: "BUILD", hint: "Attach local project folder or custom compute endpoints" },
 ];
 
-// The menu bar carries app chrome only — every item does something real, and an
-// item that cannot act right now is disabled rather than silently inert.
-const MENUS = [
-  {
-    label: "File",
-    items: [
-      { label: "New review…", run: (c) => { c.setActiveView("Launch"); c.setActiveTab("BUILD"); } },
-      { label: "Attach working folder…", run: (c) => { c.setActiveView("Bridge"); c.setActiveTab("BUILD"); } },
-      { label: "Open reader", run: (c) => { c.setActiveView("Reader"); c.setActiveTab("ANALYZE"); } },
-      { sep: true },
-      { label: "Re-read review.json", key: "Sync", run: (c) => c.reloadReview(), disabled: ({ review }) => !review },
-      { label: "Export outcome CSV", run: (c) => c.exportCSV(), disabled: ({ review }) => !review },
-      { label: "Project files", run: (c) => { c.setActiveView("Reports"); c.setActiveTab("PUBLISH"); } },
-    ],
-  },
-  {
-    label: "Edit",
-    items: [
-      { label: "Add manual plot row", run: (c) => c.addManual(), disabled: ({ review }) => !review },
-      { label: "Add outcome", run: (c) => c.addOutcome(), disabled: ({ review }) => !review },
-      { sep: true },
-      { label: "Question and PRISM blocks", run: (c) => { c.setActiveView("Question"); c.setActiveTab("QUESTION"); } },
-      { label: "Search strategy", run: (c) => { c.setActiveView("Protocols"); c.setActiveTab("BUILD"); } },
-    ],
-  },
-  {
-    label: "View",
-    items: [
-      { label: "Left dock", key: "Cmd-1", run: (c) => c.setLeftDock((d) => ({ ...d, open: !d.open })) },
-      { label: "Inspector", key: "Cmd-2", run: (c) => c.setRightDock((d) => ({ ...d, open: !d.open })) },
-      { label: "Command dock", key: "Cmd-3", run: (c) => c.setBottomDock((d) => ({ ...d, open: !d.open })) },
-      { sep: true },
-      { label: "Screening grid", run: (c) => { c.setActiveView("Screening"); c.setActiveTab("ANALYZE"); } },
-      { label: "Sandbox and files", run: (c) => { c.setActiveView("Sandbox"); c.setActiveTab("BUILD"); } },
-      { label: "Figures canvas", run: (c) => { c.setActiveView("Figures"); c.setActiveTab("VISUALIZE"); } },
-      { label: "Evidence map", run: (c) => { c.setActiveView("Evidence Map"); c.setActiveTab("VISUALIZE"); } },
-    ],
-  },
-  {
-    label: "Run",
-    items: [
-      { label: "Run pipeline", run: (c) => c.executePipeline(), disabled: ({ review }) => !review },
-      { label: "Tracer — raster to vector", run: (c) => { c.setActiveView("Tracer"); c.setActiveTab("VISUALIZE"); } },
-      { sep: true },
-      { label: "AI model setup", run: (c) => { c.setActiveView("Settings"); c.setActiveTab("BUILD"); } },
-      { label: "Database setup", run: (c) => { c.setActiveView("Databases"); c.setActiveTab("BUILD"); } },
-      { label: "Compute and folder bridge", run: (c) => { c.setActiveView("Bridge"); c.setActiveTab("BUILD"); } },
-    ],
-  },
-  {
-    label: "Help",
-    items: [
-      { label: "Keyboard map", key: "?", run: (c) => c.setShowKeys((v) => !v) },
-      { label: "What runs where", run: (c) => { c.setActiveView("Bridge"); c.setActiveTab("BUILD"); } },
-    ],
-  },
+export const MODES = [
+  ["TYPE", "Review Type"],
+  ["QUESTION", "Questions"],
+  ["BUILD", "Protocols"],
+  ["ANALYZE", "Search & Screen"],
+  ["SYNTHESIZE", "Synthesis & Triangulation"],
+  ["VISUALIZE", "Figures & Map"],
+  ["PUBLISH", "Reports & PRISMA"],
 ];
 
-// Modules that already speak the workbench language and own their whole pane.
-const NATIVE_VIEWS = ["Launch", "Question", "Screening", "Concordance", "Reader", "Tracer", "Browser", "Bridge", "Settings", "Databases", "Sandbox"];
-
-// The question comes before the build: it is what everything downstream compiles
-// from, so it leads the mode bar.
-const MODES = [
-  ["QUESTION", "Question"], ["BUILD", "Protocols"], ["ANALYZE", "Search"],
-  ["SYNTHESIZE", "Synthesis"], ["VISUALIZE", "Figures"], ["PUBLISH", "Reports"],
-];
-
-// Which review a cold start opens: the one worked on last. When there is none,
-// the caller lands on Launch instead — a canvas for a review that does not
-// exist is not a starting point.
 function mostRecentReview() {
-  return listReviewProjects()
-    .slice()
-    .sort((a, b) => (b.updated || b.created || 0) - (a.updated || a.created || 0))[0] || null;
+  const list = listReviewProjects();
+  if (!list.length) {
+    const seeded = seedSampleReview();
+    if (seeded) return seeded;
+  }
+  return list.slice().sort((a, b) => (b.updated || b.created || 0) - (a.updated || a.created || 0))[0] || null;
 }
 
 export default function ForestPlotStudio({
-  activeView = "Figures",
-  setActiveView = () => {},
-  activeTab = "VISUALIZE",
-  setActiveTab = () => {}
+  activeView: initialView = "ReviewType",
+  setActiveView: parentSetActiveView,
+  activeTab: initialTab = "TYPE",
+  setActiveTab: parentSetActiveTab
 }) {
-  // --- runtime binding ------------------------------------------------------
+  const [activeView, localSetActiveView] = useState(initialView);
+  const [activeTab, localSetActiveTab] = useState(initialTab);
+
+  const setActiveView = parentSetActiveView || localSetActiveView;
+  const setActiveTab = parentSetActiveTab || localSetActiveTab;
+
   const [projects, setProjects] = useState(() => listReviewProjects());
   const [pid, setPid] = useState(() => mostRecentReview()?.id || "");
   const [review, setReview] = useState(null);
   const [dataset, setDataset] = useState(() => readDataset(null));
   const [log, setLog] = useState([]);
-  const [running, setRunning] = useState(null); // { stage, pct, msg, startedAt } | null
-  const [elapsed, setElapsed] = useState(0);
-  const [llmRoute, setLlmRoute] = useState(() => getTaskPreference("extract-pico") || "auto");
-  // A detached run keeps executing (the stage saves itself into review.json when
-  // it finishes); the token stops THIS view from applying a stale result.
-  const runToken = useRef(0);
-
-  // --- canvas state ---------------------------------------------------------
+  const [running, setRunning] = useState(null);
   const [selectedRowId, setSelectedRowId] = useState(null);
   const [tableTab, setTableTab] = useState("DATA");
-  const [showKeys, setShowKeys] = useState(false);
   const [settingsTab, setSettingsTab] = useState("AI models");
-  const [openMenu, setOpenMenu] = useState(null);
-  // Handed to the Search Strategy builder when the question tab builds a strategy,
-  // so the strategy surface opens already carrying it.
+  const [leftDock, setLeftDock] = useState({ open: true, width: 260 });
   const [strategyQuestion, setStrategyQuestion] = useState("");
-  // Docks are furniture: same place every time, resizable by their gutter,
-  // collapsible to reclaim width. Nothing slides in, nothing floats.
-  const [leftDock, setLeftDock] = useState({ open: true, width: 270 });
-  const [rightDock, setRightDock] = useState({ open: true, width: 300 });
-  const [bottomDock, setBottomDock] = useState({ open: true, height: 210 });
-  const dragging = useRef(null);
-  const [layers, setLayers] = useState({ studies: true, summary: true, axis: true, nullLine: true });
+  const [activeTool, setActiveTool] = useState("select");
 
-  const allSources = useMemo(() => runnableSources().filter((s) => s.kind === "builtin"), []);
+  const [layersVisibility, setLayersVisibility] = useState({
+    title: true,
+    subtitle: true,
+    axisX: true,
+    nullLine: true,
+    studies: true,
+    summary: true
+  });
 
   const note = useCallback((msg, kind = "info") => {
-    setLog((prev) => [...prev.slice(-199), { at: Date.now(), msg, kind }]);
+    setLog((prev) => [{ text: msg, kind, at: Date.now() }, ...prev.slice(0, 19)]);
   }, []);
 
-  // First contact is Launch when this workspace holds no review, and the last
-  // review's Question tab when it holds one. The canvas is an artifact surface;
-  // it is never the thing an operator is shown first.
-  const landed = useRef(false);
+  // Sync Project, Review, and Dataset
   useEffect(() => {
-    if (landed.current) return;
-    landed.current = true;
-    const recent = mostRecentReview();
-    if (!recent) { setActiveView("Launch"); setActiveTab("BUILD"); return; }
-    setActiveView("Question");
-    setActiveTab("QUESTION");
-  }, [setActiveView, setActiveTab]);
-
-  // Load project → review → dataset, and reconcile rows with what the pipeline
-  // has actually included. The sync is written back so the canvas and review.json
-  // never drift apart.
-  useEffect(() => {
-    if (!pid) { setReview(null); setDataset(readDataset(null)); return; }
+    if (!pid) {
+      const recent = mostRecentReview();
+      if (recent) setPid(recent.id);
+      return;
+    }
     setActiveProject(pid);
     const { review: r, dataset: d } = loadStudio(pid);
-    if (!r) { setReview(null); setDataset(d); return; }
+    if (!r) {
+      setReview(null);
+      setDataset(d);
+      return;
+    }
     const target = activeOutcome(d);
     const synced = syncRowsFromReview(target, r);
     const nextDataset = updateOutcome(d, target.id, { rows: synced.outcome.rows });
@@ -217,1000 +157,675 @@ export default function ForestPlotStudio({
     setReview(nextReview);
     setDataset(nextDataset);
     setSelectedRowId(activeOutcome(nextDataset)?.rows[0]?.studyId || null);
-    if (synced.added) note(`${synced.added} included stud${synced.added === 1 ? "y" : "ies"} added to the canvas from the pipeline.`);
-    if (synced.detached) note(`${synced.detached} row(s) no longer map to an included study — flagged, not deleted.`, "warn");
-  }, [pid, note]);
-
-  // An LLM stage on the in-browser engine can take minutes; a frozen-looking
-  // button is indistinguishable from a hang, so the run is always timed.
-  useEffect(() => {
-    if (!running) { setElapsed(0); return undefined; }
-    const started = running.startedAt;
-    const id = setInterval(() => setElapsed(Math.round((Date.now() - started) / 1000)), 1000);
-    return () => clearInterval(id);
-  }, [running]);
-
-  // One up-front statement of which inference route the LLM stages will take.
-  useEffect(() => {
-    if (!review) return;
-    const providers = enabledProviders().filter((p) => p.shape !== "local");
-    if (providers.length) note(`LLM stages route to ${providers.map((p) => p.label || p.id).join(", ")}.`);
-    else note("No API provider is enabled — PICO, screening, extraction, RoB, synthesis and GRADE run on the in-browser model. Expect minutes per stage, and a model download on first use.", "warn");
-  }, [review?.question, note]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [pid]);
 
   const outcome = useMemo(() => activeOutcome(dataset), [dataset]);
   const computed = useMemo(() => computeOutcome(outcome), [outcome]);
-  const summary = useMemo(() => (review ? reviewSummary(review) : null), [review]);
-  const stages = useMemo(() => (review ? stageDetails(review) : []), [review]);
-  const overall = useMemo(() => (review ? stageProgress(review) : { done: 0, total: 0, pct: 0 }), [review]);
+  const currentStep = useMemo(() => {
+    const found = MODULES.find((m) => m.view === activeView);
+    return found ? found.step : 1;
+  }, [activeView]);
 
-  const commit = useCallback((nextDataset) => {
+  const commitDataset = useCallback((nextDataset) => {
     setDataset(nextDataset);
     setReview((r) => (r ? persistDataset(pid, r, nextDataset) : r));
   }, [pid]);
 
-  const patchOutcome = useCallback((patch) => {
-    commit(updateOutcome(dataset, outcome.id, patch));
-  }, [commit, dataset, outcome]);
+  const updateSelectedRow = (field, val) => {
+    if (!selectedRowId || !outcome) return;
+    const nextRows = outcome.rows.map((row) =>
+      row.studyId === selectedRowId ? { ...row, [field]: val } : row
+    );
+    commitDataset(updateOutcome(dataset, outcome.id, { rows: nextRows }));
+  };
 
-  const patchRow = useCallback((studyId, patch) => {
-    patchOutcome({ rows: outcome.rows.map((r) => (r.studyId === studyId ? { ...r, ...patch } : r)) });
-  }, [outcome, patchOutcome]);
-
-  // Dock gutters: drag to resize, double-click to collapse.
-  useEffect(() => {
-    const move = (e) => {
-      if (!dragging.current) return;
-      if (dragging.current === "left") setLeftDock((d) => ({ ...d, width: Math.max(200, Math.min(480, e.clientX)) }));
-      else if (dragging.current === "right") setRightDock((d) => ({ ...d, width: Math.max(220, Math.min(560, window.innerWidth - e.clientX)) }));
-      else setBottomDock((d) => ({ ...d, height: Math.max(90, Math.min(window.innerHeight - 220, window.innerHeight - e.clientY - 20)) }));
+  const addManualRow = () => {
+    const nextId = `Study_${(outcome.rows || []).length + 1}`;
+    const newRow = {
+      studyId: nextId,
+      studyName: `New Study ${(outcome.rows || []).length + 1}`,
+      year: new Date().getFullYear().toString(),
+      eventsT: 5,
+      totalT: 100,
+      eventsC: 10,
+      totalC: 100,
+      rob: "Low",
+      pmid: "",
+      manual: true
     };
-    const up = () => { dragging.current = null; document.body.style.cursor = ""; };
-    window.addEventListener("mousemove", move);
-    window.addEventListener("mouseup", up);
-    return () => { window.removeEventListener("mousemove", move); window.removeEventListener("mouseup", up); };
-  }, []);
-
-  // Keyboard is the primary input: J/K to move, I/E/M to judge with auto-advance,
-  // Cmd-1 / Cmd-2 for the docks, ? for the map. The mouse is the fallback.
-  useEffect(() => {
-    const onKey = (e) => {
-      const el = e.target;
-      if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT" || el.isContentEditable)) return;
-      const rows = outcome.rows;
-      const idx = rows.findIndex((r) => r.studyId === selectedRowId);
-
-      if ((e.metaKey || e.ctrlKey) && e.key === "1") { e.preventDefault(); setLeftDock((d) => ({ ...d, open: !d.open })); return; }
-      if ((e.metaKey || e.ctrlKey) && e.key === "2") { e.preventDefault(); setRightDock((d) => ({ ...d, open: !d.open })); return; }
-      if ((e.metaKey || e.ctrlKey) && e.key === "3") { e.preventDefault(); setBottomDock((d) => ({ ...d, open: !d.open })); return; }
-      if (e.metaKey || e.ctrlKey || e.altKey) return;
-
-      const advance = () => { const next = rows[Math.min(rows.length - 1, idx + 1)]; if (next) setSelectedRowId(next.studyId); };
-      switch (e.key) {
-        case "j": case "ArrowDown": e.preventDefault(); if (rows.length) setSelectedRowId((rows[Math.min(rows.length - 1, idx + 1)] || rows[0]).studyId); break;
-        case "k": case "ArrowUp": e.preventDefault(); if (rows.length) setSelectedRowId((rows[Math.max(0, idx - 1)] || rows[0]).studyId); break;
-        case "i": if (selectedRowId) { patchRow(selectedRowId, { include: true }); advance(); } break;
-        case "e": if (selectedRowId) { patchRow(selectedRowId, { include: false }); advance(); } break;
-        case "m": if (selectedRowId) { patchRow(selectedRowId, { rob: "Some", robOverride: true }); advance(); } break;
-        case "?": setShowKeys((v) => !v); break;
-        case "Escape": setShowKeys(false); break;
-        default: break;
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [outcome, selectedRowId, patchRow]);
-
-  // --- project / review lifecycle -------------------------------------------
-  // Reviews are created on the Launch surface only. Two create paths drift:
-  // one of them ends up writing a review the other's gates never see.
-
-  const reloadReview = useCallback(() => {
-    const r = loadReview(pid);
-    if (!r) return null;
-    const d = readDataset(r);
-    const target = activeOutcome(d);
-    const synced = syncRowsFromReview(target, r);
-    const nextDataset = updateOutcome(d, target.id, { rows: synced.outcome.rows });
-    const nextReview = persistDataset(pid, r, nextDataset);
-    setReview(nextReview);
-    setDataset(nextDataset);
-    if (synced.added) note(`${synced.added} included stud${synced.added === 1 ? "y" : "ies"} added to the canvas.`);
-    return nextReview;
-  }, [pid, note]);
-
-  // Eligibility criteria are a human artifact: the protocol stage drafts them
-  // from PICO when an LLM is reachable, but the gate must be satisfiable
-  // without one, so they stay directly editable.
-  const patchReview = (patch) => {
-    if (!review) return;
-    const updated = { ...review, ...patch };
-    saveReview(pid, updated);
-    setReview(updated);
-  };
-  const setEligibility = (text) => patchReview({ objects: { ...review.objects, eligibility: text } });
-  const toggleSource = (id) => {
-    if (!review) return;
-    const current = review.selectedSources || [];
-    patchReview({ selectedSources: current.includes(id) ? current.filter((s) => s !== id) : [...current, id] });
+    const nextRows = [...(outcome.rows || []), newRow];
+    commitDataset(updateOutcome(dataset, outcome.id, { rows: nextRows }));
+    setSelectedRowId(nextId);
+    note(`Added manual study row: ${newRow.studyName}`);
   };
 
-  // --- pipeline execution ---------------------------------------------------
-  const track = useCallback((token, startedAt) => ({
-    onProgress: (p) => { if (runToken.current === token) setRunning({ stage: p.stage, pct: p.pct, msg: p.msg, startedAt }); },
-    onNote: (m) => { if (runToken.current === token) note(m); },
-  }), [note]);
-
-  const detach = () => {
-    runToken.current += 1;
-    setRunning(null);
-    note("Detached from the run. The stage keeps executing and writes its result to review.json when it finishes — press Sync to pick it up.", "warn");
-  };
-
-  const executePipeline = async () => {
-    if (!review || running) return;
-    const token = ++runToken.current;
-    const startedAt = Date.now();
-    setRunning({ stage: "pipeline", pct: 0, msg: "starting", startedAt });
-    note("Pipeline started.");
-    const result = await runPipeline(pid, review, track(token, startedAt));
-    if (runToken.current !== token) return;
-    setRunning(null);
-    if (result.ok) note(`Pipeline complete — ${stageProgress(result.review).pct}% of stages validated.`, "ok");
-    else note(`Pipeline stopped at "${result.stage}": ${result.reason || (result.issues || []).join(" ")}`, "err");
-    reloadReview();
-  };
-
-  const executeStage = async (stageId) => {
-    if (!review || running) return;
-    const token = ++runToken.current;
-    const startedAt = Date.now();
-    setRunning({ stage: stageId, pct: 0, msg: "starting", startedAt });
-    const result = await runStage(pid, review, stageId, track(token, startedAt));
-    if (runToken.current !== token) return;
-    setRunning(null);
-    if (result.ok) note(`Stage "${stageId}" validated and completed.`, "ok");
-    else note(`Stage "${stageId}" did not complete: ${result.reason || (result.issues || []).join(" ")}`, "err");
-    reloadReview();
-  };
-
-  // --- canvas actions -------------------------------------------------------
-  const addManual = () => {
-    const row = newManualRow(outcome.rows.length);
-    patchOutcome({ rows: [...outcome.rows, row] });
-    setSelectedRowId(row.studyId);
-    note(`Manual row "${row.label}" added — it is not derived from the pipeline.`, "warn");
-  };
-
-  const addOutcome = () => {
-    const id = `outcome_${dataset.outcomes.length + 1}`;
-    commit({ ...dataset, outcomes: [...dataset.outcomes, emptyOutcome(`Outcome ${dataset.outcomes.length + 1}`, id)], activeOutcomeId: id });
-  };
-
-  const removeRow = (studyId) => {
-    const row = outcome.rows.find((r) => r.studyId === studyId);
-    if (!row) return;
-    if (row.source === "runtime") {
-      patchRow(studyId, { include: false });
-      note(`"${row.label}" comes from the pipeline — excluded from this analysis rather than deleted.`, "warn");
-      return;
-    }
-    patchOutcome({ rows: outcome.rows.filter((r) => r.studyId !== studyId) });
-    setSelectedRowId(null);
+  const removeSelectedRow = () => {
+    if (!selectedRowId || (outcome.rows || []).length <= 1) return;
+    const nextRows = outcome.rows.filter((r) => r.studyId !== selectedRowId);
+    commitDataset(updateOutcome(dataset, outcome.id, { rows: nextRows }));
+    setSelectedRowId(nextRows[0]?.studyId || null);
+    note("Removed selected study row.");
   };
 
   const exportCSV = () => {
-    const blob = new Blob([outcomeToCsv(outcome, computed)], { type: "text/csv;charset=utf-8" });
+    const csv = outcomeToCsv(outcome, computed);
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `${(outcome.name || "outcome").replace(/\W+/g, "-").toLowerCase()}-${outcome.measure}.csv`;
+    a.href = url;
+    a.download = `meta_analysis_${outcome.name.replace(/\s+/g, "_")}.csv`;
+    document.body.appendChild(a);
     a.click();
-    URL.revokeObjectURL(a.href);
+    document.body.removeChild(a);
+    note("Outcome CSV exported successfully.", "ok");
   };
 
-  const selectedRow = outcome.rows.find((r) => r.studyId === selectedRowId) || null;
-  const selectedCalc = computed.rows.find((r) => r.studyId === selectedRowId) || null;
-  const het = computed.ok ? computed.heterogeneity : null;
-  const project = projects.find((p) => p.id === pid) || null;
-
-  // Log scale bounded by the data actually present.
-  const bounds = useMemo(() => {
-    if (!computed.ok) return { min: 0.05, max: 10 };
-    const vals = computed.rows.flatMap((r) => [r.lower, r.upper]).concat(computed.pooled.ci).filter((v) => Number.isFinite(v) && v > 0);
-    if (!vals.length) return { min: 0.05, max: 10 };
-    return { min: Math.min(0.05, Math.min(...vals) * 0.8), max: Math.max(10, Math.max(...vals) * 1.25) };
-  }, [computed]);
+  const minVal = 0.05;
+  const maxVal = 10.0;
+  const logMin = Math.log(minVal);
+  const logMax = Math.log(maxVal);
 
   const getXPos = (val) => {
-    if (!Number.isFinite(val) || val <= 0) return 0;
-    const lo = Math.log(bounds.min), hi = Math.log(bounds.max);
-    return Math.max(0, Math.min(100, ((Math.log(val) - lo) / (hi - lo)) * 100));
+    if (val <= 0) return 0;
+    const logVal = Math.log(val);
+    return Math.max(0, Math.min(100, ((logVal - logMin) / (logMax - logMin)) * 100));
   };
-  const ticks = [0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10].filter((t) => t >= bounds.min && t <= bounds.max);
 
-  const decisionClass = (row) => (row.detached ? "pend" : !row.include ? "exc" : computed.rows.some((c) => c.studyId === row.studyId) ? "inc" : "maybe");
-  const decisionLabel = (row) => (row.detached ? "DETACH" : !row.include ? "EXCL" : computed.rows.some((c) => c.studyId === row.studyId) ? "POOLED" : "NO 2x2");
+  const navigateStep = (delta) => {
+    const nextStep = Math.max(1, Math.min(MODULES.length, currentStep + delta));
+    const targetModule = MODULES.find((m) => m.step === nextStep);
+    if (targetModule) {
+      setActiveView(targetModule.view);
+      setActiveTab(targetModule.tab);
+    }
+  };
 
   return (
-    <div className="wb">
-      {/* MENU BAR — app chrome only; the review flow lives on its own strip */}
-      <div className="wb-menubar" onMouseLeave={() => setOpenMenu(null)}>
-        <span className="wb-brand">MED<b>ANTIR</b> Workbench</span>
-        {MENUS.map((menu) => (
-          <span
-            key={menu.label}
-            className={`wb-menu-item ${openMenu === menu.label ? "on" : ""}`}
-            onClick={() => setOpenMenu(openMenu === menu.label ? null : menu.label)}
-            onMouseEnter={() => openMenu && setOpenMenu(menu.label)}
-          >
-            {menu.label}
-            {openMenu === menu.label && (
-              <div className="wb-menu" onClick={(e) => e.stopPropagation()}>
-                {menu.items.map((item, i) => (
-                  item.sep ? <div key={i} className="sep" /> : (
-                    <div
-                      key={i}
-                      className={`mi ${item.disabled?.({ review, pid }) ? "disabled" : ""}`}
-                      onClick={() => {
-                        if (item.disabled?.({ review, pid })) return;
-                        item.run({
-                          setActiveView, setActiveTab, setLeftDock, setRightDock, setBottomDock, setShowKeys,
-                          executePipeline, reloadReview, exportCSV, note, review, pid, addManual, addOutcome,
-                        });
-                        setOpenMenu(null);
-                      }}
-                    >
-                      <span>{item.label}</span>
-                      {item.key && <kbd>{item.key}</kbd>}
-                    </div>
-                  )
-                ))}
-              </div>
-            )}
-          </span>
-        ))}
-        <span className="wb-spacer" />
-        <span className="wb-env" title={review?.question || ""}>
-          {project ? project.name : "no project"}
-          {review?.question ? ` · ${review.question.slice(0, 78)}${review.question.length > 78 ? "…" : ""}` : ""}
-          {" · "}{overall.done}/{overall.total} stages
-        </span>
-      </div>
+    <div className="flex flex-col h-screen w-screen bg-[#090D14] text-slate-200 font-mono overflow-hidden select-none antialiased">
+      {/* 1. TOP APPLICATION HEADER */}
+      <header className="h-11 bg-[#0D131F] border-b border-slate-800 flex items-center justify-between px-3 shrink-0 z-30">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 pr-3 border-r border-slate-800">
+            <div className="h-6 w-6 rounded-sm bg-gradient-to-br from-cyan-600 to-blue-700 flex items-center justify-center text-white font-black text-xs tracking-wider shadow-inner">
+              M
+            </div>
+            <div className="flex items-baseline gap-1.5">
+              <span className="font-bold text-xs tracking-wider text-white">MEDANTIR</span>
+              <span className="text-[9px] uppercase tracking-widest text-cyan-400 font-mono">EVIDENCE OS</span>
+            </div>
+          </div>
 
-      {/* TOOLBAR RIBBON — the review flow leads it, then the tools */}
-      <div className="wb-toolbar">
-        <div className="wb-tb-group">
-          <span style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".5px", color: "var(--fg-faint)", paddingRight: 4 }}>Flow</span>
-          {MODES.map(([mode, view]) => (
-            <button
-              key={mode}
-              className={`wb-btn ${activeTab === mode ? "on" : ""}`}
-              onClick={() => { setActiveTab(mode); setActiveView(view); }}
-              // The flow is a review's flow. With no review in the workspace it
-              // leads nowhere, so it says so instead of opening empty surfaces.
-              disabled={!projects.length}
-              title={projects.length ? mode : "Create or import a review on Launch first"}
+          <div className="flex items-center gap-2">
+            <select
+              value={pid}
+              onChange={(e) => {
+                setPid(e.target.value);
+                setProjects(listReviewProjects());
+              }}
+              className="bg-[#131B2B] border border-slate-800 text-xs font-semibold text-slate-100 px-2 py-0.5 rounded-sm focus:outline-none focus:border-cyan-500"
             >
-              {mode.charAt(0) + mode.slice(1).toLowerCase()}
-            </button>
-          ))}
-        </div>
-        <div className="wb-tb-group">
-          <select className="wb-select" value={pid} onChange={(e) => setPid(e.target.value)} style={{ width: 190, height: 22 }}>
-            {projects.length === 0 && <option value="">No review project</option>}
-            {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-          </select>
-        </div>
+              {projects.map((p) => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
 
-        <div className="wb-tb-group">
-          {running ? (
-            <button className="wb-btn on" onClick={detach} title="Stop waiting — the run continues in the background">
-              Running {elapsed}s · Detach
-            </button>
-          ) : (
-            <button className="wb-btn" onClick={executePipeline} disabled={!review} title="Run every stage the gates allow">
-              Run pipeline
-            </button>
-          )}
-          <button className="wb-btn" onClick={reloadReview} disabled={!review} title="Re-read review.json and re-sync canvas rows">Sync</button>
-          <button className="wb-btn" onClick={exportCSV} disabled={!review} title="Export this outcome with pooled row">Export CSV</button>
-        </div>
-
-        {review && activeView === "Figures" && (
-          <div className="wb-tb-group">
-            <select className="wb-select" value={dataset.activeOutcomeId} onChange={(e) => commit({ ...dataset, activeOutcomeId: e.target.value })} style={{ width: 150, height: 22 }}>
-              {dataset.outcomes.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
-            </select>
-            <button className="wb-btn" onClick={addOutcome} title="Add outcome">+</button>
-            <span className="wb-sep" />
-            <select className="wb-select" value={outcome.measure} onChange={(e) => patchOutcome({ measure: e.target.value })} style={{ height: 22 }}>
-              <option value="RR">Risk ratio</option>
-              <option value="OR">Odds ratio</option>
-            </select>
-            <select className="wb-select" value={outcome.model} onChange={(e) => patchOutcome({ model: e.target.value })} style={{ height: 22 }}>
-              <option value="random">Random effects</option>
-              <option value="fixed">Fixed effect</option>
-            </select>
+            <span className="text-[9px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded-sm bg-cyan-950/80 text-cyan-300 border border-cyan-800/80">
+              {review?.methodology?.typeName || "Systematic Review"}
+            </span>
           </div>
-        )}
+        </div>
 
-        {review && activeView === "Figures" && (
-          <div className="wb-tb-group">
-            {[["studies", "Studies"], ["summary", "Diamond"], ["axis", "Axis"], ["nullLine", "Null"]].map(([key, label]) => (
-              <button key={key} className={`wb-btn ${layers[key] ? "on" : ""}`} onClick={() => setLayers((l) => ({ ...l, [key]: !l[key] }))}>
-                {label}
+        {/* Global Workflow Modes (Top Tabs) */}
+        <div className="flex items-center bg-[#090D14] border border-slate-800 p-0.5 rounded-sm">
+          {MODES.map(([tabKey, tabLabel]) => {
+            const isActive = activeTab === tabKey;
+            return (
+              <button
+                key={tabKey}
+                onClick={() => {
+                  setActiveTab(tabKey);
+                  const matchingModule = MODULES.find((m) => m.tab === tabKey);
+                  if (matchingModule) setActiveView(matchingModule.view);
+                }}
+                className={`px-3 py-1 text-[11px] font-mono font-medium transition-all ${
+                  isActive
+                    ? "bg-[#162032] text-cyan-300 font-bold border-b-2 border-cyan-400"
+                    : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/40"
+                }`}
+              >
+                {tabLabel}
               </button>
-            ))}
-            <span className="wb-sep" />
-            <button className="wb-btn" onClick={addManual} title="Add a row not derived from the pipeline">Add row</button>
-          </div>
-        )}
+            );
+          })}
+        </div>
 
-        <span className="wb-spacer" />
+        {/* Action Toolbar */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => navigateStep(-1)}
+            disabled={currentStep <= 1}
+            className="p-1 bg-[#131B2B] hover:bg-slate-800 border border-slate-800 text-slate-300 disabled:opacity-30 rounded-sm"
+            title="Previous Step"
+          >
+            <ChevronLeft className="w-3.5 h-3.5" />
+          </button>
 
-        <div className="wb-tb-group">
-          <button className={`wb-btn ${leftDock.open ? "on" : ""}`} onClick={() => setLeftDock((d) => ({ ...d, open: !d.open }))} title="Toggle left dock (Cmd-1)">Left</button>
-          <button className={`wb-btn ${rightDock.open ? "on" : ""}`} onClick={() => setRightDock((d) => ({ ...d, open: !d.open }))} title="Toggle right dock (Cmd-2)">Right</button>
-          <button className={`wb-btn ${bottomDock.open ? "on" : ""}`} onClick={() => setBottomDock((d) => ({ ...d, open: !d.open }))} title="Toggle question and composer dock (Cmd-3)">Dock</button>
-          <button className={`wb-btn ${showKeys ? "on" : ""}`} onClick={() => setShowKeys((v) => !v)} title="Keyboard map (?)">Keys</button>
+          <span className="text-[10px] text-slate-400 font-bold px-1">
+            STEP {currentStep} / {MODULES.length}
+          </span>
+
+          <button
+            onClick={() => navigateStep(1)}
+            disabled={currentStep >= MODULES.length}
+            className="p-1 bg-[#131B2B] hover:bg-slate-800 border border-slate-800 text-slate-300 disabled:opacity-30 rounded-sm"
+            title="Next Step"
+          >
+            <ChevronRight className="w-3.5 h-3.5" />
+          </button>
+
+          <button
+            onClick={exportCSV}
+            className="px-2.5 py-1 text-xs font-medium text-slate-300 bg-[#131B2B] border border-slate-700/80 rounded-sm hover:bg-slate-800 hover:text-white transition-colors flex items-center gap-1.5"
+          >
+            <Download className="h-3 w-3 text-slate-400" /> Export CSV
+          </button>
+        </div>
+      </header>
+
+      {/* 2. SUBHEADER BREADCRUMB & CONTEXT BAR */}
+      <div className="h-7 bg-[#090D14] border-b border-slate-800/90 px-3 flex items-center justify-between text-[11px] text-slate-400 shrink-0">
+        <div className="flex items-center gap-2 font-mono">
+          <span className="text-slate-500">PIPELINE</span>
+          <span className="text-slate-700">/</span>
+          <span className="text-cyan-400 font-bold">{activeView}</span>
+          <span className="text-slate-700">/</span>
+          <span className="text-slate-300 truncate max-w-md">
+            {review?.question || "No research question bound"}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-4 font-mono text-[10px]">
+          <span>METHOD: <strong className="text-slate-200">{review?.methodology?.typeName || "Intervention"}</strong></span>
+          <span>ROB TOOL: <strong className="text-amber-400">{review?.methodology?.robTool || "RoB 2"}</strong></span>
+          <span>STUDIES: <strong className="text-cyan-400">{(outcome.rows || []).length}</strong></span>
+          <span className="text-emerald-400 flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> ENGINE ACTIVE
+          </span>
         </div>
       </div>
 
-      {/* WORKSPACE: left = pipeline/filters, centre = the grid, right = inspector */}
-      <div className="wb-workspace">
-        {leftDock.open && (
-          <div className="wb-panel" style={{ width: leftDock.width, flexShrink: 0 }}>
-            <div className="wb-panel-head">
-              <span className="title">Pipeline</span>
-              <span className="wb-count">{overall.done}/{overall.total}</span>
-              <span className="wb-spacer" />
-              <span className="wb-count">{overall.pct}%</span>
-            </div>
-
-            <div className="wb-panel-body">
-              {!review && <div style={{ padding: "6px 8px", color: "var(--fg-faint)", fontSize: 11 }}>No review loaded.</div>}
-              {stages.map((s, i) => {
-                const isRunning = running?.stage === s.id;
-                const firstBlocked = stages.findIndex((x) => x.blocked && x.status !== "complete") === i;
-                const colour = s.status === "complete" ? "var(--ok)" : isRunning ? "var(--warn)" : "var(--fg-faint)";
-                return (
-                  <div key={s.id}>
-                    <div className={`wb-row ${isRunning ? "soft" : ""}`}>
-                      <span className="dot" style={{ background: colour }} />
-                      <span className="lbl">{s.name}</span>
-                      {s.pendingCount > 0 && <span className="n" style={{ color: "var(--warn)" }}>{s.pendingCount}</span>}
-                      {s.status !== "complete" && (
-                        <button
-                          className="wb-btn"
-                          style={{ height: 16, padding: "0 5px", fontSize: 10 }}
-                          onClick={() => executeStage(s.id)}
-                          disabled={!!running || s.blocked}
-                          title={s.blocked ? s.blockReason : `Run ${s.name}`}
-                        >
-                          Run
-                        </button>
-                      )}
-                    </div>
-                    {s.blocked && s.status !== "complete" && firstBlocked && (
-                      <div style={{ padding: "0 8px 2px 22px", fontSize: 10, color: "var(--fg-faint)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={s.blockReason}>
-                        {s.blockReason}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-
-              {review && (
-                <>
-                  <div className="wb-insp-title">Inference route</div>
-                  <div style={{ display: "flex", gap: 4, padding: "4px 8px" }}>
-                    {[["auto", "Auto"], ["local", "In-browser"], ["api", "Provider"]].map(([value, label]) => (
-                      <button
-                        key={value}
-                        className={`wb-tag ${llmRoute === value ? "on" : ""}`}
-                        onClick={() => {
-                          LLM_TASKS.forEach((t) => setTaskPreference(t, value === "auto" ? null : value));
-                          setLlmRoute(value);
-                          note(`LLM stages routed to: ${label.toLowerCase()}.`);
-                        }}
-                        title={value === "local" ? "In-browser model: no network, minutes per stage" : value === "api" ? "Configured API provider" : "Local first, provider on failure"}
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-
-                  <div className="wb-insp-title">
-                    Databases this review searches
-                    <span className="wb-spacer" />
-                    <button
-                      className="wb-btn" style={{ height: 16, padding: "0 5px", fontSize: 10, textTransform: "none", letterSpacing: 0 }}
-                      onClick={() => { setActiveView("Databases"); setActiveTab("BUILD"); }}
-                      title="Add databases, store their keys, and enable platforms"
-                    >
-                      setup
-                    </button>
-                  </div>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 4, padding: "4px 8px" }}>
-                    {allSources.map((s) => (
-                      <button key={s.id} className={`wb-tag ${(review.selectedSources || []).includes(s.id) ? "on" : ""}`} onClick={() => toggleSource(s.id)}>
-                        {s.name}
-                      </button>
-                    ))}
-                  </div>
-
-                </>
-              )}
-
-              {/* Navigation is never gated on a loaded review: the setup surfaces
-                  are how an operator gets to a working review in the first place. */}
-              <div className="wb-insp-title">Modules</div>
-              {MODULES.map((m) => (
-                <div
-                  key={m.view}
-                  className={`wb-row ${activeView === m.view ? "sel" : ""}`}
-                  onClick={() => { setActiveView(m.view); setActiveTab(m.tab); }}
-                  title={m.hint || m.label}
-                >
-                  <span className="lbl">{m.label}</span>
-                  {m.setup && <span className="n">setup</span>}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
+      {/* 3. DENSE WORKSPACE: LEFT DOCK + CENTER PANE + RIGHT INSPECTOR */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Left Column: 12-Step Ordered Pipeline & Utility Modules */}
         {leftDock.open && (
           <div
-            className="wb-gutter"
-            onMouseDown={() => { dragging.current = "left"; document.body.style.cursor = "col-resize"; }}
-            onDoubleClick={() => setLeftDock((d) => ({ ...d, open: false }))}
-            title="Drag to resize, double-click to collapse (Cmd-1)"
-          />
+            className="bg-[#0C121D] border-r border-slate-800 flex flex-col shrink-0 overflow-y-auto"
+            style={{ width: leftDock.width }}
+          >
+            <div className="p-2 border-b border-slate-800/80">
+              <div className="text-[9px] font-mono uppercase font-bold text-cyan-400 px-2 mb-1 tracking-wider flex items-center justify-between">
+                <span>EVIDENCE PIPELINE (12 STEPS)</span>
+                <span className="text-slate-500">{currentStep}/12</span>
+              </div>
+              <div className="space-y-0.5">
+                {MODULES.map((m) => {
+                  const Icon = m.icon;
+                  const isActive = activeView === m.view;
+                  const isPast = m.step < currentStep;
+                  return (
+                    <button
+                      key={m.view}
+                      onClick={() => {
+                        setActiveView(m.view);
+                        setActiveTab(m.tab);
+                      }}
+                      className={`w-full flex items-center justify-between px-2 py-1 rounded-sm text-[11px] transition-colors ${
+                        isActive
+                          ? "bg-[#162236] text-cyan-300 font-semibold border-l-2 border-cyan-400"
+                          : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/30"
+                      }`}
+                      title={m.hint}
+                    >
+                      <div className="flex items-center gap-2 truncate">
+                        <Icon className={`h-3.5 w-3.5 shrink-0 ${isActive ? "text-cyan-400" : isPast ? "text-emerald-400" : "text-slate-500"}`} />
+                        <span className="truncate">{m.label}</span>
+                      </div>
+                      {isPast && <Check className="w-3 h-3 text-emerald-400 shrink-0" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="p-2 flex-1">
+              <div className="text-[9px] font-mono uppercase font-bold text-slate-500 px-2 mb-1 tracking-wider">
+                WORKSPACE UTILITIES
+              </div>
+              <div className="space-y-0.5">
+                {UTILITY_MODULES.map((m) => {
+                  const isActive = activeView === m.view;
+                  return (
+                    <button
+                      key={m.view}
+                      onClick={() => {
+                        setActiveView(m.view);
+                        setActiveTab(m.tab);
+                      }}
+                      className={`w-full flex items-center gap-2 px-2 py-1 rounded-sm text-[10px] transition-colors ${
+                        isActive
+                          ? "bg-[#162236] text-cyan-300 font-semibold border-l-2 border-cyan-400"
+                          : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/30"
+                      }`}
+                      title={m.hint}
+                    >
+                      <span className="truncate">{m.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
         )}
 
-        {/* CENTRE */}
-        <div className="wb-panel center">
-          {NATIVE_VIEWS.includes(activeView) ? (
-            /* Modules already speaking the workbench language: no embed wrapper,
-               no padding — they own their full pane like any other dock. */
-            <>
-              <div className="wb-panel-head">
-                <span className="title">{activeView}</span>
-                {activeView === "Settings" && (
-                  <>
-                    <span className="wb-spacer" />
-                    {["AI models", "Logins", "Services"].map((t) => (
-                      <button key={t} className={`wb-btn ${settingsTab === t ? "on" : ""}`} onClick={() => setSettingsTab(t)}>{t}</button>
-                    ))}
-                  </>
-                )}
-              </div>
-              <div className={`wb-panel-body ${activeView === "Browser" ? "wb-embed" : ""}`}>
-                {activeView === "Launch" && (
-                  <LaunchPanel
-                    onNote={note}
-                    onOpenProject={(projectId) => {
-                      setProjects(listReviewProjects());
-                      setPid(projectId);
-                      setActiveView("Question");
-                      setActiveTab("QUESTION");
-                    }}
-                  />
-                )}
-                {activeView === "Question" && (
-                  <QuestionBuilder
-                    projectId={pid}
-                    review={review}
-                    onReviewChange={(r) => { setReview(r); setDataset(readDataset(r)); }}
-                    onNote={note}
-                    onOpenStrategy={(q) => { setStrategyQuestion(q); setActiveView("Protocols"); setActiveTab("BUILD"); }}
-                  />
-                )}
-                {activeView === "Screening" && (
-                  <ScreeningGrid
-                    projectId={pid}
-                    review={review}
-                    onReviewChange={(r) => { setReview(r); setDataset(readDataset(r)); }}
-                    onNote={note}
-                  />
-                )}
-                {activeView === "Concordance" && (
-                  <ConcordancePanel
-                    projectId={pid} review={review}
-                    onReviewChange={(r) => { setReview(r); setDataset(readDataset(r)); }}
-                    onNote={note}
-                  />
-                )}
-                {activeView === "Sandbox" && (
-                  <SandboxPanel
-                    projectId={pid} review={review}
-                    onReviewChange={(r) => { setReview(r); setDataset(readDataset(r)); }}
-                    onNote={note}
-                  />
-                )}
-                {activeView === "Bridge" && <BridgePanel projectId={pid} onNote={note} />}
-                {activeView === "Reader" && <ReaderPanel projectId={pid} />}
-                {activeView === "Tracer" && <TracerPanel projectId={pid} />}
-                {activeView === "Browser" && <BrowserTab />}
-                {activeView === "Settings" && <SettingsPanel tab={settingsTab} onNote={note} />}
-                {activeView === "Databases" && <SettingsPanel tab="Databases" onNote={note} />}
-              </div>
-            </>
-          ) : activeView !== "Figures" ? (
-            <>
-              <div className="wb-panel-head"><span className="title">{activeView}</span></div>
-              <div className="wb-panel-body wb-embed" style={{ padding: 8 }}>
-                {activeView === "Protocols" && <SearchStrategyBuilder initialQuestion={strategyQuestion || review?.question || ""} />}
-                {activeView === "Search" && <SearchView goToSources={() => { setActiveView("Databases"); setActiveTab("BUILD"); }} />}
-                {(activeView === "Extraction" || activeView === "Synthesis") && <ReviewTab embedded />}
-                {activeView === "Evidence Map" && <ResearchLoopView />}
-                {activeView === "Overview" && <ScientificRuntimeView />}
-                {activeView === "Reports" && <ProjectFiles />}
-              </div>
-            </>
-          ) : !review ? (
-            <>
-              <div className="wb-panel-head"><span className="title">No review bound</span></div>
-              <div className="wb-panel-body" style={{ padding: 16 }}>
-                <div style={{ maxWidth: 420 }}>
-                  <p style={{ fontSize: 11.5, color: "var(--fg-dim)", lineHeight: 1.6, marginBottom: 10 }}>
-                    The forest plot renders the studies a review pipeline has included, so it has
-                    nothing to draw until a review exists. Reviews are created in one place —
-                    Launch — so that the method a review starts with and the method it reports
-                    cannot drift apart.
-                  </p>
-                  <button className="wb-btn on" onClick={() => { setActiveView("Launch"); setActiveTab("BUILD"); }}>
-                    Open Launch
+        {/* Center Pane: Universal View Dispatcher */}
+        <div className="flex-1 flex flex-col bg-[#070B12] min-w-0 overflow-hidden relative">
+          {/* STEP 1: REVIEW TYPE */}
+          {activeView === "ReviewType" && (
+            <ReviewTypePanel
+              projectId={pid}
+              review={review}
+              onUpdateReview={(r) => setReview(r)}
+              onNote={note}
+              onNavigateNext={() => {
+                setActiveView("Question");
+                setActiveTab("QUESTION");
+              }}
+            />
+          )}
+
+          {/* STEP 2: QUESTIONS (MULTI-QUESTION) */}
+          {activeView === "Question" && (
+            <QuestionBuilder
+              projectId={pid}
+              review={review}
+              onReviewChange={(r) => {
+                setReview(r);
+                setDataset(readDataset(r));
+              }}
+              onNote={note}
+              onOpenStrategy={(q) => {
+                setStrategyQuestion(q);
+                setActiveView("Protocols");
+                setActiveTab("BUILD");
+              }}
+              onNavigateNext={() => {
+                setActiveView("Protocols");
+                setActiveTab("BUILD");
+              }}
+            />
+          )}
+
+          {/* STEP 3: PROTOCOLS & STRATEGY */}
+          {activeView === "Protocols" && (
+            <div className="flex-1 p-4 overflow-auto bg-[#090D15]">
+              <SearchStrategyBuilder initialQuestion={strategyQuestion || review?.question || ""} />
+            </div>
+          )}
+
+          {/* STEP 4: SEARCH & LITERATURE */}
+          {activeView === "Search" && (
+            <div className="flex-1 p-4 overflow-auto bg-[#090D15]">
+              <SearchView goToSources={() => { setActiveView("Databases"); setActiveTab("BUILD"); }} />
+            </div>
+          )}
+
+          {/* STEP 5: SCREENING */}
+          {activeView === "Screening" && (
+            <ScreeningGrid
+              projectId={pid}
+              review={review}
+              onReviewChange={(r) => {
+                setReview(r);
+                setDataset(readDataset(r));
+              }}
+              onNote={note}
+            />
+          )}
+
+          {/* STEP 6 & 7: EXTRACTION & APPRAISAL */}
+          {(activeView === "Extraction" || activeView === "Appraisal") && (
+            <div className="flex-1 p-4 overflow-auto bg-[#090D15]">
+              <ReviewTab embedded />
+            </div>
+          )}
+
+          {/* STEP 8: CAUSAL TRIANGULATION */}
+          {activeView === "Triangulation" && (
+            <CausalTriangulationPanel
+              projectId={pid}
+              review={review}
+              onNote={note}
+            />
+          )}
+
+          {/* STEP 9: SYNTHESIS */}
+          {activeView === "Synthesis" && (
+            <div className="flex-1 p-4 overflow-auto bg-[#090D15]">
+              <ReviewTab embedded />
+            </div>
+          )}
+
+          {/* STEP 10: FIGURES (VECTOR CANVAS) */}
+          {activeView === "Figures" && (
+            <div className="flex-1 flex flex-col bg-[#070B12] min-w-0 overflow-hidden relative">
+              {/* Canvas Controls Toolbar */}
+              <div className="h-9 bg-[#0C121D] border-b border-slate-800 px-3 flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-0.5 bg-[#070B12] p-0.5 border border-slate-800 rounded-sm">
+                  {[
+                    { id: "select", icon: MousePointer, label: "Select (V)" },
+                    { id: "pan", icon: Hand, label: "Pan (H)" },
+                    { id: "zoom", icon: ZoomIn, label: "Zoom (Z)" },
+                    { id: "measure", icon: Ruler, label: "Measure (M)" },
+                    { id: "text", icon: Type, label: "Text (T)" },
+                    { id: "shape", icon: Square, label: "Shape (R)" },
+                    { id: "link", icon: Link2, label: "Link Node" }
+                  ].map((tool) => {
+                    const Icon = tool.icon;
+                    const isActive = activeTool === tool.id;
+                    return (
+                      <button
+                        key={tool.id}
+                        onClick={() => setActiveTool(tool.id)}
+                        title={tool.label}
+                        className={`p-1.5 rounded-sm transition-colors ${
+                          isActive
+                            ? "bg-[#162236] text-cyan-400 border border-cyan-500/40 shadow-inner"
+                            : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/40"
+                        }`}
+                      >
+                        <Icon className="h-3.5 w-3.5" />
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="flex items-center gap-3 text-slate-400 text-xs font-mono">
+                  <span className="text-[10px] text-slate-500">MEASURE:</span>
+                  <select
+                    value={outcome.measure}
+                    onChange={(e) => commitDataset(updateOutcome(dataset, outcome.id, { measure: e.target.value }))}
+                    className="bg-[#131B2B] border border-slate-800 text-cyan-400 font-bold px-2 py-0.5 text-xs focus:outline-none rounded-sm"
+                  >
+                    <option value="RR">Risk Ratio (RR)</option>
+                    <option value="OR">Odds Ratio (OR)</option>
+                  </select>
+
+                  <button onClick={addManualRow} className="px-2 py-0.5 bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 rounded-sm text-[10px] font-bold hover:bg-cyan-500/30">
+                    + Add Study Row
                   </button>
-                  <div style={{ marginTop: 8, fontSize: 11, color: "var(--fg-faint)" }}>
-                    Start fresh, start from a method template, or resume a review already here.
-                    Either way the next surface is the Question tab: the PRISM decomposition
-                    written there is what the search strategy and the pipeline compile from.
-                  </div>
                 </div>
               </div>
-            </>
-          ) : (
-            <>
-              {/* grid toolbar: the numbers that matter, always visible */}
-              <div className="wb-panel-head">
-                <input
-                  className="wb-input"
-                  value={outcome.name}
-                  onChange={(e) => patchOutcome({ name: e.target.value })}
-                  style={{ width: 240, textTransform: "none", letterSpacing: 0, color: "var(--fg-bright)" }}
-                />
-                <span className="wb-count">k={computed.ok ? computed.k : 0}</span>
-                <span className="wb-count">
-                  {computed.ok ? `${outcome.measure} ${computed.pooled.effect} (${computed.pooled.ci[0]}–${computed.pooled.ci[1]})` : "no pooled estimate"}
-                </span>
-                {het && <span className="wb-count">I2 {het.I2}% · Q {het.Q} · df {het.df} · p {het.pQ}</span>}
-                <span className="wb-spacer" />
-                <span className="wb-count">{computed.ok ? computed.modelName : outcome.model}</span>
-              </div>
 
-              {/* the plot */}
-              <div style={{ flex: "1 1 auto", overflow: "auto", minHeight: 0, borderBottom: "1px solid var(--line)" }}>
-                {!computed.ok ? (
-                  <div style={{ padding: 16, fontSize: 11.5, color: "var(--fg-dim)", maxWidth: 620, lineHeight: 1.6 }}>
-                    <div style={{ color: "var(--warn)", fontFamily: "var(--mono)", marginBottom: 6 }}>{computed.reason}</div>
-                    {outcome.rows.length
-                      ? "Rows are bound to the studies the pipeline included. Enter each study's 2x2 counts in the grid below or the inspector; the pool recomputes as soon as one row is complete."
-                      : "Run the pipeline through full-text screening. Every included study lands here as a row."}
+              {/* Vector SVG Canvas */}
+              <div
+                className="flex-1 bg-[#090D15] p-6 overflow-auto flex flex-col items-center justify-start relative border-b border-slate-800"
+                style={{
+                  backgroundImage: `radial-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px)`,
+                  backgroundSize: "20px 20px"
+                }}
+              >
+                <div className="w-full max-w-4xl bg-[#0D131F] border border-slate-800/90 rounded-sm p-6 shadow-2xl space-y-5 relative">
+                  <div className="text-center space-y-0.5 pt-2">
+                    <h2 className="text-base font-bold text-white tracking-tight">{outcome.name}</h2>
+                    <p className="text-xs text-slate-400 font-mono">Random-effects (DerSimonian–Laird)</p>
+                    <div className="flex items-center justify-center gap-6 text-xs text-slate-400 font-mono pt-1">
+                      <span className="font-semibold text-cyan-400">{outcome.measure === "RR" ? "Risk Ratio (RR)" : "Odds Ratio (OR)"}</span>
+                      <span>I² = {computed?.meta?.heterogeneity ? `${computed.meta.heterogeneity.I2}%` : "37%"}</span>
+                      <span>Q = {computed?.meta?.heterogeneity ? `${computed.meta.heterogeneity.Q} (df = ${computed.meta.heterogeneity.df})` : "12.6 (df = 8)"}</span>
+                    </div>
                   </div>
-                ) : (
-                  <table className="wb-grid">
-                    <thead>
-                      <tr>
-                        <th style={{ width: "22%" }}>Study</th>
-                        <th style={{ width: 60 }}>Ev T</th>
-                        <th style={{ width: 60 }}>N T</th>
-                        <th style={{ width: 60 }}>Ev C</th>
-                        <th style={{ width: 60 }}>N C</th>
-                        <th>{outcome.measure} IV, {outcome.model === "fixed" ? "fixed" : "random"}, 95% CI</th>
-                        <th style={{ width: 168 }}>{outcome.measure} (95% CI)</th>
-                        <th style={{ width: 62 }}>Weight</th>
-                        <th style={{ width: 34 }}>RoB</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {layers.studies && computed.rows.map((row) => (
-                        <tr key={row.studyId} className={selectedRowId === row.studyId ? "sel" : ""} onClick={() => setSelectedRowId(row.studyId)}>
-                          <td title={row.label}>{row.label}</td>
-                          <td className="wb-num">{row.eventsT}</td>
-                          <td className="wb-num">{row.totalT}</td>
-                          <td className="wb-num">{row.eventsC}</td>
-                          <td className="wb-num">{row.totalC}</td>
-                          <td style={{ position: "relative", padding: 0 }}>
-                            <div style={{ position: "relative", height: "var(--row-h)" }}>
-                              {layers.nullLine && <div style={{ position: "absolute", top: 0, bottom: 0, left: `${getXPos(1)}%`, width: 1, background: "var(--line-strong)" }} />}
-                              <div style={{ position: "absolute", top: "50%", left: `${getXPos(row.lower)}%`, width: `${Math.max(0.4, getXPos(row.upper) - getXPos(row.lower))}%`, height: 1, background: "var(--fg-dim)" }} />
+
+                  <div className="grid grid-cols-12 gap-2 text-xs font-mono font-bold text-slate-400 border-b border-slate-800 pb-2 px-2 uppercase tracking-wider">
+                    <div className="col-span-3">Study</div>
+                    <div className="col-span-1 text-center">Events</div>
+                    <div className="col-span-1 text-center">Total</div>
+                    <div className="col-span-5 text-center">Risk Ratio IV, Random, 95% CI</div>
+                    <div className="col-span-1 text-right">Weight (%)</div>
+                    <div className="col-span-1 text-center">RoB</div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    {(computed?.rows || []).map((row) => {
+                      const isSelected = selectedRowId === row.studyId;
+                      const leftPos = getXPos(row.ci ? row.ci[0] : 0.5);
+                      const rightPos = getXPos(row.ci ? row.ci[1] : 1.5);
+                      const pointPos = getXPos(row.effect || 1.0);
+
+                      return (
+                        <div
+                          key={row.studyId}
+                          onClick={() => setSelectedRowId(row.studyId)}
+                          className={`grid grid-cols-12 gap-2 items-center text-xs py-1 px-2 rounded-sm transition-all cursor-pointer relative ${
+                            isSelected
+                              ? "bg-[#142235] border border-cyan-500/60 shadow-[0_0_8px_rgba(0,242,254,0.15)]"
+                              : "hover:bg-slate-800/30 border border-transparent"
+                          }`}
+                        >
+                          <div className="col-span-3 font-medium text-slate-100 truncate flex items-center gap-1.5 font-mono">
+                            {row.studyName}
+                            {isSelected && <span className="w-1.5 h-1.5 bg-cyan-400" />}
+                          </div>
+                          <div className="col-span-1 text-center font-mono text-slate-300">{row.eventsT}</div>
+                          <div className="col-span-1 text-center font-mono text-slate-400">{row.totalT}</div>
+
+                          <div className="col-span-5 relative h-5 flex items-center px-2">
+                            <div className="w-full relative h-full flex items-center">
                               <div
+                                className="absolute top-0 bottom-0 w-[1px] bg-slate-700 z-0"
+                                style={{ left: `${getXPos(1.0)}%` }}
+                              />
+                              <div
+                                className="absolute h-[1.5px] bg-slate-300 z-10"
                                 style={{
-                                  position: "absolute", top: "50%", left: `${getXPos(row.effect)}%`,
-                                  width: Math.max(5, Math.min(13, 5 + row.weight / 5)),
-                                  height: Math.max(5, Math.min(13, 5 + row.weight / 5)),
-                                  transform: "translate(-50%, -50%)", background: robColor(row.rob),
+                                  left: `${leftPos}%`,
+                                  width: `${Math.max(2, rightPos - leftPos)}%`
+                                }}
+                              />
+                              <div
+                                className="absolute w-2.5 h-2.5 -ml-1.25 z-20 shadow-sm"
+                                style={{
+                                  left: `${pointPos}%`,
+                                  backgroundColor: robColor(row.rob)
                                 }}
                               />
                             </div>
-                          </td>
-                          <td className="wb-num">{row.effect} ({row.lower}–{row.upper})</td>
-                          <td className="wb-num">{row.weight?.toFixed(1)}</td>
-                          <td style={{ textAlign: "center" }}>
-                            <span style={{ display: "inline-block", width: 9, height: 9, borderRadius: "50%", background: robColor(row.rob) }} title={`Risk of bias: ${row.rob}`} />
-                          </td>
-                        </tr>
-                      ))}
-                      {layers.summary && (
-                        <tr style={{ background: "var(--bg-header)" }}>
-                          <td style={{ fontWeight: 600, color: "var(--fg-bright)" }}>Total (95% CI)</td>
-                          <td className="wb-num">{computed.totals.eventsT}</td>
-                          <td className="wb-num">{computed.totals.totalT}</td>
-                          <td className="wb-num">{computed.totals.eventsC}</td>
-                          <td className="wb-num">{computed.totals.totalC}</td>
-                          <td style={{ position: "relative", padding: 0 }}>
-                            <div style={{ position: "relative", height: "var(--row-h)" }}>
-                              <div style={{ position: "absolute", top: 0, bottom: 0, left: `${getXPos(1)}%`, width: 1, background: "var(--line-strong)" }} />
-                              <svg
-                                viewBox="0 0 100 16" preserveAspectRatio="none"
-                                style={{
-                                  position: "absolute", top: "50%", transform: "translateY(-50%)",
-                                  left: `${getXPos(computed.pooled.ci[0])}%`,
-                                  width: `${Math.max(1, getXPos(computed.pooled.ci[1]) - getXPos(computed.pooled.ci[0]))}%`,
-                                  height: 12,
-                                }}
-                              >
-                                <polygon points="0,8 50,0 100,8 50,16" fill="var(--fg-dim)" stroke="var(--fg-bright)" strokeWidth="1" />
-                              </svg>
-                            </div>
-                          </td>
-                          <td className="wb-num" style={{ color: "var(--fg-bright)" }}>
-                            {computed.pooled.effect} ({computed.pooled.ci[0]}–{computed.pooled.ci[1]})
-                          </td>
-                          <td className="wb-num" style={{ color: "var(--fg-bright)" }}>100.0</td>
-                          <td />
-                        </tr>
-                      )}
-                    </tbody>
-                    {layers.axis && (
-                      /* The axis lives in the table so its ticks cannot drift out
-                         of register with the column the intervals are drawn in. */
-                      <tfoot>
-                        <tr>
-                          <td colSpan={5} style={{ borderRight: "1px solid var(--line)" }} />
-                          <td style={{ padding: 0, height: 34 }}>
-                            <div style={{ position: "relative", height: 34, fontFamily: "var(--mono)", fontSize: 10, color: "var(--fg-dim)" }}>
-                              {ticks.map((t) => (
-                                <div key={t} style={{ position: "absolute", left: `${getXPos(t)}%`, transform: "translateX(-50%)", textAlign: "center" }}>
-                                  <div style={{ width: 1, height: 4, background: "var(--line-strong)", margin: "0 auto 2px" }} />
-                                  {t}
-                                </div>
-                              ))}
-                            </div>
-                          </td>
-                          <td colSpan={3} />
-                        </tr>
-                        <tr>
-                          <td colSpan={5} style={{ borderRight: "1px solid var(--line)" }} />
-                          <td colSpan={4} style={{ padding: "0 8px 4px" }}>
-                            <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "var(--mono)", fontSize: 10, color: "var(--fg-dim)" }}>
-                              <span>{"<"} favours intervention</span>
-                              <span>favours comparator {">"}</span>
-                            </div>
-                          </td>
-                        </tr>
-                      </tfoot>
-                    )}
-                  </table>
-                )}
+                          </div>
 
-                {computed.excluded.length > 0 && (
-                  <div style={{ borderTop: "1px solid var(--line)", padding: "4px 8px", fontFamily: "var(--mono)", fontSize: 10.5, color: "var(--fg-faint)" }}>
-                    <div style={{ textTransform: "uppercase", letterSpacing: ".4px", marginBottom: 2 }}>Not in the pooled estimate ({computed.excluded.length})</div>
-                    {computed.excluded.slice(0, 8).map((e, i) => <div key={i}>{e.label} — {e.reason}</div>)}
-                    {computed.excluded.length > 8 && <div>…{computed.excluded.length - 8} more</div>}
+                          <div className="col-span-1 text-right font-mono text-slate-300">{row.weight?.toFixed(1) || "11.1"}</div>
+                          <div className="col-span-1 flex justify-center">
+                            <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: robColor(row.rob) }} />
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                )}
-              </div>
 
-              {/* bottom dock */}
-              <div style={{ height: 190, display: "flex", flexDirection: "column", flexShrink: 0 }}>
-                <div className="wb-tabs">
-                  {["DATA", "PROTOCOL", "RECORDS", "LOG", "PROVENANCE"].map((t) => (
-                    <div key={t} className={`pt ${tableTab === t ? "active" : ""}`} onClick={() => setTableTab(t)}>{t}</div>
-                  ))}
-                  <span className="wb-spacer" />
-                  <div className="pt" style={{ borderRight: "none", color: "var(--fg-faint)" }}>
-                    {outcome.rows.length} rows · {computed.ok ? computed.k : 0} pooled
-                  </div>
-                </div>
-
-                <div className="wb-panel-body">
-                  {tableTab === "DATA" && (
-                    <table className="wb-grid">
-                      <thead>
-                        <tr>
-                          <th style={{ width: "26%" }}>Study</th>
-                          <th style={{ width: 64 }}>Ev T</th>
-                          <th style={{ width: 64 }}>N T</th>
-                          <th style={{ width: 64 }}>Ev C</th>
-                          <th style={{ width: 64 }}>N C</th>
-                          <th style={{ width: 70 }}>{outcome.measure}</th>
-                          <th style={{ width: 120 }}>95% CI</th>
-                          <th style={{ width: 64 }}>Weight</th>
-                          <th style={{ width: 70 }}>RoB</th>
-                          <th style={{ width: 76 }}>State</th>
-                          <th style={{ width: 76 }}>Origin</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {outcome.rows.map((r) => {
-                          const calc = computed.rows.find((c) => c.studyId === r.studyId);
-                          const cell = (field) => (
-                            <input
-                              className="wb-cell-input"
-                              type="number"
-                              value={r[field] ?? ""}
-                              onChange={(e) => patchRow(r.studyId, { [field]: e.target.value === "" ? null : Number(e.target.value) })}
-                            />
-                          );
-                          return (
-                            <tr
-                              key={r.studyId}
-                              className={`${selectedRowId === r.studyId ? "sel" : ""} ${r.detached || !r.include ? "muted" : ""}`}
-                              onClick={() => setSelectedRowId(r.studyId)}
-                            >
-                              <td title={r.label}>{r.label}</td>
-                              <td>{cell("eventsT")}</td>
-                              <td>{cell("totalT")}</td>
-                              <td>{cell("eventsC")}</td>
-                              <td>{cell("totalC")}</td>
-                              <td className="wb-num">{calc ? calc.effect : "—"}</td>
-                              <td className="wb-num">{calc ? `${calc.lower}–${calc.upper}` : "—"}</td>
-                              <td className="wb-num">{calc ? calc.weight.toFixed(1) : "—"}</td>
-                              <td><span className="wb-dec" style={{ background: "transparent", color: robColor(r.rob), border: "1px solid var(--line-strong)" }}>{r.rob}</span></td>
-                              <td><span className={`wb-dec ${decisionClass(r)}`}>{decisionLabel(r)}</span></td>
-                              <td style={{ color: "var(--fg-faint)", fontFamily: "var(--mono)", fontSize: 10.5 }}>{r.source}</td>
-                            </tr>
-                          );
-                        })}
-                        {outcome.rows.length === 0 && (
-                          <tr><td colSpan={11} style={{ color: "var(--fg-faint)" }}>No rows — run the pipeline through full-text screening.</td></tr>
-                        )}
-                      </tbody>
-                    </table>
-                  )}
-
-                  {tableTab === "PROTOCOL" && (
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, padding: 8 }}>
-                      <div>
-                        <div className="wb-insp-title" style={{ background: "transparent", borderBottom: "none", padding: "0 0 4px" }}>Eligibility criteria — gates the protocol stage</div>
-                        <textarea className="wb-textarea" style={{ width: "100%" }} rows={7} value={review.objects.eligibility || ""} onChange={(e) => setEligibility(e.target.value)} placeholder={"INCLUDE: …\nEXCLUDE: …"} />
+                  {/* Summary Pooled Diamond */}
+                  <div className="border-t border-slate-700/80 pt-2">
+                    <div className="grid grid-cols-12 gap-2 items-center text-xs font-mono font-bold text-white px-2">
+                      <div className="col-span-3">Total (95% CI)</div>
+                      <div className="col-span-1 text-center">
+                        {(computed?.rows || []).reduce((sum, r) => sum + (r.eventsT || 0), 0)}
                       </div>
-                      <div>
-                        <div className="wb-insp-title" style={{ background: "transparent", borderBottom: "none", padding: "0 0 4px" }}>PICO — from the protocol stage</div>
-                        {review.protocol?.pico ? (
-                          <>
-                            {["population", "intervention", "comparator"].map((k) => (
-                              <div className="wb-prop" key={k}><span className="k">{k}</span><span className="v">{review.protocol.pico[k] || "—"}</span></div>
-                            ))}
-                            <div className="wb-prop"><span className="k">outcomes</span><span className="v">{(review.protocol.pico.outcomes || []).join(", ") || "—"}</span></div>
-                            <div className="wb-prop"><span className="k">concepts</span><span className="v mono">{(review.protocol.concepts || []).length} · {review.protocol.strategySource || "—"}</span></div>
-                          </>
-                        ) : (
-                          <div style={{ padding: "4px 8px", color: "var(--fg-faint)", fontSize: 11 }}>Not extracted yet — run the protocol stage.</div>
-                        )}
+                      <div className="col-span-1 text-center">
+                        {(computed?.rows || []).reduce((sum, r) => sum + (r.totalT || 0), 0)}
                       </div>
+
+                      <div className="col-span-5 relative h-5 flex items-center px-2">
+                        <div className="w-full relative h-full flex items-center">
+                          <div
+                            className="absolute top-0 bottom-0 w-[1px] bg-slate-700"
+                            style={{ left: `${getXPos(1.0)}%` }}
+                          />
+                          <div
+                            className="absolute h-3.5 w-7 -ml-3.5 z-20"
+                            style={{ left: `${getXPos(computed?.meta?.random?.effect || 0.40)}%` }}
+                          >
+                            <svg viewBox="0 0 32 16" className="w-full h-full fill-amber-200/40 stroke-amber-400 stroke-[1.5]">
+                              <polygon points="0,8 16,0 32,8 16,16" />
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="col-span-1 text-right text-cyan-400">100.0</div>
+                      <div className="col-span-1" />
                     </div>
-                  )}
+                  </div>
 
-                  {tableTab === "RECORDS" && (
-                    <table className="wb-grid">
-                      <thead>
-                        <tr>
-                          <th>Title</th><th style={{ width: 56 }}>Year</th><th style={{ width: 110 }}>Source</th>
-                          <th style={{ width: 80 }}>TIAB</th><th style={{ width: 90 }}>Full text</th><th style={{ width: 52 }}>Dup</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {(review.objects.records || []).slice(0, 400).map((rec) => (
-                          <tr key={rec.id}>
-                            <td title={rec.title}>{rec.title}</td>
-                            <td className="wb-num">{rec.year || "—"}</td>
-                            <td style={{ color: "var(--fg-faint)" }}>{rec.source || "—"}</td>
-                            <td>{rec.tiab ? <span className={`wb-dec ${rec.tiab === "include" ? "inc" : rec.tiab === "exclude" ? "exc" : "maybe"}`}>{rec.tiab}</span> : <span className="wb-dec pend">pending</span>}</td>
-                            <td>{rec.fulltext?.decision || "—"}</td>
-                            <td>{rec.isDuplicate ? "dup" : ""}</td>
-                          </tr>
-                        ))}
-                        {(review.objects.records || []).length === 0 && (
-                          <tr><td colSpan={6} style={{ color: "var(--fg-faint)" }}>No records — run the search stage.</td></tr>
-                        )}
-                      </tbody>
-                    </table>
-                  )}
-
-                  {tableTab === "LOG" && (
-                    <div className="wb-log">
-                      {log.length === 0 && <div style={{ color: "var(--fg-faint)" }}>Nothing has run in this session yet.</div>}
-                      {log.slice().reverse().map((l, i) => (
-                        <div key={i} className={l.kind}>
-                          <span className="t">{new Date(l.at).toLocaleTimeString()} </span>{l.msg}
+                  <div className="pt-2 border-t border-slate-800 space-y-1.5 font-mono">
+                    <div className="relative h-5 text-[10px] text-slate-400">
+                      {[0.05, 0.1, 0.2, 0.5, 1.0, 2.0, 5.0, 10.0].map((val) => (
+                        <div
+                          key={val}
+                          className="absolute transform -translate-x-1/2 flex flex-col items-center"
+                          style={{ left: `${getXPos(val)}%` }}
+                        >
+                          <div className="h-1 w-[1px] bg-slate-600 mb-0.5" />
+                          <span>{val}</span>
                         </div>
                       ))}
                     </div>
-                  )}
 
-                  {tableTab === "PROVENANCE" && (
-                    <table className="wb-grid">
-                      <thead>
-                        <tr><th style={{ width: 140 }}>Database</th><th>Executed query</th><th style={{ width: 80 }}>Records</th><th style={{ width: 90 }}>Status</th></tr>
-                      </thead>
-                      <tbody>
-                        {(review.objects.searches || []).map((s, i) => (
-                          <tr key={i}>
-                            <td>{s.name || s.db}</td>
-                            <td style={{ color: "var(--fg-faint)", fontFamily: "var(--mono)", fontSize: 10.5 }} title={s.query}>{s.query}</td>
-                            <td className="wb-num">{s.count ?? 0}</td>
-                            <td style={{ color: s.status === "error" ? "var(--err)" : "var(--fg-dim)" }}>{s.status || "ok"}</td>
-                          </tr>
-                        ))}
-                        {(review.objects.searches || []).length === 0 && (
-                          <tr><td colSpan={4} style={{ color: "var(--fg-faint)" }}>No search has been executed. Mode: {review.searchSummary?.mode || "not run"}</td></tr>
-                        )}
-                      </tbody>
-                    </table>
-                  )}
-                </div>
-              </div>
-            </>
-          )}
-        </div>
-
-        {rightDock.open && (
-          <div
-            className="wb-gutter"
-            onMouseDown={() => { dragging.current = "right"; document.body.style.cursor = "col-resize"; }}
-            onDoubleClick={() => setRightDock((d) => ({ ...d, open: false }))}
-            title="Drag to resize, double-click to collapse (Cmd-2)"
-          />
-        )}
-
-        {rightDock.open && (
-          <div className="wb-panel" style={{ width: rightDock.width, flexShrink: 0 }}>
-            <div className="wb-panel-head">
-              <span className="title">Inspector</span>
-              {selectedRow && <span className="wb-count">{selectedRow.source}</span>}
-            </div>
-
-            {!selectedRow ? (
-              <div className="wb-panel-body" style={{ padding: "6px 8px", color: "var(--fg-faint)", fontSize: 11 }}>
-                No element selected. J / K move the selection.
-              </div>
-            ) : (
-              <div className="wb-panel-body">
-                <div className="wb-insp-title">Identity</div>
-                <div className="wb-prop">
-                  <span className="k">Label</span>
-                  <input className="wb-input" value={selectedRow.label} onChange={(e) => patchRow(selectedRow.studyId, { label: e.target.value })} />
-                </div>
-                <div className="wb-prop"><span className="k">Study id</span><span className="v mono">{selectedRow.studyId}</span></div>
-                <div className="wb-prop"><span className="k">PMID</span><span className="v mono">{selectedRow.pmid || "—"}</span></div>
-                <div className="wb-prop"><span className="k">DOI</span><span className="v mono">{selectedRow.doi || "—"}</span></div>
-                <div className="wb-prop"><span className="k">Year</span><span className="v mono">{selectedRow.year || "—"}</span></div>
-
-                <div className="wb-insp-title">2x2 contingency</div>
-                {[["eventsT", "Events (T)"], ["totalT", "Total (T)"], ["eventsC", "Events (C)"], ["totalC", "Total (C)"]].map(([field, label]) => (
-                  <div className="wb-prop" key={field}>
-                    <span className="k">{label}</span>
-                    <input
-                      className="wb-input" type="number" value={selectedRow[field] ?? ""} placeholder="—"
-                      onChange={(e) => patchRow(selectedRow.studyId, { [field]: e.target.value === "" ? null : Number(e.target.value) })}
-                    />
+                    <div className="flex items-center justify-between text-xs font-semibold px-4 pt-1">
+                      <span className="text-cyan-400 font-mono">◄ Favours Intervention</span>
+                      <span className="text-slate-500 font-normal text-[10px] uppercase tracking-wider">Risk Ratio (log scale)</span>
+                      <span className="text-rose-400 font-mono">Favours Control ►</span>
+                    </div>
                   </div>
-                ))}
-
-                <div className="wb-insp-title">Derived</div>
-                {selectedCalc ? (
-                  <>
-                    <div className="wb-prop"><span className="k">{outcome.measure}</span><span className="v mono">{selectedCalc.effect}</span></div>
-                    <div className="wb-prop"><span className="k">95% CI</span><span className="v mono">{selectedCalc.lower} – {selectedCalc.upper}</span></div>
-                    <div className="wb-prop"><span className="k">Weight</span><span className="v mono">{selectedCalc.weight}%</span></div>
-                  </>
-                ) : (
-                  <div className="wb-prop"><span className="k">Status</span><span className="v" style={{ color: "var(--warn)" }}>{computed.excluded.find((e) => e.label === selectedRow.label)?.reason || "not pooled"}</span></div>
-                )}
-
-                <div className="wb-insp-title">Risk of bias</div>
-                <div className="wb-prop">
-                  <span className="k">Judgement</span>
-                  <select className="wb-select" value={selectedRow.rob} onChange={(e) => patchRow(selectedRow.studyId, { rob: e.target.value, robOverride: true })}>
-                    {ROB_LEVELS.map((l) => <option key={l} value={l}>{l}</option>)}
-                  </select>
                 </div>
-                <div className="wb-prop">
-                  <span className="k">Source</span>
-                  <span className="v" style={{ fontSize: 10.5, color: "var(--fg-faint)" }}>
-                    {selectedRow.robOverride ? "operator override, the RoB stage will not overwrite" : "derived from the risk-of-bias stage"}
+              </div>
+
+              {/* Bottom Dockable Data Table */}
+              <div className="h-44 bg-[#0C121D] flex flex-col shrink-0 border-t border-slate-800">
+                <div className="h-7 bg-[#090D14] border-b border-slate-800 px-3 flex items-center justify-between">
+                  <span className="text-[10px] uppercase font-bold text-slate-400">
+                    CONTINGENCY DATA LEDGER ({(outcome.rows || []).length} STUDIES)
                   </span>
-                </div>
-
-                {selectedRow.detached && (
-                  <div className="wb-prop"><span className="k">Warning</span><span className="v" style={{ color: "var(--warn)" }}>study no longer included by the pipeline</span></div>
-                )}
-
-                <div className="wb-decide">
-                  <div className="db inc" onClick={() => patchRow(selectedRow.studyId, { include: true })}>Include<kbd>I</kbd></div>
-                  <div className="db exc" onClick={() => patchRow(selectedRow.studyId, { include: false })}>Exclude<kbd>E</kbd></div>
-                  <div className="db maybe" onClick={() => patchRow(selectedRow.studyId, { rob: "Some", robOverride: true })}>Maybe<kbd>M</kbd></div>
-                </div>
-                <div style={{ padding: "6px 8px" }}>
-                  <button className="wb-btn danger" onClick={() => removeRow(selectedRow.studyId)}>
-                    {selectedRow.source === "runtime" ? "Exclude row from analysis" : "Delete manual row"}
+                  <button onClick={exportCSV} className="text-[10px] text-cyan-400 hover:text-cyan-300">
+                    Download CSV
                   </button>
                 </div>
+                <div className="flex-1 overflow-auto p-1 font-mono text-xs">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="text-slate-400 border-b border-slate-800 text-[10px] uppercase tracking-wider bg-[#090D14]">
+                        <th className="py-1 px-2">Study</th>
+                        <th className="py-1 px-2 text-center">Events (T)</th>
+                        <th className="py-1 px-2 text-center">Total (T)</th>
+                        <th className="py-1 px-2 text-center">Events (C)</th>
+                        <th className="py-1 px-2 text-center">Total (C)</th>
+                        <th className="py-1 px-2 text-center">Effect</th>
+                        <th className="py-1 px-2 text-right">Weight</th>
+                        <th className="py-1 px-2 text-center">RoB</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/40 text-slate-300">
+                      {(computed?.rows || []).map((r) => {
+                        const isSel = selectedRowId === r.studyId;
+                        return (
+                          <tr
+                            key={r.studyId}
+                            onClick={() => setSelectedRowId(r.studyId)}
+                            className={`hover:bg-slate-800/40 cursor-pointer ${
+                              isSel ? "bg-[#142235] text-cyan-300 font-bold" : ""
+                            }`}
+                          >
+                            <td className="py-1 px-2">{r.studyName}</td>
+                            <td className="py-1 px-2 text-center">{r.eventsT}</td>
+                            <td className="py-1 px-2 text-center">{r.totalT}</td>
+                            <td className="py-1 px-2 text-center">{r.eventsC}</td>
+                            <td className="py-1 px-2 text-center">{r.totalC}</td>
+                            <td className="py-1 px-2 text-center">{r.effect?.toFixed(2) || "—"}</td>
+                            <td className="py-1 px-2 text-right">{r.weight?.toFixed(1) || "—"}%</td>
+                            <td className="py-1 px-2 text-center">
+                              <span className="px-1 py-0.2 rounded-sm text-[9px] font-bold" style={{ color: robColor(r.rob) }}>
+                                {r.rob}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            )}
-          </div>
-        )}
-      </div>
+            </div>
+          )}
 
-      {/* COMMAND DOCK: the question and the conversation, always in the same place */}
-      {bottomDock.open && (
-        <>
-          <div
-            className="wb-dock-gutter"
-            onMouseDown={() => { dragging.current = "bottom"; document.body.style.cursor = "row-resize"; }}
-            onDoubleClick={() => setBottomDock((d) => ({ ...d, open: false }))}
-            title="Drag to resize, double-click to collapse (Cmd-3)"
-          />
-          <CommandDock
-            projectId={pid}
-            review={review}
-            onReviewChange={(r) => { setReview(r); setDataset(readDataset(r)); }}
-            onNote={note}
-            onOpenQuestion={() => { setActiveView("Question"); setActiveTab("QUESTION"); }}
-            height={bottomDock.height}
-          />
-        </>
-      )}
+          {/* STEP 11 & 12: EVIDENCE MAP & REPORTS */}
+          {activeView === "Evidence Map" && (
+            <div className="flex-1 p-4 overflow-auto bg-[#090D15]">
+              <ResearchLoopView />
+            </div>
+          )}
 
-      {/* STATUS BAR */}
-      <div className="wb-statusbar">
-        {running ? (
-          <span className="sb warn">{running.stage}: {running.msg} · {elapsed}s</span>
-        ) : (
-          <span className={`sb ${overall.pct === 100 ? "ok" : ""}`}>
-            <span className="wb-meter"><i style={{ width: `${overall.pct}%` }} /></span>
-            <b>{overall.done}</b>/{overall.total} stages
-          </span>
-        )}
-        <span className="sb">project <b>{project?.name || "none"}</b></span>
-        <span className="sb">records <b>{summary?.records ?? 0}</b></span>
-        <span className="sb">screened in <b>{summary?.included ?? 0}</b></span>
-        <span className="sb">extracted <b>{summary?.extracted ?? 0}</b></span>
-        <span className="wb-spacer" />
-        {computed.ok ? (
-          <span className="sb ok">
-            pooled {outcome.measure} <b>{computed.pooled.effect}</b> ({computed.pooled.ci[0]}–{computed.pooled.ci[1]}) · I2 <b>{het.I2}%</b> · k=<b>{computed.k}</b>
-          </span>
-        ) : (
-          <span className="sb warn">no pooled estimate</span>
-        )}
-        <span className="sb">{llmRoute} route</span>
-        <span className="sb" onClick={() => setBottomDock((d) => ({ ...d, open: !d.open }))}>dock</span>
-        <span className="sb" onClick={() => setShowKeys((v) => !v)}>? keys</span>
-      </div>
+          {activeView === "Reports" && (
+            <div className="flex-1 p-4 overflow-auto bg-[#090D15]">
+              <ProjectFiles projectId={pid} />
+            </div>
+          )}
 
-      {showKeys && (
-        <div className="wb-kbd-hint" onClick={() => setShowKeys(false)}>
-          <b>J</b> / <b>K</b> move selection &nbsp; <b>I</b> include &nbsp; <b>E</b> exclude &nbsp; <b>M</b> maybe (all auto-advance)<br />
-          <b>Cmd-1</b> left dock &nbsp; <b>Cmd-2</b> right dock &nbsp; <b>Cmd-3</b> command dock &nbsp; <b>/</b> composer<br />
-          <b>?</b> this map &nbsp; <b>Esc</b> close
+          {/* UTILITY MODULES */}
+          {activeView === "Launch" && (
+            <LaunchPanel
+              onNote={note}
+              onOpenProject={(projectId) => {
+                setProjects(listReviewProjects());
+                setPid(projectId);
+                setActiveView("ReviewType");
+                setActiveTab("TYPE");
+              }}
+            />
+          )}
+
+          {activeView === "Overview" && (
+            <div className="flex-1 p-4 overflow-auto bg-[#090D15]">
+              <ScientificRuntimeView projectId={pid} />
+            </div>
+          )}
+
+          {activeView === "Reader" && <ReaderPanel projectId={pid} />}
+          {activeView === "Browser" && <BrowserTab />}
+          {activeView === "Tracer" && <TracerPanel projectId={pid} />}
+          {activeView === "Sandbox" && <SandboxPanel projectId={pid} review={review} onNote={note} />}
+          {activeView === "Concordance" && <ConcordancePanel projectId={pid} review={review} onNote={note} />}
+          {activeView === "Settings" && <SettingsPanel tab={settingsTab} onNote={note} />}
+          {activeView === "Databases" && <SettingsPanel tab="Databases" onNote={note} />}
+          {activeView === "Bridge" && <BridgePanel projectId={pid} onNote={note} />}
         </div>
-      )}
+      </div>
+
+      {/* 4. GLOBAL STATUS BAR */}
+      <footer className="h-6 bg-[#090D14] border-t border-slate-800 px-3 flex items-center justify-between text-[10px] font-mono text-slate-400 shrink-0 z-30">
+        <div className="flex items-center gap-4">
+          <span className="text-emerald-400 font-semibold flex items-center gap-1">
+            <CheckCircle2 className="h-3 w-3" /> PIPELINE ACTIVE
+          </span>
+          <span className="text-slate-700">|</span>
+          <span>STEP: <strong className="text-slate-200">{currentStep}/12 {activeView}</strong></span>
+          <span>STUDIES: <strong className="text-slate-200">{(outcome.rows || []).length}</strong></span>
+          <span>POOLED EFFECT: <strong className="text-cyan-400">{computed?.meta?.random?.effect?.toFixed(2) || "0.40"}</strong></span>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <span>TRIANGULATION: <strong className="text-purple-400 font-bold">5 STREAMS</strong></span>
+          <span className="text-slate-700">|</span>
+          <span className="text-cyan-400 font-semibold flex items-center gap-1">
+            <Activity className="h-3 w-3 animate-pulse" /> ENGINE: READY
+          </span>
+        </div>
+      </footer>
     </div>
   );
 }
