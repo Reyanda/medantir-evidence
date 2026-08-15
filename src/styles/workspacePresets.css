@@ -1,0 +1,86 @@
+/* MEDANTIR workspace preset composition. Scientific capability stays invariant. */
+:root {
+  --workspace-left-rail-width: 15rem;
+  --workspace-left-rail-collapsed-width: 3.75rem;
+  --workspace-right-rail-collapsed-width: 3rem;
+  --workspace-main-gutter: 1.25rem;
+}
+
+html[data-workspace-preset="studio-dark"] {
+  --workspace-left-rail-width: 14.5rem;
+  --workspace-left-rail-collapsed-width: 3.5rem;
+  --workspace-right-rail-collapsed-width: 3rem;
+  --workspace-main-gutter: 1rem;
+}
+
+html[data-workspace-preset="clinical-light"] {
+  --workspace-left-rail-width: 13.75rem;
+  --workspace-left-rail-collapsed-width: 3.5rem;
+  --workspace-right-rail-collapsed-width: 3rem;
+  --workspace-main-gutter: 1.25rem;
+}
+
+html[data-workspace-preset="focus-canvas"] {
+  --workspace-left-rail-width: 14rem;
+  --workspace-left-rail-collapsed-width: 3.5rem;
+  --workspace-right-rail-collapsed-width: 3rem;
+  --workspace-main-gutter: 0.875rem;
+}
+
+@media (min-width: 768px) {
+  .workspace-left-rail[data-collapsed="false"] {
+    width: var(--workspace-left-rail-width) !important;
+    min-width: var(--workspace-left-rail-width) !important;
+  }
+  .workspace-left-rail[data-collapsed="true"] {
+    width: var(--workspace-left-rail-collapsed-width) !important;
+    min-width: var(--workspace-left-rail-collapsed-width) !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .workspace-right-rail[data-collapsed="true"] {
+    width: var(--workspace-right-rail-collapsed-width) !important;
+    min-width: var(--workspace-right-rail-collapsed-width) !important;
+  }
+}
+
+.workspace-primary > main {
+  padding-left: var(--workspace-main-gutter);
+  padding-right: var(--workspace-main-gutter);
+}
+
+/* Focus Canvas uses dark rails around a bright scientific work surface. */
+html[data-workspace-preset="focus-canvas"] .workspace-left-rail,
+html[data-workspace-preset="focus-canvas"] .workspace-right-rail {
+  --color-bg-surface: #0b1e32;
+  --color-bg-elevated: #112a44;
+  --color-border-subtle: #203a54;
+  --color-text-primary: #f8fafc;
+  --color-text-secondary: #a8b7c8;
+  background: #0b1e32;
+  color: #f8fafc;
+}
+
+html[data-workspace-preset="focus-canvas"] .workspace-left-rail :where(.text-zinc-900, .text-zinc-800, .text-zinc-700, .text-zinc-600),
+html[data-workspace-preset="focus-canvas"] .workspace-right-rail :where(.text-zinc-900, .text-zinc-800, .text-zinc-700, .text-zinc-600) {
+  color: #e6edf5 !important;
+}
+
+html[data-workspace-preset="focus-canvas"] .workspace-left-rail :where(.text-zinc-500, .text-zinc-400),
+html[data-workspace-preset="focus-canvas"] .workspace-right-rail :where(.text-zinc-500, .text-zinc-400) {
+  color: #9fb0c2 !important;
+}
+
+/* Preset discipline: ambient color and glass-like bloom are never the default. */
+html[data-workspace-preset="studio-dark"] .app-ambient,
+html[data-workspace-preset="clinical-light"] .app-ambient,
+html[data-workspace-preset="focus-canvas"] .app-ambient {
+  opacity: 0.08;
+}
+
+html[data-workspace-preset="studio-dark"] .chrome-surface,
+html[data-workspace-preset="clinical-light"] .chrome-surface,
+html[data-workspace-preset="focus-canvas"] .chrome-surface {
+  box-shadow: none;
+}
