@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { Plus, Trash2, CheckCircle, HelpCircle, FileText, Sparkles, BookOpen, Layers, ArrowRight } from "lucide-react";
 import { createReview, saveReview, loadReview } from "../engine/reviewengine.js";
 import { putFile, getFile } from "../engine/projectstore.js";
 import { buildStrategy, STRATEGY_DBS, databaseName } from "../engine/searchStrategy.js";
 import TokenField, { toTokens } from "./TokenField.jsx";
-import { compileMatcher, screenCorpus, synonymCandidates, noiseCandidates, buildTermIndex, topTerms, highlightSpans, recordText } from "../engine/termIndex.js";
+import { compileMatcher, screenCorpus, synonymCandidates, noiseCandidates, buildTermIndex, topTerms, highlightSpans } from "../engine/termIndex.js";
 import { expandConcept, NATIVE_VOCABULARIES } from "../engine/medvocab.js";
 import { assessPress, PRESS_CITATION } from "../engine/pressReview.js";
 
@@ -117,7 +116,6 @@ export function buildIsrConcepts(facets, { includeMeasure, includeDesign, noise 
 }
 
 export default function QuestionBuilder({ projectId, review, onReviewChange, onNote, onOpenStrategy, onNavigateNext }) {
-  // Multi-Question State
   const initialQuestions = useMemo(() => {
     if (review?.questions && Array.isArray(review.questions) && review.questions.length > 0) {
       return review.questions;
@@ -126,7 +124,7 @@ export default function QuestionBuilder({ projectId, review, onReviewChange, onN
     return [
       {
         id: "q1",
-        name: "Primary: Efficacy & Mortality",
+        name: "Q1: 28-Day Mortality (Primary)",
         text: defaultQ,
         primary: true,
         facets: {
@@ -142,7 +140,7 @@ export default function QuestionBuilder({ projectId, review, onReviewChange, onN
       },
       {
         id: "q2",
-        name: "Secondary: Mechanical Ventilation",
+        name: "Q2: Mechanical Ventilation Progression",
         text: "In hospitalized adults with COVID-19, do JAK inhibitors prevent progression to invasive mechanical ventilation?",
         primary: false,
         facets: {
@@ -158,7 +156,7 @@ export default function QuestionBuilder({ projectId, review, onReviewChange, onN
       },
       {
         id: "q3",
-        name: "Secondary: Serious Adverse Events",
+        name: "Q3: Serious Adverse Events & Infections",
         text: "In COVID-19 patients treated with JAK inhibitors, what is the incidence of secondary bacterial/fungal infections and thromboembolism?",
         primary: false,
         facets: {
@@ -306,91 +304,60 @@ export default function QuestionBuilder({ projectId, review, onReviewChange, onN
     putFile(projectId, { path: "search/isr.json", name: "isr.json", type: "provenance", content: JSON.stringify(isr, null, 2) });
 
     onReviewChange?.(next);
-    onNote?.(`Multi-question review updated (${questions.length} questions). Search strategy compiled to search/isr.json.`, "ok");
+    onNote?.(`Multi-question review updated (${questions.length} questions). Search strategy written to search/isr.json.`, "ok");
     if (thenOpen) onOpenStrategy?.(currentQuestionText);
   }, [projectId, currentQuestionText, questions, facets, concepts, notes, databases, includeMeasure, includeDesign, noise, headings, onReviewChange, onNote, onOpenStrategy]);
 
   return (
-    <div className="flex flex-col h-full bg-[#090D15] text-slate-200 overflow-hidden font-mono select-none">
-      {/* Top Banner & Multi-Question Bar */}
-      <div className="bg-[#0D131F] border-b border-slate-800 px-4 py-2 shrink-0 space-y-2">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] uppercase font-bold text-cyan-400">
-              STEP 2: RESEARCH QUESTIONS ({questions.length})
-            </span>
-            <span className="text-[9px] text-slate-500 font-mono">
-              PRISM / PICO Framing & Syntax Compilation
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2">
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0 }}>
+      {/* Multi-Question Selector Bar */}
+      <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 8px", background: "var(--bg-header)", borderBottom: "1px solid var(--line)" }}>
+        <span style={{ fontSize: 10, fontFamily: "var(--mono)", color: "var(--fg-dim)", textTransform: "uppercase", marginRight: 4 }}>
+          Questions ({questions.length}):
+        </span>
+        {questions.map((q, idx) => {
+          const isSel = q.id === activeQuestionId;
+          return (
             <button
-              onClick={() => applyAndBuild(false)}
-              className="px-3 py-1 bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold rounded-sm shadow-sm transition-colors flex items-center gap-1.5"
+              key={q.id}
+              className={`wb-btn ${isSel ? "on" : ""}`}
+              onClick={() => setActiveQuestionId(q.id)}
             >
-              <CheckCircle className="w-3 h-3" /> Save Questions & Build ISR
+              <span>{q.name || `Question ${idx + 1}`}</span>
+              {q.primary && <span style={{ fontSize: 9, color: "var(--ok)", marginLeft: 2 }}>[PRIMARY]</span>}
+              {questions.length > 1 && (
+                <span
+                  onClick={(e) => { e.stopPropagation(); removeQuestion(q.id); }}
+                  style={{ marginLeft: 4, opacity: 0.6, cursor: "pointer" }}
+                >
+                  ×
+                </span>
+              )}
             </button>
-            {onNavigateNext && (
-              <button
-                onClick={onNavigateNext}
-                className="px-3 py-1 bg-[#162236] hover:bg-[#1E2E48] text-cyan-300 border border-cyan-500/30 text-xs font-semibold rounded-sm transition-colors flex items-center gap-1.5"
-              >
-                Next: Protocols <ArrowRight className="w-3 h-3" />
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Question Selector Tabs */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-          {questions.map((q, idx) => {
-            const isSel = q.id === activeQuestionId;
-            return (
-              <div
-                key={q.id}
-                onClick={() => setActiveQuestionId(q.id)}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-sm text-xs cursor-pointer border transition-colors shrink-0 ${
-                  isSel
-                    ? "bg-[#18283E] text-cyan-300 border-cyan-500/60 font-bold"
-                    : "bg-[#090D14] text-slate-400 border-slate-800 hover:text-slate-200"
-                }`}
-              >
-                <span>{q.name || `Question ${idx + 1}`}</span>
-                {q.primary && (
-                  <span className="text-[8px] px-1 py-0.2 bg-cyan-950 text-cyan-400 border border-cyan-800 rounded-sm">
-                    PRIMARY
-                  </span>
-                )}
-                {questions.length > 1 && (
-                  <button
-                    onClick={(e) => { e.stopPropagation(); removeQuestion(q.id); }}
-                    className="hover:text-rose-400 ml-1 text-[10px]"
-                  >
-                    ×
-                  </button>
-                )}
-              </div>
-            );
-          })}
-
-          <button
-            onClick={addQuestion}
-            className="flex items-center gap-1 px-2.5 py-1 bg-[#090D14] hover:bg-slate-800 border border-dashed border-slate-700 text-slate-400 hover:text-slate-200 text-xs rounded-sm shrink-0"
-          >
-            <Plus className="w-3 h-3" /> Add Question
+          );
+        })}
+        <button className="wb-btn" onClick={addQuestion} title="Add another research question">
+          + Question
+        </button>
+        <span className="wb-spacer" />
+        <button className="wb-btn on" onClick={() => applyAndBuild(false)}>
+          Save Question & ISR
+        </button>
+        {onNavigateNext && (
+          <button className="wb-btn" onClick={onNavigateNext}>
+            Next: Protocols →
           </button>
-        </div>
+        )}
       </div>
 
-      {/* Main 2-Column Decomposition and Compiler */}
-      <div className="flex-1 grid grid-cols-12 min-h-0 overflow-hidden">
-        {/* Left Column: PRISM Facet Matrix */}
-        <div className="col-span-7 border-r border-slate-800 overflow-y-auto p-4 space-y-4 bg-[#0C121D]">
-          <div className="space-y-1.5 bg-[#090D14] border border-slate-800 rounded-sm p-3">
-            <div className="flex items-center justify-between text-[10px] text-slate-500 font-bold uppercase">
-              <span>Question Label & Primary Status</span>
-              <label className="flex items-center gap-1.5 cursor-pointer text-slate-400">
+      {/* Main Grid: Facets (Left) & Compiled Boolean / PRESS (Right) */}
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(380px, 1.2fr) minmax(340px, 1fr)", flex: 1, minHeight: 0 }}>
+        {/* Facets Column */}
+        <div style={{ borderRight: "1px solid var(--line)", overflow: "auto", background: "var(--bg-panel)" }}>
+          <div style={{ padding: "8px 10px", borderBottom: "1px solid var(--line)", background: "var(--bg-panel-2)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+              <span style={{ fontSize: 10, fontFamily: "var(--mono)", color: "var(--fg-faint)", textTransform: "uppercase" }}>Question Label</span>
+              <label style={{ fontSize: 10, color: "var(--fg-dim)", display: "flex", alignItems: "center", gap: 4, cursor: "default" }}>
                 <input
                   type="checkbox"
                   checked={activeQuestion.primary}
@@ -402,13 +369,14 @@ export default function QuestionBuilder({ projectId, review, onReviewChange, onN
                       }))
                     );
                   }}
-                  className="accent-cyan-400"
                 />
                 Primary Question
               </label>
             </div>
             <input
               type="text"
+              className="wb-input"
+              style={{ width: "100%", height: 22, fontWeight: 600 }}
               value={activeQuestion.name}
               onChange={(e) => {
                 const val = e.target.value;
@@ -416,130 +384,111 @@ export default function QuestionBuilder({ projectId, review, onReviewChange, onN
                   prev.map((q) => (q.id === activeQuestionId ? { ...q, name: val } : q))
                 );
               }}
-              className="w-full bg-[#131B2B] border border-slate-800 rounded-sm px-2.5 py-1 text-xs text-white font-mono focus:outline-none focus:border-cyan-500"
             />
           </div>
 
-          <div className="bg-[#090D14] border border-slate-800 rounded-sm p-3 space-y-1">
-            <div className="text-[10px] uppercase font-bold text-slate-500">Synthesised Question Text</div>
-            <div className="text-xs text-slate-100 font-sans italic leading-relaxed">
-              "{currentQuestionText || "Add terms to population and intervention to synthesise question..."}"
-            </div>
+          <div style={{ padding: "8px 10px", borderBottom: "1px solid var(--line)", fontSize: 11.5, color: "var(--fg-bright)", lineHeight: 1.4, fontStyle: "italic", background: "var(--bg-input)" }}>
+            "{currentQuestionText || "Add population and intervention terms to synthesise question text…"}"
           </div>
 
-          <div className="space-y-2">
-            <div className="text-[10px] font-bold uppercase text-slate-400">
-              PRISM 8-Facet Block Decomposition
-            </div>
-            <div className="space-y-2">
+          <div className="wb-insp-title">PRISM 8-Facet Decomposition</div>
+          <table className="wb-grid wb-grid-soft">
+            <thead>
+              <tr>
+                <th style={{ width: 28 }} />
+                <th style={{ width: 160 }}>Facet</th>
+                <th>Terms (Enter makes a token)</th>
+              </tr>
+            </thead>
+            <tbody>
               {PRISM_FACETS.map((f) => (
-                <div key={f.key} className="bg-[#090D14] border border-slate-800/80 rounded-sm p-2.5 space-y-1">
-                  <div className="flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2">
-                      <span className="w-5 h-5 rounded-sm bg-cyan-950 text-cyan-400 font-mono font-bold flex items-center justify-center text-[10px] border border-cyan-800">
-                        {f.code}
-                      </span>
-                      <span className="font-semibold text-slate-200">{f.label}</span>
-                    </div>
-                    <span className="text-[10px] text-slate-500 font-mono">{f.hint}</span>
-                  </div>
-
-                  <div className="pt-1">
+                <tr key={f.key}>
+                  <td style={{ fontFamily: "var(--mono)", color: "var(--accent)", textAlign: "center", fontWeight: 700 }}>{f.code}</td>
+                  <td title={f.hint} style={{ fontWeight: 500 }}>{f.label}</td>
+                  <td style={{ padding: "2px 4px", whiteSpace: "normal" }}>
                     <TokenField
                       value={facets[f.key] || []}
                       onChange={(tokens) => updateActiveFacets(f.key, tokens)}
-                      placeholder={`Type term and press Enter (e.g. ${f.hint})`}
+                      placeholder={`e.g. ${f.hint}`}
                     />
-                  </div>
-                </div>
+                  </td>
+                </tr>
               ))}
-            </div>
-          </div>
+            </tbody>
+          </table>
         </div>
 
-        {/* Right Column: Compiled Search ISR & PRESS Peer Review */}
-        <div className="col-span-5 flex flex-col bg-[#090D15] overflow-y-auto p-4 space-y-4">
-          <div className="flex border-b border-slate-800 pb-1 gap-2 text-xs">
-            {["BLOCKS", "STRATEGIES", "PRESS 2015", "THEMES"].map((t) => (
-              <button
+        {/* Compiled Strategy & PRESS Inspection */}
+        <div style={{ display: "flex", flexDirection: "column", overflow: "hidden", background: "var(--bg-panel-2)" }}>
+          <div className="wb-tabs">
+            {["BLOCKS", "STRATEGIES", "PRESS 2015"].map((t) => (
+              <div
                 key={t}
+                className={`pt ${rightTab === t ? "sel" : ""}`}
                 onClick={() => setRightTab(t)}
-                className={`px-3 py-1 font-bold text-[10px] transition-colors rounded-sm ${
-                  rightTab === t
-                    ? "bg-[#18283E] text-cyan-300 border border-cyan-500/40"
-                    : "text-slate-400 hover:text-slate-200"
-                }`}
               >
                 {t}
-              </button>
+              </div>
             ))}
           </div>
 
-          {rightTab === "BLOCKS" && (
-            <div className="space-y-3 text-xs">
-              <div className="text-[10px] font-bold uppercase text-slate-400">
-                Boolean Search Concepts ({concepts.length} Blocks)
-              </div>
-              <div className="space-y-2">
+          <div style={{ flex: 1, overflow: "auto", padding: 10 }}>
+            {rightTab === "BLOCKS" && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <div className="wb-insp-title">
+                  Search Concepts ({concepts.length} Blocks)
+                </div>
                 {concepts.map((c, i) => (
-                  <div key={i} className="bg-[#0C121D] border border-slate-800 rounded-sm p-3 space-y-1.5">
-                    <div className="flex items-center justify-between text-xs font-bold">
-                      <span className="text-cyan-400">{c.label}</span>
-                      <span className="text-[10px] px-1.5 py-0.2 bg-slate-800 text-slate-300 rounded-sm">
-                        {c.op}
-                      </span>
+                  <div key={i} style={{ background: "var(--bg-panel)", border: "1px solid var(--line)", borderRadius: 2, padding: 8 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                      <span style={{ fontWeight: 600, color: "var(--accent)" }}>{c.label}</span>
+                      <span className="wb-count">{c.op}</span>
                     </div>
-                    <div className="flex flex-wrap gap-1">
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 3 }}>
                       {c.terms.map((t, ti) => (
-                        <span key={ti} className="text-[10px] bg-[#131B2B] text-slate-200 border border-slate-700 px-1.5 py-0.5 rounded-sm">
-                          {t}
-                        </span>
+                        <span key={ti} className="wb-tag on">{t}</span>
                       ))}
                     </div>
                   </div>
                 ))}
               </div>
-            </div>
-          )}
+            )}
 
-          {rightTab === "PRESS 2015" && press && (
-            <div className="space-y-3 text-xs">
-              <div className="text-[10px] font-bold uppercase text-slate-400">
-                PRESS 2015 Evidence Assessment
-              </div>
-              <div className="space-y-2">
+            {rightTab === "PRESS 2015" && press && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <div className="wb-insp-title">PRESS 2015 Evidence Assessment</div>
                 {(press.elements || []).map((el, ei) => (
-                  <div key={ei} className="bg-[#0C121D] border border-slate-800 rounded-sm p-2.5 space-y-1">
-                    <div className="flex items-center justify-between text-[11px] font-bold">
-                      <span className="text-slate-200">{el.name}</span>
-                      <span className={`text-[9px] px-1.5 py-0.2 rounded-sm ${el.status === "pass" ? "bg-emerald-950 text-emerald-400" : "bg-amber-950 text-amber-400"}`}>
+                  <div key={ei} style={{ background: "var(--bg-panel)", border: "1px solid var(--line)", borderRadius: 2, padding: "6px 8px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ fontWeight: 600, color: "var(--fg-bright)", fontSize: 11 }}>{el.name}</span>
+                      <span className="wb-count" style={{ color: el.status === "pass" ? "var(--ok)" : "var(--warn)" }}>
                         {el.status?.toUpperCase()}
                       </span>
                     </div>
-                    <div className="text-[10px] text-slate-400 leading-relaxed font-sans">{el.note}</div>
+                    <div style={{ fontSize: 10.5, color: "var(--fg-dim)", marginTop: 2, lineHeight: 1.35 }}>
+                      {el.note}
+                    </div>
                   </div>
                 ))}
               </div>
-            </div>
-          )}
+            )}
 
-          {rightTab === "STRATEGIES" && (
-            <div className="space-y-3 text-xs">
-              <div className="text-[10px] font-bold uppercase text-slate-400">
-                Native Database Search Syntax Preview
-              </div>
-              <div className="space-y-2">
+            {rightTab === "STRATEGIES" && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <div className="wb-insp-title">Database Search Syntax Translation</div>
                 {preview.map((s, idx) => (
-                  <div key={idx} className="bg-[#0C121D] border border-slate-800 rounded-sm p-2.5 space-y-1">
-                    <div className="text-xs font-bold text-cyan-300 uppercase">{s.database}</div>
-                    <pre className="text-[10px] text-slate-300 bg-[#070B12] p-2 border border-slate-800 rounded-sm overflow-x-auto whitespace-pre-wrap font-mono">
+                  <div key={idx} style={{ background: "var(--bg-panel)", border: "1px solid var(--line)", borderRadius: 2, padding: 8 }}>
+                    <div style={{ fontWeight: 600, color: "var(--fg-bright)", textTransform: "uppercase", fontSize: 10, fontFamily: "var(--mono)", marginBottom: 4 }}>
+                      {s.database}
+                    </div>
+                    <pre style={{ background: "var(--bg-input)", border: "1px solid var(--line)", borderRadius: 2, padding: 6, margin: 0, fontSize: 10.5, fontFamily: "var(--mono)", color: "var(--fg)", whiteSpace: "pre-wrap" }}>
                       {s.query}
                     </pre>
                   </div>
                 ))}
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </div>

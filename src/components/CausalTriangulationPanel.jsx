@@ -1,8 +1,4 @@
 import React, { useState, useMemo } from "react";
-import {
-  Shield, CheckCircle2, AlertTriangle, HelpCircle, Layers, Activity,
-  Scale, ArrowRight, RefreshCw, Info, Download, FileText, Check
-} from "lucide-react";
 
 const EVIDENCE_STREAMS = [
   {
@@ -102,202 +98,143 @@ export default function CausalTriangulationPanel({ review, projectId, onNote }) 
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-[#090D15] text-slate-200 overflow-hidden font-mono select-none">
-      {/* Header Banner */}
-      <div className="h-12 bg-[#0D131F] border-b border-slate-800 px-4 flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="w-7 h-7 rounded-sm bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400">
-            <Scale className="w-4 h-4" />
-          </div>
-          <div>
-            <div className="text-xs font-bold text-slate-100 flex items-center gap-2">
-              CAUSAL TRIANGULATION STUDIO
-              <span className="text-[9px] px-1.5 py-0.2 rounded-sm bg-purple-950 text-purple-300 border border-purple-800">
-                ORTHOGONAL BIAS INTEGRATION
-              </span>
-            </div>
-            <div className="text-[10px] text-slate-500">
-              Integrate evidence across complementary designs to establish causal certainty (Lawlor / Davey Smith)
-            </div>
-          </div>
+    <div style={{ display: "grid", gridTemplateColumns: "320px 1fr", height: "100%", minHeight: 0 }}>
+      {/* Left Column: Streams */}
+      <div style={{ borderRight: "1px solid var(--line)", display: "flex", flexDirection: "column", background: "var(--bg-panel)" }}>
+        <div className="wb-insp-title">
+          Evidence Streams
+          <span className="wb-spacer" />
+          <span className="wb-count" style={{ color: "var(--ok)", borderColor: "var(--ok)" }}>5 CONCORDANT</span>
+        </div>
+        <div style={{ flex: 1, overflow: "auto" }}>
+          {streams.map((s) => {
+            const isSel = selectedStreamId === s.id;
+            return (
+              <div
+                key={s.id}
+                className={`wb-row ${isSel ? "sel" : ""}`}
+                style={{ height: "auto", minHeight: 44, padding: "6px 8px", flexDirection: "column", alignItems: "flex-start", gap: 2 }}
+                onClick={() => setSelectedStreamId(s.id)}
+              >
+                <div style={{ display: "flex", width: "100%", alignItems: "center", justifyContent: "space-between" }}>
+                  <span className="lbl" style={{ fontWeight: 600, color: isSel ? "var(--fg-bright)" : "var(--fg)" }}>{s.name}</span>
+                  <span className="n">{s.certainty}</span>
+                </div>
+                <div style={{ fontFamily: "var(--mono)", fontSize: 10.5, color: "var(--accent)" }}>
+                  {s.estimate}
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", width: "100%", fontSize: 10, color: "var(--fg-dim)" }}>
+                  <span>{s.defaultDirection}</span>
+                  <span style={{ color: "var(--ok)" }}>● {s.concordance}</span>
+                </div>
+              </div>
+            );
+          })}
         </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={exportTriangulationSummary}
-            className="px-3 py-1 bg-[#131B2B] hover:bg-slate-800 text-slate-300 border border-slate-700 text-xs font-medium rounded-sm transition-colors flex items-center gap-1.5"
-          >
-            <Download className="w-3 h-3" /> Export Triangulation Report
-          </button>
+        <div style={{ padding: 8, borderTop: "1px solid var(--line)", fontSize: 10.5, color: "var(--fg-dim)", lineHeight: 1.4 }}>
+          <div style={{ fontWeight: 600, color: "var(--fg)", marginBottom: 4, textTransform: "uppercase", fontSize: 10, letterSpacing: 0.3 }}>
+            Triangulation Rule
+          </div>
+          Evidence streams must feature orthogonal, unrelated sources of bias to demonstrate causality.
         </div>
       </div>
 
-      {/* Main 2-Column Triangulation Matrix */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Left Column: Stream Matrix & Directional Map */}
-        <div className="w-96 bg-[#0C121D] border-r border-slate-800 flex flex-col shrink-0">
-          <div className="p-3 bg-[#090D14] border-b border-slate-800 flex items-center justify-between">
-            <span className="text-[10px] uppercase font-bold text-slate-400">
-              Evidence Streams ({streams.length})
-            </span>
-            <span className="text-[9px] text-emerald-400 font-semibold flex items-center gap-1">
-              <CheckCircle2 className="w-3 h-3" /> ALL CONCORDANT
-            </span>
-          </div>
-
-          <div className="flex-1 overflow-y-auto p-2 space-y-1.5">
-            {streams.map((s) => {
-              const isSelected = selectedStreamId === s.id;
-              return (
-                <div
-                  key={s.id}
-                  onClick={() => setSelectedStreamId(s.id)}
-                  className={`p-3 rounded-sm border cursor-pointer transition-all ${
-                    isSelected
-                      ? "bg-[#182438] border-purple-500/60 shadow-sm"
-                      : "bg-[#0E1522] border-slate-800/80 hover:bg-slate-800/40 text-slate-300"
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-bold text-white truncate">
-                      {s.name}
-                    </span>
-                    <span className="text-[9px] px-1 py-0.2 rounded-sm bg-purple-950 text-purple-300 border border-purple-800/60 font-mono">
-                      {s.certainty}
-                    </span>
-                  </div>
-
-                  <div className="text-[10px] text-cyan-400 font-bold mb-1 font-mono">
-                    {s.estimate}
-                  </div>
-
-                  <div className="flex items-center justify-between text-[9px] text-slate-500 font-mono">
-                    <span className="truncate">Direction: <strong className="text-slate-300">{s.defaultDirection}</strong></span>
-                    <span className="text-emerald-400">● {s.concordance}</span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="p-3 border-t border-slate-800 bg-[#090D14] space-y-2">
-            <div className="text-[10px] font-bold uppercase text-slate-500">
-              TRIANGULATION CRITERIA
+      {/* Right Column: Inspector & Narrative */}
+      <div style={{ padding: 16, overflow: "auto", display: "flex", flexDirection: "column", gap: 14 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid var(--line)", paddingBottom: 8 }}>
+          <div>
+            <div style={{ fontSize: 10, fontFamily: "var(--mono)", color: "var(--accent)", textTransform: "uppercase", letterSpacing: 0.5 }}>
+              Step 8: Causal Triangulation Studio
             </div>
-            <div className="space-y-1 text-[10px] text-slate-400">
-              <div className="flex items-center gap-1.5 text-emerald-400">
-                <Check className="w-3 h-3" /> Directional concordance across ≥ 3 streams
-              </div>
-              <div className="flex items-center gap-1.5 text-emerald-400">
-                <Check className="w-3 h-3" /> Orthogonal & unrelated bias profiles
-              </div>
-              <div className="flex items-center gap-1.5 text-emerald-400">
-                <Check className="w-3 h-3" /> Validated negative control specificity
-              </div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: "var(--fg-bright)", marginTop: 2 }}>
+              {selectedStream.name}
             </div>
           </div>
+          <button className="wb-btn" onClick={exportTriangulationSummary}>
+            Export Summary (.md)
+          </button>
         </div>
 
-        {/* Right Column: Stream Detail & Bias Independence Inspector */}
-        <div className="flex-1 bg-[#090D15] p-6 overflow-y-auto space-y-6">
-          <div className="bg-[#0D131F] border border-slate-800 rounded-sm p-5 space-y-4">
-            <div className="flex items-start justify-between">
-              <div>
-                <span className="text-[10px] font-mono text-purple-400 font-bold uppercase tracking-wider block">
-                  SELECTED EVIDENCE STREAM
-                </span>
-                <h2 className="text-base font-bold text-white mt-0.5">
-                  {selectedStream.name}
-                </h2>
-              </div>
-              <span className="text-xs px-2 py-0.5 rounded-sm bg-[#182438] text-purple-300 border border-purple-700 font-mono">
-                CERTAINTY: {selectedStream.certainty}
-              </span>
-            </div>
+        <div style={{ fontSize: 12, color: "var(--fg)", lineHeight: 1.5, background: "var(--bg-panel)", padding: "10px 12px", border: "1px solid var(--line)", borderRadius: 2 }}>
+          {selectedStream.description}
+        </div>
 
-            <p className="text-xs text-slate-300 font-sans leading-relaxed">
-              {selectedStream.description}
-            </p>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2">
-              <div className="bg-[#131B2B] border border-slate-800 rounded-sm p-3 space-y-1">
-                <span className="text-[10px] text-slate-500 font-bold uppercase block">
-                  Effect Estimate
-                </span>
+        <div className="wb-insp-title">Stream Parameters</div>
+        <table className="wb-grid wb-grid-soft">
+          <thead>
+            <tr>
+              <th style={{ width: 140 }}>Parameter</th>
+              <th>Value</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style={{ fontWeight: 600 }}>Effect Estimate</td>
+              <td>
                 <input
                   type="text"
+                  className="wb-input wb-mono"
+                  style={{ width: "100%" }}
                   value={selectedStream.estimate}
                   onChange={(e) => updateStream(selectedStream.id, "estimate", e.target.value)}
-                  className="w-full bg-[#090D14] border border-slate-800 rounded-sm px-2 py-1 text-xs text-cyan-300 font-mono font-bold focus:outline-none focus:border-cyan-500"
                 />
-              </div>
-
-              <div className="bg-[#131B2B] border border-slate-800 rounded-sm p-3 space-y-1">
-                <span className="text-[10px] text-slate-500 font-bold uppercase block">
-                  Directionality
-                </span>
+              </td>
+            </tr>
+            <tr>
+              <td style={{ fontWeight: 600 }}>Directionality</td>
+              <td>
                 <select
+                  className="wb-select"
+                  style={{ width: "100%" }}
                   value={selectedStream.defaultDirection}
                   onChange={(e) => updateStream(selectedStream.id, "defaultDirection", e.target.value)}
-                  className="w-full bg-[#090D14] border border-slate-800 rounded-sm px-2 py-1 text-xs text-slate-200 font-mono focus:outline-none focus:border-cyan-500"
                 >
                   <option value="Favours Intervention">Favours Intervention</option>
                   <option value="Favours Control">Favours Control</option>
-                  <option value="Null (No Effect Detected)">Null (No Effect)</option>
+                  <option value="Null (No Effect Detected)">Null (No Effect Detected)</option>
                   <option value="Inconclusive">Inconclusive</option>
                 </select>
-              </div>
-
-              <div className="bg-[#131B2B] border border-slate-800 rounded-sm p-3 space-y-1">
-                <span className="text-[10px] text-slate-500 font-bold uppercase block">
-                  Concordance
-                </span>
+              </td>
+            </tr>
+            <tr>
+              <td style={{ fontWeight: 600 }}>Concordance</td>
+              <td>
                 <select
+                  className="wb-select"
+                  style={{ width: "100%" }}
                   value={selectedStream.concordance}
                   onChange={(e) => updateStream(selectedStream.id, "concordance", e.target.value)}
-                  className="w-full bg-[#090D14] border border-slate-800 rounded-sm px-2 py-1 text-xs text-emerald-400 font-mono font-bold focus:outline-none"
                 >
                   <option value="Concordant">Concordant</option>
                   <option value="Discordant">Discordant</option>
                   <option value="Qualifying">Qualifying</option>
                 </select>
-              </div>
-            </div>
+              </td>
+            </tr>
+            <tr>
+              <td style={{ fontWeight: 600 }}>Key Biases</td>
+              <td>
+                <input
+                  type="text"
+                  className="wb-input"
+                  style={{ width: "100%" }}
+                  value={selectedStream.biasRisk}
+                  onChange={(e) => updateStream(selectedStream.id, "biasRisk", e.target.value)}
+                />
+              </td>
+            </tr>
+          </tbody>
+        </table>
 
-            <div className="bg-[#131B2B] border border-slate-800 rounded-sm p-3 space-y-1.5">
-              <span className="text-[10px] text-rose-400 font-bold uppercase block flex items-center gap-1.5">
-                <AlertTriangle className="w-3 h-3" /> Key Method-Specific Biases
-              </span>
-              <input
-                type="text"
-                value={selectedStream.biasRisk}
-                onChange={(e) => updateStream(selectedStream.id, "biasRisk", e.target.value)}
-                className="w-full bg-[#090D14] border border-slate-800 rounded-sm px-2 py-1 text-xs text-slate-300 font-mono focus:outline-none"
-              />
-              <span className="text-[9px] text-slate-500 block">
-                Triangulation relies on biases operating through completely separate causal mechanisms.
-              </span>
-            </div>
-          </div>
-
-          {/* Triangulation Synthesis & Narrative Statement */}
-          <div className="bg-[#0D131F] border border-slate-800 rounded-sm p-5 space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                <FileText className="w-3.5 h-3.5 text-purple-400" />
-                Causal Synthesis & Triangulation Statement
-              </h3>
-              <span className="text-[9px] text-slate-500 font-mono">DURABLE EVIDENCE OUTPUT</span>
-            </div>
-
-            <textarea
-              rows={4}
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              className="w-full bg-[#131B2B] border border-slate-800 rounded-sm p-3 text-xs text-slate-200 font-sans focus:outline-none focus:border-purple-500/60 leading-relaxed"
-            />
-          </div>
-        </div>
+        <div className="wb-insp-title">Causal Synthesis & Triangulation Narrative</div>
+        <textarea
+          className="wb-textarea"
+          rows={5}
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          style={{ width: "100%", fontSize: 11.5 }}
+        />
       </div>
     </div>
   );

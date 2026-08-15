@@ -5,33 +5,33 @@
    Every value below is a token; components must not hardcode hexes. */
 
 .wb {
-  --bg-app:      #1e1e1e;
-  --bg-panel:    #252526;
-  --bg-panel-2:  #2d2d2e;
-  --bg-toolbar:  #333334;
-  --bg-header:   #3c3c3d;
-  --bg-input:    #1c1c1c;
-  --bg-hover:    #2a2d2e;
-  --bg-active:   #094771;
-  --bg-active-2: #37373d;
+  --bg-app:      #0A1622;
+  --bg-panel:    #0E1B28;
+  --bg-panel-2:  #121F2C;
+  --bg-toolbar:  #07131E;
+  --bg-header:   #121D29;
+  --bg-input:    #040F1B;
+  --bg-hover:    #182838;
+  --bg-active:   #0D3859;
+  --bg-active-2: #14283C;
 
-  --line:        #3f3f42;
-  --line-strong: #4a4a4f;
-  --line-focus:  #007acc;
+  --line:        #202C38;
+  --line-strong: #2D3D4E;
+  --line-focus:  #00E5FF;
 
-  --fg:          #d4d4d4;
-  --fg-dim:      #9d9d9d;
-  --fg-faint:    #6e6e6e;
-  --fg-bright:   #f0f0f0;
+  --fg:          #c8d6e5;
+  --fg-dim:      #8395a7;
+  --fg-faint:    #576574;
+  --fg-bright:   #ffffff;
 
-  --accent:      #4ea1ff;
-  --ok:          #4ec94e;
-  --warn:        #d7a11e;
-  --err:         #e05555;
+  --accent:      #00E5FF;
+  --ok:          #10ac84;
+  --warn:        #ff9f43;
+  --err:         #ee5253;
 
-  --tag-inc:     #2d5a2d;
-  --tag-exc:     #5a2d2d;
-  --tag-maybe:   #5a4d1e;
+  --tag-inc:     #1b4332;
+  --tag-exc:     #49111c;
+  --tag-maybe:   #4a3b00;
 
   --row-h: 22px;
   --mono: "JetBrains Mono", "SF Mono", ui-monospace, Menlo, monospace;

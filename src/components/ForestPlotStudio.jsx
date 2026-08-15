@@ -1,12 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
-  BookOpen, FileText, ScrollText, Search, Filter, Database, Shield,
-  Scale, Zap, BarChart2, Compass, FileArchive, Layers, Plus, Download,
-  Play, CheckCircle2, ChevronRight, ChevronLeft, ChevronDown, Check,
-  Activity, MousePointer, Hand, ZoomIn, Ruler, Type, Square, Link2,
-  Trash2, Lock, Eye, EyeOff, AlertTriangle
-} from "lucide-react";
-import {
   listReviewProjects,
   loadStudio,
   persistDataset,
@@ -23,11 +16,8 @@ import {
   seedSampleReview
 } from "../engine/forestRuntime.js";
 import { saveReview, loadReview, createReview } from "../engine/reviewengine.js";
-import { runPipeline, runStage, stageDetails, stageProgress, reviewSummary } from "../engine/srOrchestrator.js";
 import { setActiveProject, listProjects } from "../engine/projectstore.js";
 import { runnableSources } from "../engine/academic.js";
-import { enabledProviders } from "../engine/providers.js";
-import { getTaskPreference, setTaskPreference } from "../engine/taskRouter.js";
 
 // Core Pipeline & Studio Components
 import ReviewTypePanel from "./ReviewTypePanel.jsx";
@@ -50,20 +40,19 @@ import SandboxPanel from "./SandboxPanel.jsx";
 import LaunchPanel from "./LaunchPanel.jsx";
 import "../styles/workbench.css";
 
-// 12-Step Ordered Methodological Pipeline
 export const MODULES = [
-  { step: 1, label: "1. Review Type", view: "ReviewType", tab: "TYPE", icon: BookOpen, hint: "Step 1: Define methodology, framework, RoB tools, and synthesis design" },
-  { step: 2, label: "2. Questions", view: "Question", tab: "QUESTION", icon: FileText, hint: "Step 2: Multi-question PRISM / PICO framing & syntax compilation" },
-  { step: 3, label: "3. Protocols & Strategy", view: "Protocols", tab: "BUILD", icon: ScrollText, hint: "Step 3: Database query translations, syntax explosion, and PRESS review" },
-  { step: 4, label: "4. Search & Retrieval", view: "Search", tab: "ANALYZE", icon: Search, hint: "Step 4: Execute multi-source literature retrieval across configured databases" },
-  { step: 5, label: "5. Screening", view: "Screening", tab: "ANALYZE", icon: Filter, hint: "Step 5: High-density TiAb and Full-text screening grid with decision ledger" },
-  { step: 6, label: "6. Extraction", view: "Extraction", tab: "SYNTHESIZE", icon: Database, hint: "Step 6: Structured study data extraction and 2x2 contingency table ingestion" },
-  { step: 7, label: "7. Appraisal (RoB)", view: "Appraisal", tab: "SYNTHESIZE", icon: Shield, hint: "Step 7: Critical appraisal using RoB 2, ROBINS-I, QUADAS-2, or CASP" },
-  { step: 8, label: "8. Causal Triangulation", view: "Triangulation", tab: "SYNTHESIZE", icon: Scale, hint: "Step 8: Multi-stream triangulation across orthogonal bias profiles" },
-  { step: 9, label: "9. Synthesis", view: "Synthesis", tab: "SYNTHESIZE", icon: Zap, hint: "Step 9: Inverse-variance and DerSimonian-Laird meta-analysis engine" },
-  { step: 10, label: "10. Figures (Canvas)", view: "Figures", tab: "VISUALIZE", icon: BarChart2, hint: "Step 10: Vector forest plot studio, N-panel geometry, and data table" },
-  { step: 11, label: "11. Evidence Map", view: "Evidence Map", tab: "VISUALIZE", icon: Compass, hint: "Step 11: Systematic evidence-gap map and geospatial evidence radar" },
-  { step: 12, label: "12. Reports & PRISMA", view: "Reports", tab: "PUBLISH", icon: FileArchive, hint: "Step 12: PRISMA flow diagram, structured summary, and auditable outputs" },
+  { step: 1, label: "1. Review Type", view: "ReviewType", tab: "TYPE", hint: "Step 1: Define methodology, framework, RoB tools, and synthesis design" },
+  { step: 2, label: "2. Questions", view: "Question", tab: "QUESTION", hint: "Step 2: Multi-question PRISM / PICO framing & syntax compilation" },
+  { step: 3, label: "3. Protocols & Strategy", view: "Protocols", tab: "BUILD", hint: "Step 3: Database query translations, syntax explosion, and PRESS review" },
+  { step: 4, label: "4. Search & Retrieval", view: "Search", tab: "ANALYZE", hint: "Step 4: Execute multi-source literature retrieval across configured databases" },
+  { step: 5, label: "5. Screening", view: "Screening", tab: "ANALYZE", hint: "Step 5: High-density TiAb and Full-text screening grid with decision ledger" },
+  { step: 6, label: "6. Extraction", view: "Extraction", tab: "SYNTHESIZE", hint: "Step 6: Structured study data extraction and 2x2 contingency table ingestion" },
+  { step: 7, label: "7. Appraisal (RoB)", view: "Appraisal", tab: "SYNTHESIZE", hint: "Step 7: Critical appraisal using RoB 2, ROBINS-I, QUADAS-2, or CASP" },
+  { step: 8, label: "8. Causal Triangulation", view: "Triangulation", tab: "SYNTHESIZE", hint: "Step 8: Multi-stream triangulation across orthogonal bias profiles" },
+  { step: 9, label: "9. Synthesis", view: "Synthesis", tab: "SYNTHESIZE", hint: "Step 9: Inverse-variance and DerSimonian-Laird meta-analysis engine" },
+  { step: 10, label: "10. Figures (Canvas)", view: "Figures", tab: "VISUALIZE", hint: "Step 10: Vector forest plot studio, N-panel geometry, and data table" },
+  { step: 11, label: "11. Evidence Map", view: "Evidence Map", tab: "VISUALIZE", hint: "Step 11: Systematic evidence-gap map and geospatial evidence radar" },
+  { step: 12, label: "12. Reports & PRISMA", view: "Reports", tab: "PUBLISH", hint: "Step 12: PRISMA flow diagram, structured summary, and auditable outputs" },
 ];
 
 export const UTILITY_MODULES = [
@@ -115,13 +104,15 @@ export default function ForestPlotStudio({
   const [review, setReview] = useState(null);
   const [dataset, setDataset] = useState(() => readDataset(null));
   const [log, setLog] = useState([]);
-  const [running, setRunning] = useState(null);
   const [selectedRowId, setSelectedRowId] = useState(null);
   const [tableTab, setTableTab] = useState("DATA");
   const [settingsTab, setSettingsTab] = useState("AI models");
-  const [leftDock, setLeftDock] = useState({ open: true, width: 260 });
+  const [leftDock, setLeftDock] = useState({ open: true, width: 240 });
+  const [rightDock, setRightDock] = useState({ open: true, width: 280 });
+  const [bottomDock, setBottomDock] = useState({ open: true, height: 160 });
   const [strategyQuestion, setStrategyQuestion] = useState("");
   const [activeTool, setActiveTool] = useState("select");
+  const [openMenu, setOpenMenu] = useState(null);
 
   const [layersVisibility, setLayersVisibility] = useState({
     title: true,
@@ -136,7 +127,6 @@ export default function ForestPlotStudio({
     setLog((prev) => [{ text: msg, kind, at: Date.now() }, ...prev.slice(0, 19)]);
   }, []);
 
-  // Sync Project, Review, and Dataset
   useEffect(() => {
     if (!pid) {
       const recent = mostRecentReview();
@@ -240,58 +230,126 @@ export default function ForestPlotStudio({
     }
   };
 
+  const MENUS = [
+    {
+      label: "File",
+      items: [
+        { label: "New Review…", run: () => { setActiveView("Launch"); setActiveTab("TYPE"); } },
+        { label: "Attach Working Folder…", run: () => { setActiveView("Bridge"); setActiveTab("BUILD"); } },
+        { label: "Open Document Reader", run: () => { setActiveView("Reader"); setActiveTab("ANALYZE"); } },
+        { sep: true },
+        { label: "Export Outcome CSV", run: exportCSV },
+        { label: "Project Files", run: () => { setActiveView("Reports"); setActiveTab("PUBLISH"); } },
+      ],
+    },
+    {
+      label: "Edit",
+      items: [
+        { label: "Add Manual Study Row", run: addManualRow },
+        { label: "Delete Selected Row", run: removeSelectedRow },
+        { sep: true },
+        { label: "Review Methodology (Step 1)", run: () => { setActiveView("ReviewType"); setActiveTab("TYPE"); } },
+        { label: "Research Questions (Step 2)", run: () => { setActiveView("Question"); setActiveTab("QUESTION"); } },
+      ],
+    },
+    {
+      label: "View",
+      items: [
+        { label: "Toggle Left Dock (Cmd-1)", run: () => setLeftDock((d) => ({ ...d, open: !d.open })) },
+        { label: "Toggle Right Inspector (Cmd-2)", run: () => setRightDock((d) => ({ ...d, open: !d.open })) },
+        { label: "Toggle Bottom Ledger (Cmd-3)", run: () => setBottomDock((d) => ({ ...d, open: !d.open })) },
+        { sep: true },
+        { label: "Causal Triangulation Studio", run: () => { setActiveView("Triangulation"); setActiveTab("SYNTHESIZE"); } },
+        { label: "Figures Vector Canvas", run: () => { setActiveView("Figures"); setActiveTab("VISUALIZE"); } },
+      ],
+    },
+    {
+      label: "Help",
+      items: [
+        { label: "What Runs Where", run: () => { setActiveView("Bridge"); setActiveTab("BUILD"); } },
+        { label: "Methodological Governance", run: () => { setActiveView("Overview"); setActiveTab("TYPE"); } },
+      ],
+    },
+  ];
+
   return (
-    <div className="flex flex-col h-screen w-screen bg-[#090D14] text-slate-200 font-mono overflow-hidden select-none antialiased">
-      {/* 1. TOP APPLICATION HEADER */}
-      <header className="h-11 bg-[#0D131F] border-b border-slate-800 flex items-center justify-between px-3 shrink-0 z-30">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 pr-3 border-r border-slate-800">
-            <div className="h-6 w-6 rounded-sm bg-gradient-to-br from-cyan-600 to-blue-700 flex items-center justify-center text-white font-black text-xs tracking-wider shadow-inner">
-              M
-            </div>
-            <div className="flex items-baseline gap-1.5">
-              <span className="font-bold text-xs tracking-wider text-white">MEDANTIR</span>
-              <span className="text-[9px] uppercase tracking-widest text-cyan-400 font-mono">EVIDENCE OS</span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <select
-              value={pid}
-              onChange={(e) => {
-                setPid(e.target.value);
-                setProjects(listReviewProjects());
-              }}
-              className="bg-[#131B2B] border border-slate-800 text-xs font-semibold text-slate-100 px-2 py-0.5 rounded-sm focus:outline-none focus:border-cyan-500"
+    <div className="wb">
+      {/* 1. TOP NATIVE MENUBAR (22px) */}
+      <div className="wb-menubar">
+        <span className="wb-brand">MEDANTIR <b>EVIDENCE OS</b></span>
+        {MENUS.map((m) => (
+          <div key={m.label} style={{ position: "relative" }}>
+            <span
+              className={`wb-menu-item ${openMenu === m.label ? "on" : ""}`}
+              onClick={() => setOpenMenu(openMenu === m.label ? null : m.label)}
             >
-              {projects.map((p) => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
-
-            <span className="text-[9px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded-sm bg-cyan-950/80 text-cyan-300 border border-cyan-800/80">
-              {review?.methodology?.typeName || "Systematic Review"}
+              {m.label}
             </span>
+            {openMenu === m.label && (
+              <div
+                style={{
+                  position: "absolute", top: "100%", left: 0, zIndex: 1000,
+                  background: "var(--bg-panel-2)", border: "1px solid var(--line-strong)",
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.5)", minWidth: 190, padding: 2, borderRadius: 2
+                }}
+              >
+                {m.items.map((item, idx) => (
+                  item.sep ? (
+                    <div key={idx} style={{ height: 1, background: "var(--line)", margin: "3px 0" }} />
+                  ) : (
+                    <div
+                      key={idx}
+                      className="wb-menu-item"
+                      onClick={() => { item.run?.(); setOpenMenu(null); }}
+                      style={{ padding: "4px 8px", fontSize: 11, color: "var(--fg)" }}
+                    >
+                      {item.label}
+                    </div>
+                  )
+                ))}
+              </div>
+            )}
           </div>
-        </div>
+        ))}
 
-        {/* Global Workflow Modes (Top Tabs) */}
-        <div className="flex items-center bg-[#090D14] border border-slate-800 p-0.5 rounded-sm">
+        <span className="wb-spacer" />
+
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ fontSize: 10, color: "var(--fg-dim)", fontFamily: "var(--mono)" }}>PROJECT:</span>
+          <select
+            className="wb-select"
+            style={{ height: 18, fontSize: 10.5, fontFamily: "var(--mono)" }}
+            value={pid}
+            onChange={(e) => {
+              setPid(e.target.value);
+              setProjects(listReviewProjects());
+            }}
+          >
+            {projects.map((p) => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
+          <span className="wb-count" style={{ color: "var(--accent)", borderColor: "var(--line-strong)" }}>
+            {review?.methodology?.typeName || "Systematic Review"}
+          </span>
+        </div>
+      </div>
+
+      {/* 2. TOP TOOLBAR RIBBON & MODE TABS (30px) */}
+      <div className="wb-toolbar">
+        {/* Mode Selector Tabs */}
+        <div className="wb-tb-group" style={{ padding: 0 }}>
           {MODES.map(([tabKey, tabLabel]) => {
             const isActive = activeTab === tabKey;
             return (
               <button
                 key={tabKey}
+                className={`wb-btn ${isActive ? "on" : ""}`}
                 onClick={() => {
                   setActiveTab(tabKey);
                   const matchingModule = MODULES.find((m) => m.tab === tabKey);
                   if (matchingModule) setActiveView(matchingModule.view);
                 }}
-                className={`px-3 py-1 text-[11px] font-mono font-medium transition-all ${
-                  isActive
-                    ? "bg-[#162032] text-cyan-300 font-bold border-b-2 border-cyan-400"
-                    : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/40"
-                }`}
               >
                 {tabLabel}
               </button>
@@ -299,304 +357,236 @@ export default function ForestPlotStudio({
           })}
         </div>
 
-        {/* Action Toolbar */}
-        <div className="flex items-center gap-2">
+        <div className="wb-tb-group">
           <button
-            onClick={() => navigateStep(-1)}
+            className="wb-btn"
             disabled={currentStep <= 1}
-            className="p-1 bg-[#131B2B] hover:bg-slate-800 border border-slate-800 text-slate-300 disabled:opacity-30 rounded-sm"
-            title="Previous Step"
+            onClick={() => navigateStep(-1)}
+            title="Previous pipeline step"
           >
-            <ChevronLeft className="w-3.5 h-3.5" />
+            ◀
           </button>
-
-          <span className="text-[10px] text-slate-400 font-bold px-1">
-            STEP {currentStep} / {MODULES.length}
+          <span style={{ fontSize: 10.5, fontFamily: "var(--mono)", color: "var(--fg-dim)", padding: "0 4px" }}>
+            STEP {currentStep}/{MODULES.length}
           </span>
-
           <button
-            onClick={() => navigateStep(1)}
+            className="wb-btn"
             disabled={currentStep >= MODULES.length}
-            className="p-1 bg-[#131B2B] hover:bg-slate-800 border border-slate-800 text-slate-300 disabled:opacity-30 rounded-sm"
-            title="Next Step"
+            onClick={() => navigateStep(1)}
+            title="Next pipeline step"
           >
-            <ChevronRight className="w-3.5 h-3.5" />
-          </button>
-
-          <button
-            onClick={exportCSV}
-            className="px-2.5 py-1 text-xs font-medium text-slate-300 bg-[#131B2B] border border-slate-700/80 rounded-sm hover:bg-slate-800 hover:text-white transition-colors flex items-center gap-1.5"
-          >
-            <Download className="h-3 w-3 text-slate-400" /> Export CSV
+            ▶
           </button>
         </div>
-      </header>
 
-      {/* 2. SUBHEADER BREADCRUMB & CONTEXT BAR */}
-      <div className="h-7 bg-[#090D14] border-b border-slate-800/90 px-3 flex items-center justify-between text-[11px] text-slate-400 shrink-0">
-        <div className="flex items-center gap-2 font-mono">
-          <span className="text-slate-500">PIPELINE</span>
-          <span className="text-slate-700">/</span>
-          <span className="text-cyan-400 font-bold">{activeView}</span>
-          <span className="text-slate-700">/</span>
-          <span className="text-slate-300 truncate max-w-md">
-            {review?.question || "No research question bound"}
-          </span>
-        </div>
+        {activeView === "Figures" && (
+          <div className="wb-tb-group">
+            {[
+              { id: "select", label: "V", title: "Select tool" },
+              { id: "pan", label: "H", title: "Pan canvas" },
+              { id: "zoom", label: "Z", title: "Zoom" },
+              { id: "measure", label: "M", title: "Measure distance" },
+              { id: "text", label: "T", title: "Text annotation" },
+              { id: "shape", label: "R", title: "Vector shape" },
+            ].map((t) => (
+              <button
+                key={t.id}
+                className={`wb-btn ${activeTool === t.id ? "on" : ""}`}
+                onClick={() => setActiveTool(t.id)}
+                title={t.title}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+        )}
 
-        <div className="flex items-center gap-4 font-mono text-[10px]">
-          <span>METHOD: <strong className="text-slate-200">{review?.methodology?.typeName || "Intervention"}</strong></span>
-          <span>ROB TOOL: <strong className="text-amber-400">{review?.methodology?.robTool || "RoB 2"}</strong></span>
-          <span>STUDIES: <strong className="text-cyan-400">{(outcome.rows || []).length}</strong></span>
-          <span className="text-emerald-400 flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> ENGINE ACTIVE
-          </span>
+        <span className="wb-spacer" />
+
+        <div className="wb-tb-group">
+          {activeView === "Figures" && (
+            <>
+              <select
+                className="wb-select"
+                style={{ height: 20, fontSize: 10.5 }}
+                value={outcome.measure}
+                onChange={(e) => commitDataset(updateOutcome(dataset, outcome.id, { measure: e.target.value }))}
+              >
+                <option value="RR">Risk Ratio (RR)</option>
+                <option value="OR">Odds Ratio (OR)</option>
+              </select>
+              <button className="wb-btn" onClick={addManualRow}>+ Study Row</button>
+            </>
+          )}
+          <button className="wb-btn" onClick={exportCSV}>Export CSV</button>
         </div>
       </div>
 
-      {/* 3. DENSE WORKSPACE: LEFT DOCK + CENTER PANE + RIGHT INSPECTOR */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Left Column: 12-Step Ordered Pipeline & Utility Modules */}
+      {/* 3. DENSE WORKSPACE: LEFT DOCK + CENTER VIEWPORT + RIGHT INSPECTOR */}
+      <div className="wb-workspace">
+        {/* Left Dock: 12-Step Method Pipeline */}
         {leftDock.open && (
-          <div
-            className="bg-[#0C121D] border-r border-slate-800 flex flex-col shrink-0 overflow-y-auto"
-            style={{ width: leftDock.width }}
-          >
-            <div className="p-2 border-b border-slate-800/80">
-              <div className="text-[9px] font-mono uppercase font-bold text-cyan-400 px-2 mb-1 tracking-wider flex items-center justify-between">
-                <span>EVIDENCE PIPELINE (12 STEPS)</span>
-                <span className="text-slate-500">{currentStep}/12</span>
-              </div>
-              <div className="space-y-0.5">
-                {MODULES.map((m) => {
-                  const Icon = m.icon;
-                  const isActive = activeView === m.view;
-                  const isPast = m.step < currentStep;
-                  return (
-                    <button
-                      key={m.view}
-                      onClick={() => {
-                        setActiveView(m.view);
-                        setActiveTab(m.tab);
-                      }}
-                      className={`w-full flex items-center justify-between px-2 py-1 rounded-sm text-[11px] transition-colors ${
-                        isActive
-                          ? "bg-[#162236] text-cyan-300 font-semibold border-l-2 border-cyan-400"
-                          : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/30"
-                      }`}
-                      title={m.hint}
-                    >
-                      <div className="flex items-center gap-2 truncate">
-                        <Icon className={`h-3.5 w-3.5 shrink-0 ${isActive ? "text-cyan-400" : isPast ? "text-emerald-400" : "text-slate-500"}`} />
-                        <span className="truncate">{m.label}</span>
-                      </div>
-                      {isPast && <Check className="w-3 h-3 text-emerald-400 shrink-0" />}
-                    </button>
-                  );
-                })}
-              </div>
+          <div className="wb-panel" style={{ width: leftDock.width }}>
+            <div className="wb-panel-head">
+              <span className="title">Pipeline</span>
+              <span className="wb-count">12 STEPS</span>
             </div>
+            <div className="wb-panel-body">
+              <div className="wb-insp-title">12-Step Ordered Sequence</div>
+              {MODULES.map((m) => {
+                const isActive = activeView === m.view;
+                const isPast = m.step < currentStep;
+                return (
+                  <div
+                    key={m.view}
+                    className={`wb-row ${isActive ? "sel" : ""}`}
+                    onClick={() => { setActiveView(m.view); setActiveTab(m.tab); }}
+                    title={m.hint}
+                  >
+                    <span className="lbl">{m.label}</span>
+                    {isPast && <span className="n" style={{ color: "var(--ok)", borderColor: "var(--ok)" }}>✓</span>}
+                  </div>
+                );
+              })}
 
-            <div className="p-2 flex-1">
-              <div className="text-[9px] font-mono uppercase font-bold text-slate-500 px-2 mb-1 tracking-wider">
-                WORKSPACE UTILITIES
-              </div>
-              <div className="space-y-0.5">
-                {UTILITY_MODULES.map((m) => {
-                  const isActive = activeView === m.view;
-                  return (
-                    <button
-                      key={m.view}
-                      onClick={() => {
-                        setActiveView(m.view);
-                        setActiveTab(m.tab);
-                      }}
-                      className={`w-full flex items-center gap-2 px-2 py-1 rounded-sm text-[10px] transition-colors ${
-                        isActive
-                          ? "bg-[#162236] text-cyan-300 font-semibold border-l-2 border-cyan-400"
-                          : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/30"
-                      }`}
-                      title={m.hint}
-                    >
-                      <span className="truncate">{m.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
+              <div className="wb-insp-title">Utilities & Infrastructure</div>
+              {UTILITY_MODULES.map((m) => {
+                const isActive = activeView === m.view;
+                return (
+                  <div
+                    key={m.view}
+                    className={`wb-row ${isActive ? "sel" : ""}`}
+                    onClick={() => { setActiveView(m.view); setActiveTab(m.tab); }}
+                    title={m.hint}
+                  >
+                    <span className="lbl">{m.label}</span>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
 
-        {/* Center Pane: Universal View Dispatcher */}
-        <div className="flex-1 flex flex-col bg-[#070B12] min-w-0 overflow-hidden relative">
-          {/* STEP 1: REVIEW TYPE */}
-          {activeView === "ReviewType" && (
-            <ReviewTypePanel
-              projectId={pid}
-              review={review}
-              onUpdateReview={(r) => setReview(r)}
-              onNote={note}
-              onNavigateNext={() => {
-                setActiveView("Question");
-                setActiveTab("QUESTION");
-              }}
-            />
-          )}
+        {leftDock.open && (
+          <div
+            className="wb-gutter"
+            onDoubleClick={() => setLeftDock((d) => ({ ...d, open: false }))}
+            title="Double-click to collapse left dock"
+          />
+        )}
 
-          {/* STEP 2: QUESTIONS (MULTI-QUESTION) */}
-          {activeView === "Question" && (
-            <QuestionBuilder
-              projectId={pid}
-              review={review}
-              onReviewChange={(r) => {
-                setReview(r);
-                setDataset(readDataset(r));
-              }}
-              onNote={note}
-              onOpenStrategy={(q) => {
-                setStrategyQuestion(q);
-                setActiveView("Protocols");
-                setActiveTab("BUILD");
-              }}
-              onNavigateNext={() => {
-                setActiveView("Protocols");
-                setActiveTab("BUILD");
-              }}
-            />
-          )}
+        {/* Center Viewport */}
+        <div className="wb-panel center">
+          <div className="wb-panel-head">
+            <span className="title">{activeView}</span>
+            <span className="wb-spacer" />
+            <span style={{ fontSize: 10, fontFamily: "var(--mono)", color: "var(--fg-faint)" }}>
+              {review?.question ? `"${review.question.slice(0, 75)}…"` : "No research question bound"}
+            </span>
+          </div>
 
-          {/* STEP 3: PROTOCOLS & STRATEGY */}
-          {activeView === "Protocols" && (
-            <div className="flex-1 p-4 overflow-auto bg-[#090D15]">
-              <SearchStrategyBuilder initialQuestion={strategyQuestion || review?.question || ""} />
-            </div>
-          )}
+          <div className="wb-panel-body">
+            {/* Step 1: Review Type */}
+            {activeView === "ReviewType" && (
+              <ReviewTypePanel
+                projectId={pid}
+                review={review}
+                onUpdateReview={(r) => setReview(r)}
+                onNote={note}
+                onNavigateNext={() => { setActiveView("Question"); setActiveTab("QUESTION"); }}
+              />
+            )}
 
-          {/* STEP 4: SEARCH & LITERATURE */}
-          {activeView === "Search" && (
-            <div className="flex-1 p-4 overflow-auto bg-[#090D15]">
-              <SearchView goToSources={() => { setActiveView("Databases"); setActiveTab("BUILD"); }} />
-            </div>
-          )}
+            {/* Step 2: Questions */}
+            {activeView === "Question" && (
+              <QuestionBuilder
+                projectId={pid}
+                review={review}
+                onReviewChange={(r) => { setReview(r); setDataset(readDataset(r)); }}
+                onNote={note}
+                onOpenStrategy={(q) => { setStrategyQuestion(q); setActiveView("Protocols"); setActiveTab("BUILD"); }}
+                onNavigateNext={() => { setActiveView("Protocols"); setActiveTab("BUILD"); }}
+              />
+            )}
 
-          {/* STEP 5: SCREENING */}
-          {activeView === "Screening" && (
-            <ScreeningGrid
-              projectId={pid}
-              review={review}
-              onReviewChange={(r) => {
-                setReview(r);
-                setDataset(readDataset(r));
-              }}
-              onNote={note}
-            />
-          )}
-
-          {/* STEP 6 & 7: EXTRACTION & APPRAISAL */}
-          {(activeView === "Extraction" || activeView === "Appraisal") && (
-            <div className="flex-1 p-4 overflow-auto bg-[#090D15]">
-              <ReviewTab embedded />
-            </div>
-          )}
-
-          {/* STEP 8: CAUSAL TRIANGULATION */}
-          {activeView === "Triangulation" && (
-            <CausalTriangulationPanel
-              projectId={pid}
-              review={review}
-              onNote={note}
-            />
-          )}
-
-          {/* STEP 9: SYNTHESIS */}
-          {activeView === "Synthesis" && (
-            <div className="flex-1 p-4 overflow-auto bg-[#090D15]">
-              <ReviewTab embedded />
-            </div>
-          )}
-
-          {/* STEP 10: FIGURES (VECTOR CANVAS) */}
-          {activeView === "Figures" && (
-            <div className="flex-1 flex flex-col bg-[#070B12] min-w-0 overflow-hidden relative">
-              {/* Canvas Controls Toolbar */}
-              <div className="h-9 bg-[#0C121D] border-b border-slate-800 px-3 flex items-center justify-between shrink-0">
-                <div className="flex items-center gap-0.5 bg-[#070B12] p-0.5 border border-slate-800 rounded-sm">
-                  {[
-                    { id: "select", icon: MousePointer, label: "Select (V)" },
-                    { id: "pan", icon: Hand, label: "Pan (H)" },
-                    { id: "zoom", icon: ZoomIn, label: "Zoom (Z)" },
-                    { id: "measure", icon: Ruler, label: "Measure (M)" },
-                    { id: "text", icon: Type, label: "Text (T)" },
-                    { id: "shape", icon: Square, label: "Shape (R)" },
-                    { id: "link", icon: Link2, label: "Link Node" }
-                  ].map((tool) => {
-                    const Icon = tool.icon;
-                    const isActive = activeTool === tool.id;
-                    return (
-                      <button
-                        key={tool.id}
-                        onClick={() => setActiveTool(tool.id)}
-                        title={tool.label}
-                        className={`p-1.5 rounded-sm transition-colors ${
-                          isActive
-                            ? "bg-[#162236] text-cyan-400 border border-cyan-500/40 shadow-inner"
-                            : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/40"
-                        }`}
-                      >
-                        <Icon className="h-3.5 w-3.5" />
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <div className="flex items-center gap-3 text-slate-400 text-xs font-mono">
-                  <span className="text-[10px] text-slate-500">MEASURE:</span>
-                  <select
-                    value={outcome.measure}
-                    onChange={(e) => commitDataset(updateOutcome(dataset, outcome.id, { measure: e.target.value }))}
-                    className="bg-[#131B2B] border border-slate-800 text-cyan-400 font-bold px-2 py-0.5 text-xs focus:outline-none rounded-sm"
-                  >
-                    <option value="RR">Risk Ratio (RR)</option>
-                    <option value="OR">Odds Ratio (OR)</option>
-                  </select>
-
-                  <button onClick={addManualRow} className="px-2 py-0.5 bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 rounded-sm text-[10px] font-bold hover:bg-cyan-500/30">
-                    + Add Study Row
-                  </button>
-                </div>
+            {/* Step 3: Protocols */}
+            {activeView === "Protocols" && (
+              <div style={{ padding: 10, height: "100%", overflow: "auto" }}>
+                <SearchStrategyBuilder initialQuestion={strategyQuestion || review?.question || ""} />
               </div>
+            )}
 
-              {/* Vector SVG Canvas */}
-              <div
-                className="flex-1 bg-[#090D15] p-6 overflow-auto flex flex-col items-center justify-start relative border-b border-slate-800"
-                style={{
-                  backgroundImage: `radial-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px)`,
-                  backgroundSize: "20px 20px"
-                }}
-              >
-                <div className="w-full max-w-4xl bg-[#0D131F] border border-slate-800/90 rounded-sm p-6 shadow-2xl space-y-5 relative">
-                  <div className="text-center space-y-0.5 pt-2">
-                    <h2 className="text-base font-bold text-white tracking-tight">{outcome.name}</h2>
-                    <p className="text-xs text-slate-400 font-mono">Random-effects (DerSimonian–Laird)</p>
-                    <div className="flex items-center justify-center gap-6 text-xs text-slate-400 font-mono pt-1">
-                      <span className="font-semibold text-cyan-400">{outcome.measure === "RR" ? "Risk Ratio (RR)" : "Odds Ratio (OR)"}</span>
-                      <span>I² = {computed?.meta?.heterogeneity ? `${computed.meta.heterogeneity.I2}%` : "37%"}</span>
-                      <span>Q = {computed?.meta?.heterogeneity ? `${computed.meta.heterogeneity.Q} (df = ${computed.meta.heterogeneity.df})` : "12.6 (df = 8)"}</span>
+            {/* Step 4: Search */}
+            {activeView === "Search" && (
+              <div style={{ padding: 10, height: "100%", overflow: "auto" }}>
+                <SearchView goToSources={() => { setActiveView("Databases"); setActiveTab("BUILD"); }} />
+              </div>
+            )}
+
+            {/* Step 5: Screening */}
+            {activeView === "Screening" && (
+              <ScreeningGrid
+                projectId={pid}
+                review={review}
+                onReviewChange={(r) => { setReview(r); setDataset(readDataset(r)); }}
+                onNote={note}
+              />
+            )}
+
+            {/* Step 6 & 7: Extraction & Appraisal */}
+            {(activeView === "Extraction" || activeView === "Appraisal") && (
+              <div style={{ padding: 10, height: "100%", overflow: "auto" }}>
+                <ReviewTab embedded />
+              </div>
+            )}
+
+            {/* Step 8: Causal Triangulation */}
+            {activeView === "Triangulation" && (
+              <CausalTriangulationPanel
+                projectId={pid}
+                review={review}
+                onNote={note}
+              />
+            )}
+
+            {/* Step 9: Synthesis */}
+            {activeView === "Synthesis" && (
+              <div style={{ padding: 10, height: "100%", overflow: "auto" }}>
+                <ReviewTab embedded />
+              </div>
+            )}
+
+            {/* Step 10: Figures (Vector Canvas) */}
+            {activeView === "Figures" && (
+              <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "var(--bg-app)", overflow: "auto", padding: 16 }}>
+                <div style={{ maxWidth: 840, margin: "0 auto", width: "100%", background: "var(--bg-panel)", border: "1px solid var(--line)", borderRadius: 2, padding: 16 }}>
+                  {layersVisibility.title && (
+                    <div style={{ textAlign: "center", marginBottom: 12 }}>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: "var(--fg-bright)" }}>
+                        {outcome.name}
+                      </div>
+                      {layersVisibility.subtitle && (
+                        <div style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--fg-dim)", marginTop: 2 }}>
+                          Random-effects meta-analysis (DerSimonian–Laird) · I² = {computed?.meta?.heterogeneity?.I2 || "37"}% · Q = {computed?.meta?.heterogeneity?.Q || "12.6"}
+                        </div>
+                      )}
                     </div>
+                  )}
+
+                  {/* Header Row */}
+                  <div style={{ display: "grid", gridTemplateColumns: "180px 45px 45px 1fr 50px 40px", gap: 6, borderBottom: "1px solid var(--line)", paddingBottom: 4, fontSize: 10.5, fontFamily: "var(--mono)", fontWeight: 700, color: "var(--fg-dim)", textTransform: "uppercase" }}>
+                    <div>Study</div>
+                    <div style={{ textAlign: "center" }}>Ev(T)</div>
+                    <div style={{ textAlign: "center" }}>Tot(T)</div>
+                    <div style={{ textAlign: "center" }}>Risk Ratio (95% CI)</div>
+                    <div style={{ textAlign: "right" }}>Weight</div>
+                    <div style={{ textAlign: "center" }}>RoB</div>
                   </div>
 
-                  <div className="grid grid-cols-12 gap-2 text-xs font-mono font-bold text-slate-400 border-b border-slate-800 pb-2 px-2 uppercase tracking-wider">
-                    <div className="col-span-3">Study</div>
-                    <div className="col-span-1 text-center">Events</div>
-                    <div className="col-span-1 text-center">Total</div>
-                    <div className="col-span-5 text-center">Risk Ratio IV, Random, 95% CI</div>
-                    <div className="col-span-1 text-right">Weight (%)</div>
-                    <div className="col-span-1 text-center">RoB</div>
-                  </div>
-
-                  <div className="space-y-1.5">
+                  {/* Studies List */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: 2, margin: "6px 0" }}>
                     {(computed?.rows || []).map((row) => {
-                      const isSelected = selectedRowId === row.studyId;
+                      const isSel = selectedRowId === row.studyId;
                       const leftPos = getXPos(row.ci ? row.ci[0] : 0.5);
                       const rightPos = getXPos(row.ci ? row.ci[1] : 1.5);
                       const pointPos = getXPos(row.effect || 1.0);
@@ -605,227 +595,306 @@ export default function ForestPlotStudio({
                         <div
                           key={row.studyId}
                           onClick={() => setSelectedRowId(row.studyId)}
-                          className={`grid grid-cols-12 gap-2 items-center text-xs py-1 px-2 rounded-sm transition-all cursor-pointer relative ${
-                            isSelected
-                              ? "bg-[#142235] border border-cyan-500/60 shadow-[0_0_8px_rgba(0,242,254,0.15)]"
-                              : "hover:bg-slate-800/30 border border-transparent"
-                          }`}
+                          style={{
+                            display: "grid", gridTemplateColumns: "180px 45px 45px 1fr 50px 40px", gap: 6,
+                            alignItems: "center", height: 22, padding: "0 2px", borderRadius: 2,
+                            background: isSel ? "var(--bg-active-2)" : "transparent",
+                            border: isSel ? "1px solid var(--line-focus)" : "1px solid transparent",
+                            cursor: "default"
+                          }}
                         >
-                          <div className="col-span-3 font-medium text-slate-100 truncate flex items-center gap-1.5 font-mono">
+                          <div style={{ fontFamily: "var(--mono)", fontSize: 11, color: isSel ? "var(--fg-bright)" : "var(--fg)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                             {row.studyName}
-                            {isSelected && <span className="w-1.5 h-1.5 bg-cyan-400" />}
                           </div>
-                          <div className="col-span-1 text-center font-mono text-slate-300">{row.eventsT}</div>
-                          <div className="col-span-1 text-center font-mono text-slate-400">{row.totalT}</div>
+                          <div style={{ textAlign: "center", fontFamily: "var(--mono)", fontSize: 11, color: "var(--fg-dim)" }}>{row.eventsT}</div>
+                          <div style={{ textAlign: "center", fontFamily: "var(--mono)", fontSize: 11, color: "var(--fg-dim)" }}>{row.totalT}</div>
 
-                          <div className="col-span-5 relative h-5 flex items-center px-2">
-                            <div className="w-full relative h-full flex items-center">
-                              <div
-                                className="absolute top-0 bottom-0 w-[1px] bg-slate-700 z-0"
-                                style={{ left: `${getXPos(1.0)}%` }}
-                              />
-                              <div
-                                className="absolute h-[1.5px] bg-slate-300 z-10"
-                                style={{
-                                  left: `${leftPos}%`,
-                                  width: `${Math.max(2, rightPos - leftPos)}%`
-                                }}
-                              />
-                              <div
-                                className="absolute w-2.5 h-2.5 -ml-1.25 z-20 shadow-sm"
-                                style={{
-                                  left: `${pointPos}%`,
-                                  backgroundColor: robColor(row.rob)
-                                }}
-                              />
-                            </div>
+                          {/* Graphical Plot Cell */}
+                          <div style={{ position: "relative", height: 16, display: "flex", alignItems: "center" }}>
+                            {layersVisibility.nullLine && (
+                              <div style={{ position: "absolute", top: 0, bottom: 0, left: `${getXPos(1.0)}%`, width: 1, background: "var(--line)" }} />
+                            )}
+                            <div style={{ position: "absolute", height: 1.5, background: "var(--fg)", left: `${leftPos}%`, width: `${Math.max(2, rightPos - leftPos)}%` }} />
+                            <div
+                              style={{
+                                position: "absolute", left: `${pointPos}%`, marginLeft: -4,
+                                width: 8, height: 8, background: robColor(row.rob), borderRadius: 1
+                              }}
+                            />
                           </div>
 
-                          <div className="col-span-1 text-right font-mono text-slate-300">{row.weight?.toFixed(1) || "11.1"}</div>
-                          <div className="col-span-1 flex justify-center">
-                            <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: robColor(row.rob) }} />
+                          <div style={{ textAlign: "right", fontFamily: "var(--mono)", fontSize: 11, color: "var(--fg-dim)" }}>
+                            {row.weight?.toFixed(1) || "11.1"}%
+                          </div>
+                          <div style={{ display: "flex", justifyContent: "center" }}>
+                            <span style={{ width: 8, height: 8, borderRadius: "50%", background: robColor(row.rob) }} />
                           </div>
                         </div>
                       );
                     })}
                   </div>
 
-                  {/* Summary Pooled Diamond */}
-                  <div className="border-t border-slate-700/80 pt-2">
-                    <div className="grid grid-cols-12 gap-2 items-center text-xs font-mono font-bold text-white px-2">
-                      <div className="col-span-3">Total (95% CI)</div>
-                      <div className="col-span-1 text-center">
-                        {(computed?.rows || []).reduce((sum, r) => sum + (r.eventsT || 0), 0)}
-                      </div>
-                      <div className="col-span-1 text-center">
-                        {(computed?.rows || []).reduce((sum, r) => sum + (r.totalT || 0), 0)}
-                      </div>
+                  {/* Summary Pooled Row */}
+                  {layersVisibility.summary && (
+                    <div style={{ borderTop: "1px solid var(--line)", paddingTop: 6, display: "grid", gridTemplateColumns: "180px 45px 45px 1fr 50px 40px", gap: 6, alignItems: "center", fontWeight: 700, fontSize: 11, color: "var(--fg-bright)" }}>
+                      <div>Total (95% CI)</div>
+                      <div style={{ textAlign: "center" }}>{(computed?.rows || []).reduce((s, r) => s + (r.eventsT || 0), 0)}</div>
+                      <div style={{ textAlign: "center" }}>{(computed?.rows || []).reduce((s, r) => s + (r.totalT || 0), 0)}</div>
 
-                      <div className="col-span-5 relative h-5 flex items-center px-2">
-                        <div className="w-full relative h-full flex items-center">
-                          <div
-                            className="absolute top-0 bottom-0 w-[1px] bg-slate-700"
-                            style={{ left: `${getXPos(1.0)}%` }}
-                          />
-                          <div
-                            className="absolute h-3.5 w-7 -ml-3.5 z-20"
-                            style={{ left: `${getXPos(computed?.meta?.random?.effect || 0.40)}%` }}
-                          >
-                            <svg viewBox="0 0 32 16" className="w-full h-full fill-amber-200/40 stroke-amber-400 stroke-[1.5]">
-                              <polygon points="0,8 16,0 32,8 16,16" />
-                            </svg>
-                          </div>
+                      <div style={{ position: "relative", height: 16, display: "flex", alignItems: "center" }}>
+                        <div style={{ position: "absolute", top: 0, bottom: 0, left: `${getXPos(1.0)}%`, width: 1, background: "var(--line)" }} />
+                        <div style={{ position: "absolute", left: `${getXPos(computed?.meta?.random?.effect || 0.40)}%`, marginLeft: -12, width: 24, height: 12 }}>
+                          <svg viewBox="0 0 32 16" style={{ width: "100%", height: "100%", fill: "rgba(230,180,60,0.35)", stroke: "#e6b43c", strokeWidth: 1.5 }}>
+                            <polygon points="0,8 16,0 32,8 16,16" />
+                          </svg>
                         </div>
                       </div>
 
-                      <div className="col-span-1 text-right text-cyan-400">100.0</div>
-                      <div className="col-span-1" />
+                      <div style={{ textAlign: "right", color: "var(--accent)" }}>100.0%</div>
+                      <div />
                     </div>
-                  </div>
+                  )}
 
-                  <div className="pt-2 border-t border-slate-800 space-y-1.5 font-mono">
-                    <div className="relative h-5 text-[10px] text-slate-400">
+                  {/* Axis Tick Scale */}
+                  {layersVisibility.axisX && (
+                    <div style={{ borderTop: "1px solid var(--line)", marginTop: 8, paddingTop: 6, position: "relative", height: 24, fontSize: 10, fontFamily: "var(--mono)", color: "var(--fg-faint)" }}>
                       {[0.05, 0.1, 0.2, 0.5, 1.0, 2.0, 5.0, 10.0].map((val) => (
                         <div
                           key={val}
-                          className="absolute transform -translate-x-1/2 flex flex-col items-center"
-                          style={{ left: `${getXPos(val)}%` }}
+                          style={{ position: "absolute", left: `${getXPos(val)}%`, transform: "translateX(-50%)", display: "flex", flexDirection: "column", alignItems: "center" }}
                         >
-                          <div className="h-1 w-[1px] bg-slate-600 mb-0.5" />
+                          <div style={{ width: 1, height: 4, background: "var(--line-strong)" }} />
                           <span>{val}</span>
                         </div>
                       ))}
                     </div>
+                  )}
 
-                    <div className="flex items-center justify-between text-xs font-semibold px-4 pt-1">
-                      <span className="text-cyan-400 font-mono">◄ Favours Intervention</span>
-                      <span className="text-slate-500 font-normal text-[10px] uppercase tracking-wider">Risk Ratio (log scale)</span>
-                      <span className="text-rose-400 font-mono">Favours Control ►</span>
-                    </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10.5, fontFamily: "var(--mono)", color: "var(--fg-dim)", marginTop: 6 }}>
+                    <span style={{ color: "var(--accent)" }}>◀ Favours Intervention</span>
+                    <span style={{ color: "var(--err)" }}>Favours Control ▶</span>
                   </div>
                 </div>
               </div>
+            )}
 
-              {/* Bottom Dockable Data Table */}
-              <div className="h-44 bg-[#0C121D] flex flex-col shrink-0 border-t border-slate-800">
-                <div className="h-7 bg-[#090D14] border-b border-slate-800 px-3 flex items-center justify-between">
-                  <span className="text-[10px] uppercase font-bold text-slate-400">
-                    CONTINGENCY DATA LEDGER ({(outcome.rows || []).length} STUDIES)
-                  </span>
-                  <button onClick={exportCSV} className="text-[10px] text-cyan-400 hover:text-cyan-300">
-                    Download CSV
-                  </button>
-                </div>
-                <div className="flex-1 overflow-auto p-1 font-mono text-xs">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="text-slate-400 border-b border-slate-800 text-[10px] uppercase tracking-wider bg-[#090D14]">
-                        <th className="py-1 px-2">Study</th>
-                        <th className="py-1 px-2 text-center">Events (T)</th>
-                        <th className="py-1 px-2 text-center">Total (T)</th>
-                        <th className="py-1 px-2 text-center">Events (C)</th>
-                        <th className="py-1 px-2 text-center">Total (C)</th>
-                        <th className="py-1 px-2 text-center">Effect</th>
-                        <th className="py-1 px-2 text-right">Weight</th>
-                        <th className="py-1 px-2 text-center">RoB</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-800/40 text-slate-300">
-                      {(computed?.rows || []).map((r) => {
-                        const isSel = selectedRowId === r.studyId;
-                        return (
-                          <tr
-                            key={r.studyId}
-                            onClick={() => setSelectedRowId(r.studyId)}
-                            className={`hover:bg-slate-800/40 cursor-pointer ${
-                              isSel ? "bg-[#142235] text-cyan-300 font-bold" : ""
-                            }`}
-                          >
-                            <td className="py-1 px-2">{r.studyName}</td>
-                            <td className="py-1 px-2 text-center">{r.eventsT}</td>
-                            <td className="py-1 px-2 text-center">{r.totalT}</td>
-                            <td className="py-1 px-2 text-center">{r.eventsC}</td>
-                            <td className="py-1 px-2 text-center">{r.totalC}</td>
-                            <td className="py-1 px-2 text-center">{r.effect?.toFixed(2) || "—"}</td>
-                            <td className="py-1 px-2 text-right">{r.weight?.toFixed(1) || "—"}%</td>
-                            <td className="py-1 px-2 text-center">
-                              <span className="px-1 py-0.2 rounded-sm text-[9px] font-bold" style={{ color: robColor(r.rob) }}>
-                                {r.rob}
-                              </span>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+            {/* Step 11: Evidence Map */}
+            {activeView === "Evidence Map" && (
+              <div style={{ padding: 10, height: "100%", overflow: "auto" }}>
+                <ResearchLoopView />
               </div>
-            </div>
-          )}
+            )}
 
-          {/* STEP 11 & 12: EVIDENCE MAP & REPORTS */}
-          {activeView === "Evidence Map" && (
-            <div className="flex-1 p-4 overflow-auto bg-[#090D15]">
-              <ResearchLoopView />
-            </div>
-          )}
+            {/* Step 12: Reports */}
+            {activeView === "Reports" && (
+              <div style={{ padding: 10, height: "100%", overflow: "auto" }}>
+                <ProjectFiles projectId={pid} />
+              </div>
+            )}
 
-          {activeView === "Reports" && (
-            <div className="flex-1 p-4 overflow-auto bg-[#090D15]">
-              <ProjectFiles projectId={pid} />
-            </div>
-          )}
-
-          {/* UTILITY MODULES */}
-          {activeView === "Launch" && (
-            <LaunchPanel
-              onNote={note}
-              onOpenProject={(projectId) => {
-                setProjects(listReviewProjects());
-                setPid(projectId);
-                setActiveView("ReviewType");
-                setActiveTab("TYPE");
-              }}
-            />
-          )}
-
-          {activeView === "Overview" && (
-            <div className="flex-1 p-4 overflow-auto bg-[#090D15]">
-              <ScientificRuntimeView projectId={pid} />
-            </div>
-          )}
-
-          {activeView === "Reader" && <ReaderPanel projectId={pid} />}
-          {activeView === "Browser" && <BrowserTab />}
-          {activeView === "Tracer" && <TracerPanel projectId={pid} />}
-          {activeView === "Sandbox" && <SandboxPanel projectId={pid} review={review} onNote={note} />}
-          {activeView === "Concordance" && <ConcordancePanel projectId={pid} review={review} onNote={note} />}
-          {activeView === "Settings" && <SettingsPanel tab={settingsTab} onNote={note} />}
-          {activeView === "Databases" && <SettingsPanel tab="Databases" onNote={note} />}
-          {activeView === "Bridge" && <BridgePanel projectId={pid} onNote={note} />}
+            {/* Utility Docks */}
+            {activeView === "Launch" && (
+              <LaunchPanel
+                onNote={note}
+                onOpenProject={(projectId) => {
+                  setProjects(listReviewProjects());
+                  setPid(projectId);
+                  setActiveView("ReviewType");
+                  setActiveTab("TYPE");
+                }}
+              />
+            )}
+            {activeView === "Overview" && <ScientificRuntimeView projectId={pid} />}
+            {activeView === "Reader" && <ReaderPanel projectId={pid} />}
+            {activeView === "Browser" && <BrowserTab />}
+            {activeView === "Tracer" && <TracerPanel projectId={pid} />}
+            {activeView === "Sandbox" && <SandboxPanel projectId={pid} review={review} onNote={note} />}
+            {activeView === "Concordance" && <ConcordancePanel projectId={pid} review={review} onNote={note} />}
+            {activeView === "Settings" && <SettingsPanel tab={settingsTab} onNote={note} />}
+            {activeView === "Databases" && <SettingsPanel tab="Databases" onNote={note} />}
+            {activeView === "Bridge" && <BridgePanel projectId={pid} onNote={note} />}
+          </div>
         </div>
+
+        {/* Right Inspector Dock */}
+        {rightDock.open && (
+          <div className="wb-panel" style={{ width: rightDock.width }}>
+            <div className="wb-panel-head">
+              <span className="title">Inspector</span>
+              <span className="wb-count">PROPERTIES</span>
+            </div>
+            <div className="wb-panel-body">
+              <div className="wb-insp-title">Layers & Visibility</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 4, padding: "4px 8px" }}>
+                {Object.keys(layersVisibility).map((k) => (
+                  <label key={k} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: "var(--fg)" }}>
+                    <input
+                      type="checkbox"
+                      checked={layersVisibility[k]}
+                      onChange={(e) => setLayersVisibility((prev) => ({ ...prev, [k]: e.target.checked }))}
+                    />
+                    <span style={{ textTransform: "capitalize" }}>{k.replace(/([A-Z])/g, " $1")}</span>
+                  </label>
+                ))}
+              </div>
+
+              {selectedRowId && (
+                <>
+                  <div className="wb-insp-title">Study Parameters</div>
+                  {(() => {
+                    const row = outcome?.rows?.find((r) => r.studyId === selectedRowId);
+                    if (!row) return null;
+                    return (
+                      <div style={{ display: "flex", flexDirection: "column", gap: 6, padding: "4px 8px" }}>
+                        <div>
+                          <div style={{ fontSize: 10, color: "var(--fg-dim)", marginBottom: 2 }}>Study Name</div>
+                          <input
+                            type="text"
+                            className="wb-input"
+                            style={{ width: "100%" }}
+                            value={row.studyName}
+                            onChange={(e) => updateSelectedRow("studyName", e.target.value)}
+                          />
+                        </div>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+                          <div>
+                            <div style={{ fontSize: 10, color: "var(--fg-dim)", marginBottom: 2 }}>Events (T)</div>
+                            <input
+                              type="number"
+                              className="wb-input wb-mono"
+                              style={{ width: "100%" }}
+                              value={row.eventsT}
+                              onChange={(e) => updateSelectedRow("eventsT", Number(e.target.value))}
+                            />
+                          </div>
+                          <div>
+                            <div style={{ fontSize: 10, color: "var(--fg-dim)", marginBottom: 2 }}>Total (T)</div>
+                            <input
+                              type="number"
+                              className="wb-input wb-mono"
+                              style={{ width: "100%" }}
+                              value={row.totalT}
+                              onChange={(e) => updateSelectedRow("totalT", Number(e.target.value))}
+                            />
+                          </div>
+                        </div>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+                          <div>
+                            <div style={{ fontSize: 10, color: "var(--fg-dim)", marginBottom: 2 }}>Events (C)</div>
+                            <input
+                              type="number"
+                              className="wb-input wb-mono"
+                              style={{ width: "100%" }}
+                              value={row.eventsC}
+                              onChange={(e) => updateSelectedRow("eventsC", Number(e.target.value))}
+                            />
+                          </div>
+                          <div>
+                            <div style={{ fontSize: 10, color: "var(--fg-dim)", marginBottom: 2 }}>Total (C)</div>
+                            <input
+                              type="number"
+                              className="wb-input wb-mono"
+                              style={{ width: "100%" }}
+                              value={row.totalC}
+                              onChange={(e) => updateSelectedRow("totalC", Number(e.target.value))}
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: 10, color: "var(--fg-dim)", marginBottom: 2 }}>Risk of Bias Judgement</div>
+                          <select
+                            className="wb-select"
+                            style={{ width: "100%" }}
+                            value={row.rob}
+                            onChange={(e) => updateSelectedRow("rob", e.target.value)}
+                          >
+                            <option value="Low">Low Risk</option>
+                            <option value="Some">Some Concerns</option>
+                            <option value="High">High Risk</option>
+                          </select>
+                        </div>
+                        <button className="wb-btn danger" onClick={removeSelectedRow} style={{ marginTop: 4 }}>
+                          Delete Study Row
+                        </button>
+                      </div>
+                    );
+                  })()}
+                </>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* 4. GLOBAL STATUS BAR */}
-      <footer className="h-6 bg-[#090D14] border-t border-slate-800 px-3 flex items-center justify-between text-[10px] font-mono text-slate-400 shrink-0 z-30">
-        <div className="flex items-center gap-4">
-          <span className="text-emerald-400 font-semibold flex items-center gap-1">
-            <CheckCircle2 className="h-3 w-3" /> PIPELINE ACTIVE
-          </span>
-          <span className="text-slate-700">|</span>
-          <span>STEP: <strong className="text-slate-200">{currentStep}/12 {activeView}</strong></span>
-          <span>STUDIES: <strong className="text-slate-200">{(outcome.rows || []).length}</strong></span>
-          <span>POOLED EFFECT: <strong className="text-cyan-400">{computed?.meta?.random?.effect?.toFixed(2) || "0.40"}</strong></span>
+      {/* 4. DOCKABLE BOTTOM DATA TABLE (160px) */}
+      {bottomDock.open && activeView === "Figures" && (
+        <div style={{ height: bottomDock.height, display: "flex", flexDirection: "column", background: "var(--bg-panel)", borderTop: "1px solid var(--line)" }}>
+          <div className="wb-panel-head">
+            <span className="title">Contingency Data Ledger</span>
+            <span className="wb-count">{(outcome.rows || []).length} STUDIES</span>
+            <span className="wb-spacer" />
+            <button className="wb-btn" onClick={addManualRow}>+ Add Row</button>
+            <button className="wb-btn" onClick={exportCSV}>CSV Export</button>
+          </div>
+          <div style={{ flex: 1, overflow: "auto" }}>
+            <table className="wb-grid">
+              <thead>
+                <tr>
+                  <th style={{ width: 180 }}>Study Name</th>
+                  <th style={{ width: 60, textAlign: "center" }}>Events (T)</th>
+                  <th style={{ width: 60, textAlign: "center" }}>Total (T)</th>
+                  <th style={{ width: 60, textAlign: "center" }}>Events (C)</th>
+                  <th style={{ width: 60, textAlign: "center" }}>Total (C)</th>
+                  <th style={{ width: 80, textAlign: "center" }}>Effect ({outcome.measure})</th>
+                  <th style={{ width: 60, textAlign: "right" }}>Weight</th>
+                  <th style={{ width: 70, textAlign: "center" }}>RoB</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(computed?.rows || []).map((r) => {
+                  const isSel = selectedRowId === r.studyId;
+                  return (
+                    <tr
+                      key={r.studyId}
+                      className={isSel ? "sel" : ""}
+                      onClick={() => setSelectedRowId(r.studyId)}
+                      style={{ cursor: "default" }}
+                    >
+                      <td style={{ fontWeight: 600 }}>{r.studyName}</td>
+                      <td style={{ textAlign: "center", fontFamily: "var(--mono)" }}>{r.eventsT}</td>
+                      <td style={{ textAlign: "center", fontFamily: "var(--mono)" }}>{r.totalT}</td>
+                      <td style={{ textAlign: "center", fontFamily: "var(--mono)" }}>{r.eventsC}</td>
+                      <td style={{ textAlign: "center", fontFamily: "var(--mono)" }}>{r.totalC}</td>
+                      <td style={{ textAlign: "center", fontFamily: "var(--mono)", color: "var(--accent)" }}>{r.effect?.toFixed(2) || "—"}</td>
+                      <td style={{ textAlign: "right", fontFamily: "var(--mono)" }}>{r.weight?.toFixed(1) || "—"}%</td>
+                      <td style={{ textAlign: "center" }}>
+                        <span className="wb-tag" style={{ color: robColor(r.rob), borderColor: robColor(r.rob) }}>
+                          {r.rob}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
+      )}
 
-        <div className="flex items-center gap-4">
-          <span>TRIANGULATION: <strong className="text-purple-400 font-bold">5 STREAMS</strong></span>
-          <span className="text-slate-700">|</span>
-          <span className="text-cyan-400 font-semibold flex items-center gap-1">
-            <Activity className="h-3 w-3 animate-pulse" /> ENGINE: READY
-          </span>
-        </div>
-      </footer>
+      {/* 5. NATIVE STATUSBAR (20px) */}
+      <div className="wb-statusbar">
+        <span>● PIPELINE ACTIVE</span>
+        <span className="wb-sep" />
+        <span>STEP: {currentStep}/12 {activeView}</span>
+        <span className="wb-sep" />
+        <span>STUDIES: {(outcome.rows || []).length}</span>
+        <span className="wb-sep" />
+        <span>POOLED: {computed?.meta?.random?.effect?.toFixed(2) || "0.40"}</span>
+        <span className="wb-spacer" />
+        <span>CAUSAL TRIANGULATION: 5 STREAMS</span>
+        <span className="wb-sep" />
+        <span style={{ color: "var(--ok)" }}>ENGINE: READY</span>
+      </div>
     </div>
   );
 }
